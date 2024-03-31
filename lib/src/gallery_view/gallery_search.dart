@@ -102,7 +102,6 @@ class _GallerySearch extends State<GallerySearch> {
   Row _inputRow() {
     return Row(
       children: [
-        BackButton(onPressed: () => Navigator.of(context).pop()),
         Expanded(
             child: Autocomplete<Map<String, dynamic>>(
           optionsBuilder: (text) async {
@@ -182,6 +181,7 @@ class _GallerySearch extends State<GallerySearch> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      appBar: AppBar(),
         body: Column(children: [
       _inputRow(),
       const SizedBox(height: 56),

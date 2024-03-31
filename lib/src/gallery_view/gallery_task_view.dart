@@ -7,10 +7,10 @@ import 'package:ayaka/src/settings/settings_controller.dart';
 import 'package:ayaka/src/ui/common_view.dart';
 import 'package:flutter/material.dart';
 import 'package:hitomi/gallery/gallery.dart';
+import 'package:hitomi/gallery/image.dart';
 import 'package:hitomi/gallery/label.dart';
 import 'package:hitomi/lib.dart';
 import 'package:provider/provider.dart';
-
 import 'gallery_item_list_view.dart';
 
 class GalleryTaskView extends StatefulWidget {
@@ -40,10 +40,10 @@ class _GalleryTaskView extends State<GalleryTaskView> {
   void didChangeDependencies() {
     super.didChangeDependencies();
     manager = context.read<SettingsController>().manager;
-    _debounce.runDebounce(_fetchTaasks, duration: deration);
+    _debounce.runDebounce(_fetchTasks, duration: deration);
   }
 
-  Future<void> _fetchTaasks() async {
+  Future<void> _fetchTasks() async {
     await manager
         .parseCommandAndRun('-l')
         .then((value) => value as Map<String, dynamic>)
@@ -55,21 +55,28 @@ class _GalleryTaskView extends State<GalleryTaskView> {
             }))
         .catchError((e) => debugPrint(' $e'), test: (error) => true)
         .whenComplete(
-            () => _debounce.runDebounce(_fetchTaasks, duration: deration));
+            () => _debounce.runDebounce(_fetchTasks, duration: deration));
   }
 
   @override
   Widget build(BuildContext context) {
-    var api = context.read<SettingsController>().hitomi();
+    var controller = context.read<SettingsController>();
+    var api = controller.hitomi();
     return CustomScrollView(slivers: [
       SliverGrid.builder(
           itemBuilder: (context, index) {
             var item = runningTask[index];
             Gallery gallery = item['gallery'];
+            final url = api.buildImageUrl(gallery.files.first,
+                id: gallery.id,
+                size: ThumbnaiSize.smaill,
+                proxy: true);
+            var header = buildRequestHeader(
+                url, 'https://hitomi.la${Uri.encodeFull(gallery.galleryurl!)}');
             return Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                ThumbImageView(api, gallery, gallery.files.first,
-                    indexStr: '${item['speed']}Kb'),
+                ThumbImageView(url,header: header,indexStr: (item['speed'] as double).toStringAsFixed(2)),
                 Expanded(
                     child: Column(children: [
                   Text(gallery.dirName),
@@ -81,8 +88,18 @@ class _GalleryTaskView extends State<GalleryTaskView> {
                       return [
                         PopupMenuItem(
                             child: Text(AppLocalizations.of(context)!.cancel),
-                            onTap: () =>
-                                manager.downLoader.removeTask(gallery.id)),
+                            onTap: () {
+                              manager.downLoader
+                                  .removeTask(gallery.id)
+                                  .then((value) => gallery
+                                      .createDir(controller.config.output,
+                                          createDir: false)
+                                      .delete(recursive: true))
+                                  .then((value) => debugPrint(value.path))
+                                  .catchError((e) {
+                                debugPrint('delete error m$e');
+                              }, test: (error) => true);
+                            }),
                       ];
                     })
                   ])
@@ -92,7 +109,7 @@ class _GalleryTaskView extends State<GalleryTaskView> {
           },
           gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
               maxCrossAxisExtent: 800,
-              mainAxisSpacing: 16,
+              mainAxisSpacing: 8,
               crossAxisSpacing: 8),
           itemCount: runningTask.length),
       SliverGrid.builder(

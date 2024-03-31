@@ -1,3 +1,7 @@
+import 'dart:async';
+import 'dart:convert';
+import 'dart:io';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:hitomi/lib.dart';
@@ -14,15 +18,12 @@ class SettingsController with ChangeNotifier {
   late ThemeMode _themeMode;
   late UserConfig _config;
   late TaskManager _manager;
+  HttpServer? _server;
   ThemeMode get themeMode => _themeMode;
   TaskManager get manager => _manager;
+  UserConfig get config => _config;
   Future<void> loadSettings() async {
     _themeMode = await _settingsService.themeMode();
-    _config = await _settingsService.readConfig();
-    _manager = TaskManager(_config);
-    if (!kIsWeb) {
-      await run_server(_manager);
-    }
     notifyListeners();
   }
 
@@ -32,16 +33,31 @@ class SettingsController with ChangeNotifier {
     if (newThemeMode == null) return;
     if (newThemeMode == _themeMode) return;
     _themeMode = newThemeMode;
-    notifyListeners();
     await _settingsService.updateThemeMode(newThemeMode);
+    notifyListeners();
   }
 
-  Future<void> updateConfig(UserConfig? config) async {
-    if (config == null) return;
+  Future<UserConfig> loadConfig() async{
+    _config = await _settingsService.readConfig();
+    debugPrint('load ${jsonEncode(_config)}');
+    _manager = TaskManager(_config);
+    if (!kIsWeb) {
+      _server?.close(force: true);
+      _server=await run_server(_manager);
+    }
+    return _config;
+  }
+
+  Future<void> updateConfig(UserConfig config) async {
     if (config == _config) return;
     _config = config;
-    _manager = TaskManager(_config);
-    notifyListeners();
+    debugPrint('save ${jsonEncode(config)}');
     await _settingsService.saveConfig(config);
+    _manager = TaskManager(_config);
+    if (!kIsWeb) {
+      _server?.close(force: true);
+      _server=await run_server(_manager);
+    }
+    notifyListeners();
   }
 }

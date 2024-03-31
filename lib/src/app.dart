@@ -19,41 +19,50 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final settingsController = context.watch<SettingsController>();
-    return ListenableBuilder(
-      listenable: settingsController,
-      builder: (BuildContext context, Widget? child) {
-        return MaterialApp(
-          restorationScopeId: 'app',
-          localizationsDelegates: const [
-            AppLocalizations.delegate,
-            GlobalMaterialLocalizations.delegate,
-            GlobalWidgetsLocalizations.delegate,
-            GlobalCupertinoLocalizations.delegate,
-          ],
-          supportedLocales: const [
-            Locale('zh', 'CN'),
-          ],
-          onGenerateTitle: (BuildContext context) =>
+    return FutureBuilder(future:settingsController.loadConfig().then((value) => Future.delayed(const Duration(milliseconds: 2000),()=>true)) , builder:(context,snap){
+      debugPrint('load result ${snap.data}');
+      if(snap.hasData){
+        return ListenableBuilder(
+          listenable: settingsController,
+          builder: (BuildContext context, Widget? child) {
+            return MaterialApp(
+              restorationScopeId: 'app',
+              localizationsDelegates: const [
+                AppLocalizations.delegate,
+                GlobalMaterialLocalizations.delegate,
+                GlobalWidgetsLocalizations.delegate,
+                GlobalCupertinoLocalizations.delegate,
+              ],
+              supportedLocales: const [
+                Locale('zh', 'CN'),
+              ],
+              onGenerateTitle: (BuildContext context) =>
               AppLocalizations.of(context)!.appTitle,
-          theme: ThemeData(
-              useMaterial3: true,
-              colorScheme: ColorScheme.fromSeed(seedColor: Colors.brown)),
-          darkTheme: ThemeData.dark(useMaterial3: true),
-          themeMode: settingsController.themeMode,
-          onGenerateRoute: (RouteSettings routeSettings) {
-            return MaterialPageRoute<void>(
-              settings: routeSettings,
-              builder: (BuildContext context) {
-                return _buildRoute(routeSettings.name ?? '/');
+              theme: ThemeData(
+                  useMaterial3: true,
+                  colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue),
+                elevatedButtonTheme: const ElevatedButtonThemeData()
+              ),
+              darkTheme: ThemeData.dark(useMaterial3: true),
+              themeMode: settingsController.themeMode,
+              onGenerateRoute: (RouteSettings routeSettings) {
+                return MaterialPageRoute<void>(
+                  settings: routeSettings,
+                  builder: (BuildContext context)  {
+                    return _buildRoute(routeSettings.name ?? '/',settingsController);
+                  },
+                );
               },
             );
           },
         );
-      },
-    );
+      } else{
+        return const Center(child: CircularProgressIndicator());
+      }
+    });
   }
 
-  Widget _buildRoute(String route) {
+  Widget _buildRoute(String route,SettingsController controller) {
     switch (route) {
       case GalleryViewer.routeName:
         return const GalleryViewer();

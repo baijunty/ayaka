@@ -1,6 +1,6 @@
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-
 import 'settings_controller.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
@@ -23,6 +23,7 @@ class _StateSetting extends State<SettingsView> {
   late SettingsController controller;
   TextEditingController? remoteAddrCon;
   TextEditingController? proxyAddrCon;
+  bool netLoading=false;
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
   @override
   void dispose() {
@@ -40,17 +41,12 @@ class _StateSetting extends State<SettingsView> {
       proxyAddrCon =
           TextEditingController(text: controller.manager.config.proxy);
     }
+    debugPrint('use theme ${Theme.of(context).elevatedButtonTheme.style}');
     return Padding(
       padding: const EdgeInsets.all(16),
-      // Glue the SettingsController to the theme selection DropdownButton.
-      //
-      // When a user selects a theme from the dropdown list, the
-      // SettingsController is updated, which rebuilds the MaterialApp.
       child: Column(children: [
         DropdownButton<ThemeMode>(
-          // Read the selected themeMode from the controller
           value: controller.themeMode,
-          // Call the updateThemeMode method any time the user selects a theme.
           onChanged: controller.updateThemeMode,
           items: [
             DropdownMenuItem(
@@ -102,17 +98,42 @@ class _StateSetting extends State<SettingsView> {
                 },
                 keyboardType: TextInputType.url,
               ),
-              TextButton(
+              FilledButton(
                   onPressed: () {
                     if (_formKey.currentState!.validate()) {
-                      controller.updateConfig(controller.manager.config
-                          .copyWith(
-                              proxy: proxyAddrCon!.text,
-                              remoteHttp: remoteAddrCon!.text));
+                      controller.updateConfig(controller.config.copyWith(
+                          proxy: proxyAddrCon!.text,
+                          remoteHttp: remoteAddrCon!.text));
                     }
                   },
+                  style: Theme.of(context).elevatedButtonTheme.style,
                   child: Text(AppLocalizations.of(context)!.confirm))
             ])),
+
+        FilledButton(
+          onPressed: () async {
+            setState(() {
+              netLoading=true;
+            });
+            await controller.manager.parseCommandAndRun('-u').then((value) => setState(() {
+              netLoading=false;
+            }));
+          },
+          child: Text(AppLocalizations.of(context)!.updateDatabase),
+        ),
+        Row(children: [
+          Expanded(child: Text(controller.config.output)),
+          FilledButton(
+              onPressed: () async {
+                var path = await FilePicker.platform.getDirectoryPath();
+                if (path?.isNotEmpty == true) {
+                  await controller
+                      .updateConfig(controller.config.copyWith(output: path!));
+                }
+                setState(() {});
+              },
+              child: Text(AppLocalizations.of(context)!.select))
+        ]),
       ]),
     );
   }

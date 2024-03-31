@@ -38,6 +38,7 @@ class _AyakaHome extends State<AyakaHome> {
       appBar: AppBar(
         title: Text(AppLocalizations.of(context)!.appTitle),
         actions: [
+          if(index<2)
           IconButton(
             icon: const Icon(Icons.search),
             onPressed: () {

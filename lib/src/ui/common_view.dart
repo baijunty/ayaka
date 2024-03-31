@@ -2,7 +2,6 @@ import 'dart:async';
 
 import 'package:ayaka/src/gallery_view/gallery_details_view.dart';
 import 'package:ayaka/src/gallery_view/gallery_viewer.dart';
-import 'package:ayaka/src/utils/responsive_util.dart';
 import 'package:collection/collection.dart';
 import 'package:easy_refresh/easy_refresh.dart';
 import 'package:flutter/material.dart';
@@ -17,28 +16,15 @@ import '../gallery_view/gallery_item_list_view.dart';
 import '../utils/label_utils.dart';
 
 class ThumbImageView extends StatelessWidget {
-  final Hitomi api;
-  final Gallery gallery;
-  final img.Image image;
-  final img.ThumbnaiSize? size;
+  final String url;
+  final Map<String,String>? header;
   final String? indexStr;
-  const ThumbImageView(this.api, this.gallery, this.image,
-      {super.key, this.size, this.indexStr});
+  const ThumbImageView(this.url,{super.key,this.header, this.indexStr});
 
   @override
   Widget build(BuildContext context) {
-    final url = api.buildImageUrl(image,
-        id: gallery.id,
-        size: size ??
-            (currentDevice(context) == DeviceInfo.mobile
-                ? img.ThumbnaiSize.smaill
-                : img.ThumbnaiSize.medium),
-        proxy: true);
-    var header = buildRequestHeader(
-        url, 'https://hitomi.la${Uri.encodeFull(gallery.galleryurl!)}');
-    return Stack(children: [
-      Center(
-          child: Image.network(
+    return Padding(padding: const EdgeInsets.all(4),child: Stack(children: [
+      Image.network(
         url,
         headers: header,
         errorBuilder: (context, error, stackTrace) {
@@ -62,18 +48,18 @@ class ThumbImageView extends StatelessWidget {
           );
         },
         fit: BoxFit.contain,
-      )),
+      ),
       if (indexStr != null)
         Align(
-            alignment: const Alignment(-0.9, -0.9),
+            alignment: const Alignment(-0.98, -0.98),
             child: DecoratedBox(
                 decoration: const BoxDecoration(
                   shape: BoxShape.circle,
                   color: Colors.black54,
                 ),
                 child: Padding(
-                    padding: const EdgeInsets.all(8), child: Text(indexStr!))))
-    ]);
+                    padding: const EdgeInsets.all(4), child: Text(indexStr!,style: Theme.of(context).primaryTextTheme.labelSmall?.copyWith(color: Colors.pink),))))
+    ]));
   }
 }
 
@@ -88,7 +74,7 @@ void showSnackBar(BuildContext context, String msg) {
 }
 
 String takeTranslateText(String input) {
-  var reg = RegExp(r'!?\[(?<name>.*?)\]\(#*\s*\"?(?<url>\S+?)\"?\)');
+  var reg = RegExp(r'!?\[(?<name>.*?)\]\(#*\s*"?(?<url>\S+?)"?\)');
   var matches = reg.allMatches(input);
   if (matches.isNotEmpty) {
     int start = 0;
@@ -106,24 +92,23 @@ String takeTranslateText(String input) {
 Widget buildGalleryListView(
     EasyRefreshController controller,
     List<Gallery> data,
-    FutureOr<dynamic> Function() onload,
+    FutureOr<dynamic> Function() onLoad,
     FutureOr<dynamic> Function() onRefresh,
     void Function(Gallery) click,
     Hitomi api,
     {ScrollController? scrollController,
     PopupMenuButton<String> Function(Gallery)? menusBuilder}) {
   return EasyRefresh(
+      key: ValueKey(controller),
       controller: controller,
       header: const MaterialHeader(),
       footer: const MaterialFooter(),
-      onLoad: onload,
+      onLoad: onLoad,
       onRefresh: onRefresh,
       child: GridView.builder(
           controller: scrollController,
           gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-              maxCrossAxisExtent: 450,
-              mainAxisSpacing: 16,
-              crossAxisSpacing: 8),
+              maxCrossAxisExtent: 400,mainAxisExtent:160),
           itemCount: data.length,
           itemBuilder: (BuildContext context, int index) {
             final item = data[index];
@@ -156,30 +141,33 @@ class GalleryInfo extends StatelessWidget {
   Widget build(BuildContext context) {
     var entry = mapGalleryType(context, gallery.type);
     var format = DateFormat('yyyy-MM-dd');
+    final url = api.buildImageUrl(gallery.files.first,
+        id: gallery.id,
+        size: img.ThumbnaiSize.medium,
+        proxy: true);
+    var header = buildRequestHeader(
+        url, 'https://hitomi.la${Uri.encodeFull(gallery.galleryurl!)}');
     return InkWell(
         key: ValueKey(gallery.id),
         onTap: () => click(gallery),
         child: Card(
             child: Container(
-                padding: const EdgeInsets.all(8),
                 color: entry.value,
-                child: Column(children: [
-                  Expanded(
-                      child: ThumbImageView(api, gallery, image,
-                          indexStr: gallery.files.length.toString())),
-                  Text(gallery.dirName,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: Theme.of(context).textTheme.titleMedium,
-                      softWrap: true),
-                  Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                child: Row(crossAxisAlignment: CrossAxisAlignment.start,children: [
+                  SizedBox.fromSize(size: const Size.fromWidth(100), child: ThumbImageView(url,header: header,
+                      indexStr: gallery.files.length.toString())),
+                  Expanded(child: Column(
+                      mainAxisAlignment: MainAxisAlignment.start,
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
+                        Text(gallery.dirName,
+                            maxLines: 2,
+                            softWrap: true),
                         Text('${gallery.languageLocalname}'),
                         Text(entry.key),
                         Text(format.format(format.parse(gallery.date))),
-                        if (menus != null) menus!
-                      ]),
+                      ])),
+                  if (menus != null) menus!
                 ]))));
   }
 }
@@ -329,6 +317,11 @@ class GalleryDetailHead extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     var entry = mapGalleryType(context, gallery.type);
+    final url = manager.getApi(local: local).buildImageUrl(gallery.files.first,
+        id: gallery.id,
+        proxy: true);
+    var header = buildRequestHeader(
+        url, 'https://hitomi.la${Uri.encodeFull(gallery.galleryurl!)}');
     return SliverAppBar.large(
         excludeHeaderSemantics: true,
         backgroundColor: entry.value,
@@ -343,8 +336,7 @@ class GalleryDetailHead extends StatelessWidget {
               margin: const EdgeInsets.only(left: 56, top: 8),
               child:
                   Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                ThumbImageView(
-                    manager.getApi(local: local), gallery, gallery.files.first,
+                ThumbImageView(url,header: header,
                     indexStr: gallery.files.length.toString()),
                 Expanded(
                     child: Container(

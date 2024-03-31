@@ -42,17 +42,12 @@ class SettingsService {
       //     }, test: (error) => true);
       return config;
     }
-    String dir;
-    if (Platform.isAndroid) {
-      dir = await getApplicationSupportDirectory().then((value) => value.path);
-    } else {
-      dir = 'd:/manga';
-    }
+    final dir = await getApplicationSupportDirectory().then((value) => value.path);
     var defaultConfig = UserConfig(dir,
         languages: const ["japanese", "chinese"],
         maxTasks: 5,
-        remoteHttp: 'http://192.168.1.107:7890',
-        proxy: '127.0.0.1:8389');
+        remoteHttp: 'http://127.0.0.1:7890',
+        proxy: '');
     final configFile = File(join(dir, 'config.json'));
     if (configFile.existsSync()) {
       return configFile

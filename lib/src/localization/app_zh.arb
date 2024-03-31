@@ -27,7 +27,7 @@
   "confirm":"确定",
   "alreadySelected":"已选",
   "exclude":"排除",
-  "include":"选择",
+  "include":"包含",
   "search":"搜索",
   "searchLocal":"搜索本地",
   "language":"语言",
@@ -51,5 +51,7 @@
   "cancel":"取消",
   "loading":"加载中",
   "delete":"删除",
+  "updateDatabase":"更新数据库",
+  "select":"选择",
   "tag":"标签"
 }

@@ -24,14 +24,14 @@ class GallerySearch extends StatefulWidget {
 class _GallerySearch extends State<GallerySearch> {
   final _selected = <Map<String, dynamic>>[];
   late Hitomi hitomi;
-  late TextEditingController controller;
   String _lastQuery = '';
   bool useInclude = true;
-  Map<String, dynamic>? _current;
   late Debounce _debounce;
   final types = <Map<String, dynamic>>[];
   final languages = <Map<String, dynamic>>[];
-  Future<List<Map<String, dynamic>>> fetchLabels(TextEditingValue key) async {
+  final _history = <Map<String, dynamic>>[];
+  Future<Iterable<Widget>> fetchLabels(SearchController controller) async {
+    var key = controller.value;
     if (key.text.length < 2 ||
         _lastQuery == key.text ||
         !zhAndJpCodeExp.hasMatch(key.text)) {
@@ -39,19 +39,18 @@ class _GallerySearch extends State<GallerySearch> {
     }
     _lastQuery = key.text;
     return _debounce.runDebounce(() {
-      if (_current != null && _showTranslate(_current!) == key.text) {
-        return <Map<String, dynamic>>[];
-      }
       debugPrint('net fetch ${key.text}');
       try {
         return context
             .read<SettingsController>()
             .hitomi(localDb: true)
             .fetchSuggestions(key.text)
-            .then((value) => _lastQuery == key.text ? value : []);
+            .then((value) =>
+                _lastQuery == key.text ? value : <Map<String, dynamic>>[])
+            .then((value) => value.map((e) => _buildListTile(e, controller)));
       } catch (e) {
         debugPrint('$e');
-        return <Map<String, dynamic>>[];
+        return [];
       }
     });
   }
@@ -99,143 +98,158 @@ class _GallerySearch extends State<GallerySearch> {
     return '$showType $translate';
   }
 
-  Row _inputRow() {
-    return Row(
-      children: [
-        Expanded(
-            child: Autocomplete<Map<String, dynamic>>(
-          optionsBuilder: (text) async {
-            if (text.text.isEmpty) {
-              return const Iterable<Map<String, dynamic>>.empty();
-            }
-            return fetchLabels(text);
-          },
-          displayStringForOption: (option) => _showTranslate(option),
-          onSelected: (option) {
-            _current = {...option, 'include': useInclude};
-          },
-          fieldViewBuilder:
-              (context, textEditingController, focusNode, onFieldSubmitted) {
-            controller = textEditingController;
-            return TextFormField(
-                focusNode: focusNode,
-                onFieldSubmitted: (value) {
-                  onFieldSubmitted();
-                },
-                controller: controller);
-          },
-        )),
-        Text(useInclude
-            ? AppLocalizations.of(context)!.alreadySelected
-            : AppLocalizations.of(context)!.exclude),
-        Switch(
-            value: useInclude,
-            onChanged: (b) => setState(() {
-                  useInclude = b;
-                })),
-        IconButton(
-            onPressed: () => setState(() {
-                  if (_current != null) {
-                    _selected.add(_current!);
-                  } else if (controller.text.isNotEmpty) {
-                    _selected.add({
-                      'type': '',
-                      'name': controller.text,
-                      'translate': controller.text,
-                      'include': useInclude
-                    });
-                  }
-                  _current = null;
-                  controller.text = '';
-                }),
-            icon: const Icon(Icons.add)),
-      ],
+  Widget _buildListTile(
+      Map<String, dynamic> label, SearchController controller) {
+    var history = _showTranslate(label);
+    return ListTile(
+        leading: const Icon(Icons.history),
+        title: Text(history),
+        onTap: () {
+          controller.closeView(history);
+          handleSelection(label, controller);
+        });
+  }
+
+  Iterable<Widget> getHistoryList(SearchController controller) {
+    return _history.map((label) {
+      return _buildListTile(label, controller);
+    });
+  }
+
+  Widget _inputRow() {
+    return SearchAnchor.bar(
+      barHintText: AppLocalizations.of(context)!.search,
+      suggestionsBuilder: (context, controller) {
+        if (controller.text.isEmpty) {
+          if (_history.isNotEmpty) {
+            return getHistoryList(controller);
+          }
+          return <Widget>[
+            Center(
+              child: Text(AppLocalizations.of(context)!.emptyContent,
+                  style: const TextStyle(color: Colors.grey)),
+            )
+          ];
+        }
+        return fetchLabels(controller);
+      },
     );
   }
 
-  Widget selectRow(String type, List<Map<String, dynamic>> labels) {
-    return Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-      Text(
-        type,
-        style: Theme.of(context).textTheme.bodyLarge,
-        textScaler: const TextScaler.linear(1.2),
-      ),
-      const SizedBox(width: 16),
-      for (var label in labels)
-        Row(children: [
-          Text(label['translate']),
-          Checkbox(
-              value: _selected.contains(label),
-              onChanged: (b) => setState(() {
-                    if (b == true) {
-                      _selected.add(label);
-                    } else {
-                      _selected.remove(label);
-                    }
-                  })),
-          const SizedBox(width: 8),
-        ])
-    ]);
-  }
+  // Widget selectRow(String type, List<Map<String, dynamic>> labels) {
+  //   return Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+  //     Text(
+  //       type,
+  //       style: Theme.of(context).textTheme.bodyLarge,
+  //       textScaler: const TextScaler.linear(1.2),
+  //     ),
+  //     const SizedBox(width: 16),
+  //     Expanded(
+  //         child: Wrap(children: [
+  //       for (var label in labels)
+  //         FilterChip(
+  //             label: Text(label['translate']),
+  //             selected: _selected.contains(label),
+  //             onDeleted: () => setState(() {
+  //                   _selected.remove(label);
+  //                 }),
+  //             onSelected: (b) => setState(() {
+  //                   if (!_selected.contains(label)) {
+  //                     _selected.add(label);
+  //                   }
+  //                 }))
+  //     ])),
+  //   ]);
+  // }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(),
+        appBar: AppBar(
+          leading: BackButton(onPressed: () => Navigator.of(context).pop()),
+        ),
         body: Column(children: [
-      _inputRow(),
-      const SizedBox(height: 56),
-      Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-        FilledButton(
-            style: Theme.of(context).filledButtonTheme.style?.copyWith(
-                backgroundColor: const MaterialStatePropertyAll(Colors.orange)),
-            onPressed: () {
-              Navigator.of(context).restorablePushNamed(
-                  GallerySearchResultView.routeName,
-                  arguments: {'tags': _selected, 'local': false});
-            },
-            child: Text(
-              AppLocalizations.of(context)!.search,
-              style: Theme.of(context).textTheme.bodyMedium,
-            )),
-        const SizedBox(width: 16),
-        FilledButton(
-            style: Theme.of(context).filledButtonTheme.style?.copyWith(
-                backgroundColor: const MaterialStatePropertyAll(Colors.blue)),
-            onPressed: () {
-              Navigator.of(context).restorablePushNamed(
-                  GallerySearchResultView.routeName,
-                  arguments: {'tags': _selected, 'local': true});
-            },
-            child: Text(
-              '搜索本地',
-              style: Theme.of(context).textTheme.bodyMedium,
-            ))
-      ]),
-      selectRow(mapTagType(context, 'type'), types),
-      selectRow(mapTagType(context, 'language'), languages),
-      const Divider(height: 1, color: Colors.grey),
-      Text(AppLocalizations.of(context)!.alreadySelected),
-      Wrap(children: [
-        for (var label
-            in _selected.where((element) => element['include'] == true))
-          TextButton(
-              onPressed: () => Navigator.of(context).restorablePushNamed(
-                  GalleryListView.routeName,
-                  arguments: {'tag': label}),
-              child: Text(_showTranslate(label)))
-      ]),
-      const Divider(color: Colors.grey),
-      Text(AppLocalizations.of(context)!.exclude),
-      Wrap(children: [
-        for (var label
-            in _selected.where((element) => element['include'] == false))
-          TextButton(
-              onPressed: () => Navigator.of(context).restorablePushNamed(
-                  GalleryListView.routeName,
-                  arguments: {'tag': label}),
-              child: Text(_showTranslate(label)))
-      ]),
-    ]));
+          _inputRow(),
+          DropdownMenu<bool>(
+              dropdownMenuEntries: [
+                DropdownMenuEntry(
+                    label: AppLocalizations.of(context)!.alreadySelected,
+                    value: true),
+                DropdownMenuEntry(
+                    label: AppLocalizations.of(context)!.exclude, value: false),
+              ],
+              label: Text(AppLocalizations.of(context)!.mode),
+              onSelected: (b) => useInclude = b == true),
+          const SizedBox(height: 16),
+          const Divider(height: 1, color: Colors.grey),
+          Text(AppLocalizations.of(context)!.alreadySelected),
+          Wrap(children: [
+            for (var label
+                in _selected.where((element) => element['include'] == true))
+              TextButton(
+                  onPressed: () => Navigator.of(context).restorablePushNamed(
+                      GalleryListView.routeName,
+                      arguments: {'tag': label}),
+                  child: Text(_showTranslate(label)))
+          ]),
+          Text(AppLocalizations.of(context)!.exclude),
+          Wrap(children: [
+            for (var label
+                in _selected.where((element) => element['include'] == false))
+              TextButton(
+                  onPressed: () => Navigator.of(context).restorablePushNamed(
+                      GalleryListView.routeName,
+                      arguments: {'tag': label}),
+                  child: Text(_showTranslate(label)))
+          ]),
+          const Divider(color: Colors.grey),
+          const SizedBox(height: 16),
+          Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+            FilledButton(
+                style: Theme.of(context).filledButtonTheme.style?.copyWith(
+                    backgroundColor:
+                        const MaterialStatePropertyAll(Colors.orange)),
+                onPressed: () {
+                  Navigator.of(context).restorablePushNamed(
+                      GallerySearchResultView.routeName,
+                      arguments: {'tags': _selected, 'local': false});
+                },
+                child: Text(
+                  AppLocalizations.of(context)!.search,
+                  style: Theme.of(context).textTheme.bodyMedium,
+                )),
+            const SizedBox(width: 16),
+            FilledButton(
+                style: Theme.of(context).filledButtonTheme.style?.copyWith(
+                    backgroundColor:
+                        const MaterialStatePropertyAll(Colors.blue)),
+                onPressed: () {
+                  Navigator.of(context).restorablePushNamed(
+                      GallerySearchResultView.routeName,
+                      arguments: {'tags': _selected, 'local': true});
+                },
+                child: Text(
+                  '搜索本地',
+                  style: Theme.of(context).textTheme.bodyMedium,
+                ))
+          ]),
+        ]));
+  }
+
+  void handleSelection(
+      Map<String, dynamic> label, SearchController controller) {
+    var useLabel = {...label, 'include': useInclude};
+    setState(() {
+      if (_selected
+          .any((element) => _showTranslate(element) == _showTranslate(label))) {
+        _selected.removeWhere(
+            (element) => _showTranslate(element) == _showTranslate(label));
+        debugPrint('remove $label');
+      } else {
+        _selected.add(useLabel);
+        debugPrint('add $label');
+      }
+      controller.text = '';
+    });
   }
 }

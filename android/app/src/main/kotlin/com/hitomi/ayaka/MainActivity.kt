@@ -1,4 +1,4 @@
-package com.example.ayaka
+package com.hitomi.ayaka
 
 import io.flutter.embedding.android.FlutterActivity
 

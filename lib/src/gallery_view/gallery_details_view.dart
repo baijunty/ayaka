@@ -19,28 +19,54 @@ class GalleryDetailsView extends StatefulWidget {
 }
 
 class _GalleryDetailView extends State<GalleryDetailsView> {
+  late SettingsController controller = context.read<SettingsController>();
+  late Gallery gallery;
+  bool local = false;
+  List<Map<String, dynamic>> translates = [];
+  Future<void> _fetchTransLate() async {
+    var api = controller.hitomi(localDb: true);
+    await api
+        .translate(gallery.labels())
+        .then((value) => setState(() {
+              translates.addAll(value);
+            }))
+        .catchError((e) => translates, test: (error) => true);
+  }
+
   @override
-  Widget build(BuildContext context) {
-    var settings = context.read<SettingsController>();
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    controller = context.read<SettingsController>();
     var args =
         ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>;
-    Gallery gallery = args['gallery'];
-    bool local = args['local'];
-    final url = settings.hitomi(localDb: local).buildImageUrl(gallery.files.first,
-        id: gallery.id,
-        size: ThumbnaiSize.smaill,
-        proxy: true);
-    var header = buildRequestHeader(
-        url, 'https://hitomi.la${Uri.encodeFull(gallery.galleryurl!)}');
+    gallery = args['gallery'];
+    local = args['local'] ?? local;
+    _fetchTransLate();
+  }
+
+  @override
+  Widget build(BuildContext context) {
     return Scaffold(
         body: CustomScrollView(slivers: [
-      GalleryDetailHead(
-          manager: settings.manager, gallery: gallery, local: local),
+      GalleryDetailHead(controller: controller, gallery: gallery, local: local),
+      GalleryDetailHeadInfo(
+        gallery: gallery,
+        extendedInfo: translates,
+        controller: controller,
+        local: local,
+      ),
       SliverGrid.builder(
           gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-              maxCrossAxisExtent: 450),
+              maxCrossAxisExtent: 300),
           itemCount: gallery.files.length,
           itemBuilder: (context, index) {
+            final url = controller.hitomi(localDb: local).buildImageUrl(
+                gallery.files[index],
+                id: gallery.id,
+                size: ThumbnaiSize.medium,
+                proxy: true);
+            var header = buildRequestHeader(
+                url, 'https://hitomi.la${Uri.encodeFull(gallery.galleryurl!)}');
             return GestureDetector(
                 onTap: () async => await Navigator.pushNamed(
                         context, GalleryViewer.routeName, arguments: {
@@ -49,9 +75,10 @@ class _GalleryDetailView extends State<GalleryDetailsView> {
                       'local': local,
                     }),
                 child: Card.outlined(
-                    child: ThumbImageView(
-                      url,header: header,
-                        indexStr: (index + 1).toString())));
+                    child: Center(
+                        child: ThumbImageView(url,
+                            header: header,
+                            indexStr: (index + 1).toString()))));
           })
     ]));
   }

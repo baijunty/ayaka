@@ -38,18 +38,18 @@ class _AyakaHome extends State<AyakaHome> {
       appBar: AppBar(
         title: Text(AppLocalizations.of(context)!.appTitle),
         actions: [
-          if(index<2)
-          IconButton(
-            icon: const Icon(Icons.search),
-            onPressed: () {
-              Navigator.pushNamed(context, GallerySearch.routeName);
-            },
-          ),
+          if (index < 2)
+            IconButton(
+              icon: const Icon(Icons.search),
+              onPressed: () {
+                Navigator.pushNamed(context, GallerySearch.routeName);
+              },
+            ),
         ],
         backgroundColor: Theme.of(context).colorScheme.primary,
       ),
-      body: switch (currentDevice(context)) {
-        DeviceInfo.mobile => content,
+      body: switch (currentOrientation(context)) {
+        Orientation.portrait => content,
         _ => Row(children: [
             NavigationRail(
                 destinations: [
@@ -72,7 +72,7 @@ class _AyakaHome extends State<AyakaHome> {
             Expanded(child: content)
           ])
       },
-      bottomNavigationBar: currentDevice(context) == DeviceInfo.mobile
+      bottomNavigationBar: currentOrientation(context) == Orientation.portrait
           ? BottomNavigationBar(
               items: [
                   BottomNavigationBarItem(

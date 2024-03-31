@@ -53,5 +53,9 @@
   "delete":"删除",
   "updateDatabase":"更新数据库",
   "select":"选择",
+  "connectType":"连接方式",
+  "direct":"本地直连",
+  "proxy":"代理",
+  "mode":"模式",
   "tag":"标签"
 }

@@ -42,7 +42,7 @@ class SettingsService {
       //     }, test: (error) => true);
       return config;
     }
-    final dir = await getApplicationSupportDirectory().then((value) => value.path);
+    final dir = await getExternalStorageDirectory().then((value) async => value??await getApplicationSupportDirectory()).then((value) => value.path);
     var defaultConfig = UserConfig(dir,
         languages: const ["japanese", "chinese"],
         maxTasks: 5,
@@ -75,9 +75,9 @@ class SettingsService {
         return false;
       }, test: (error) => true);
     } else {
-      final dir = await getApplicationSupportDirectory();
-      final configFile = File(join(dir.path, 'config.json'));
-      await configFile.writeAsString(json.encode(config));
+      final dir = await getExternalStorageDirectory().then((value) async => value??await getApplicationSupportDirectory()).then((value) => value.path);
+      final configFile = File(join(dir, 'config.json'));
+      await configFile.writeAsString(json.encode(config),flush: true);
     }
   }
 }

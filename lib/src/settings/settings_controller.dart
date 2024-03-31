@@ -22,12 +22,13 @@ class SettingsController with ChangeNotifier {
   ThemeMode get themeMode => _themeMode;
   TaskManager get manager => _manager;
   UserConfig get config => _config;
+  bool useProxy=kIsWeb;
   Future<void> loadSettings() async {
     _themeMode = await _settingsService.themeMode();
     notifyListeners();
   }
 
-  Hitomi hitomi({bool localDb = false}) => _manager.getApi(local: localDb);
+  Hitomi hitomi({bool localDb = false}) => useProxy?_manager.getApiFromProxy(localDb, _config.auth, _config.remoteHttp): _manager.getApiDirect(local: localDb);
 
   Future<void> updateThemeMode(ThemeMode? newThemeMode) async {
     if (newThemeMode == null) return;
@@ -37,13 +38,13 @@ class SettingsController with ChangeNotifier {
     notifyListeners();
   }
 
-  Future<UserConfig> loadConfig() async{
+  Future<UserConfig> loadConfig() async {
     _config = await _settingsService.readConfig();
     debugPrint('load ${jsonEncode(_config)}');
     _manager = TaskManager(_config);
     if (!kIsWeb) {
       _server?.close(force: true);
-      _server=await run_server(_manager);
+      _server = await run_server(_manager);
     }
     return _config;
   }
@@ -51,12 +52,12 @@ class SettingsController with ChangeNotifier {
   Future<void> updateConfig(UserConfig config) async {
     if (config == _config) return;
     _config = config;
-    debugPrint('save ${jsonEncode(config)}');
     await _settingsService.saveConfig(config);
+    debugPrint('after save ${jsonEncode(_config)}');
     _manager = TaskManager(_config);
     if (!kIsWeb) {
       _server?.close(force: true);
-      _server=await run_server(_manager);
+      _server = await run_server(_manager);
     }
     notifyListeners();
   }

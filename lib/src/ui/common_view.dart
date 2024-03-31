@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:ayaka/src/gallery_view/gallery_details_view.dart';
 import 'package:ayaka/src/gallery_view/gallery_viewer.dart';
+import 'package:ayaka/src/settings/settings_controller.dart';
 import 'package:collection/collection.dart';
 import 'package:easy_refresh/easy_refresh.dart';
 import 'package:flutter/material.dart';
@@ -17,49 +18,61 @@ import '../utils/label_utils.dart';
 
 class ThumbImageView extends StatelessWidget {
   final String url;
-  final Map<String,String>? header;
+  final Map<String, String>? header;
   final String? indexStr;
-  const ThumbImageView(this.url,{super.key,this.header, this.indexStr});
+  const ThumbImageView(this.url, {super.key, this.header, this.indexStr});
 
   @override
   Widget build(BuildContext context) {
-    return Padding(padding: const EdgeInsets.all(4),child: Stack(children: [
-      Image.network(
-        url,
-        headers: header,
-        errorBuilder: (context, error, stackTrace) {
-          return Text(error.toString());
-        },
-        loadingBuilder: (context, child, loadingProgress) {
-          return loadingProgress == null
-              ? child
-              : const CircularProgressIndicator();
-        },
-        frameBuilder: (BuildContext context, Widget child, int? frame,
-            bool wasSynchronouslyLoaded) {
-          if (wasSynchronouslyLoaded) {
-            return child;
-          }
-          return AnimatedOpacity(
-            opacity: frame == null ? 0 : 1,
-            duration: const Duration(seconds: 1),
-            curve: Curves.easeOut,
-            child: child,
-          );
-        },
-        fit: BoxFit.contain,
-      ),
-      if (indexStr != null)
-        Align(
-            alignment: const Alignment(-0.98, -0.98),
-            child: DecoratedBox(
-                decoration: const BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: Colors.black54,
-                ),
-                child: Padding(
-                    padding: const EdgeInsets.all(4), child: Text(indexStr!,style: Theme.of(context).primaryTextTheme.labelSmall?.copyWith(color: Colors.pink),))))
-    ]));
+    return Padding(
+        padding: const EdgeInsets.all(4),
+        child: Stack(children: [
+          AspectRatio(
+              aspectRatio: 9 / 16,
+              child: Image.network(
+                url,
+                headers: header,
+                errorBuilder: (context, error, stackTrace) {
+                  return Text(error.toString());
+                },
+                loadingBuilder: (context, child, loadingProgress) {
+                  return loadingProgress == null
+                      ? child
+                      : const CircularProgressIndicator();
+                },
+                frameBuilder: (BuildContext context, Widget child, int? frame,
+                    bool wasSynchronouslyLoaded) {
+                  if (wasSynchronouslyLoaded) {
+                    return child;
+                  }
+                  return AnimatedOpacity(
+                    opacity: frame == null ? 0 : 1,
+                    duration: const Duration(seconds: 1),
+                    curve: Curves.easeOut,
+                    child: child,
+                  );
+                },
+                fit: BoxFit.contain,
+              )),
+          if (indexStr != null)
+            Positioned(
+                left: 4,
+                top: 4,
+                child: DecoratedBox(
+                    decoration: const BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: Colors.black54,
+                    ),
+                    child: Padding(
+                        padding: const EdgeInsets.all(4),
+                        child: Text(
+                          indexStr!,
+                          style: Theme.of(context)
+                              .primaryTextTheme
+                              .labelMedium
+                              ?.copyWith(color: Colors.pink),
+                        ))))
+        ]));
   }
 }
 
@@ -108,7 +121,7 @@ Widget buildGalleryListView(
       child: GridView.builder(
           controller: scrollController,
           gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-              maxCrossAxisExtent: 400,mainAxisExtent:160),
+              maxCrossAxisExtent: 400, mainAxisExtent: 160),
           itemCount: data.length,
           itemBuilder: (BuildContext context, int index) {
             final item = data[index];
@@ -142,9 +155,7 @@ class GalleryInfo extends StatelessWidget {
     var entry = mapGalleryType(context, gallery.type);
     var format = DateFormat('yyyy-MM-dd');
     final url = api.buildImageUrl(gallery.files.first,
-        id: gallery.id,
-        size: img.ThumbnaiSize.medium,
-        proxy: true);
+        id: gallery.id, size: img.ThumbnaiSize.medium, proxy: true);
     var header = buildRequestHeader(
         url, 'https://hitomi.la${Uri.encodeFull(gallery.galleryurl!)}');
     return InkWell(
@@ -153,22 +164,26 @@ class GalleryInfo extends StatelessWidget {
         child: Card(
             child: Container(
                 color: entry.value,
-                child: Row(crossAxisAlignment: CrossAxisAlignment.start,children: [
-                  SizedBox.fromSize(size: const Size.fromWidth(100), child: ThumbImageView(url,header: header,
-                      indexStr: gallery.files.length.toString())),
-                  Expanded(child: Column(
-                      mainAxisAlignment: MainAxisAlignment.start,
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(gallery.dirName,
-                            maxLines: 2,
-                            softWrap: true),
-                        Text('${gallery.languageLocalname}'),
-                        Text(entry.key),
-                        Text(format.format(format.parse(gallery.date))),
-                      ])),
-                  if (menus != null) menus!
-                ]))));
+                child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      SizedBox.fromSize(
+                          size: const Size.fromWidth(100),
+                          child: ThumbImageView(url,
+                              header: header,
+                              indexStr: gallery.files.length.toString())),
+                      Expanded(
+                          child: Column(
+                              mainAxisAlignment: MainAxisAlignment.start,
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                            Text(gallery.dirName, maxLines: 2, softWrap: true),
+                            Text('${gallery.languageLocalname}'),
+                            Text(entry.key),
+                            Text(format.format(format.parse(gallery.date))),
+                          ])),
+                      if (menus != null) menus!
+                    ]))));
   }
 }
 
@@ -209,18 +224,18 @@ class MaxWidthBox extends StatelessWidget {
 
 class GalleryDetailHeadInfo extends StatelessWidget {
   final Gallery gallery;
-  final MapEntry<Gallery?, List<Map<String, dynamic>>> extendedInfo;
-  final TaskManager manager;
+  final List<Map<String, dynamic>> extendedInfo;
+  final SettingsController controller;
   final bool local;
   const GalleryDetailHeadInfo(
       {super.key,
       required this.gallery,
       required this.extendedInfo,
-      required this.manager,
+      required this.controller,
       required this.local});
 
   String findMatchLabel(Label label) {
-    var translate = extendedInfo.value.firstWhereOrNull((element) =>
+    var translate = extendedInfo.firstWhereOrNull((element) =>
         element['type'] == label.type &&
         element['name'] == label.name)?['translate'];
     return translate ?? label.name;
@@ -228,100 +243,77 @@ class GalleryDetailHeadInfo extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    OutlinedButton? button;
-    if (!local) {
-      if (extendedInfo.key == null) {
-        button = OutlinedButton(
-            onPressed: () async {
-              await manager
-                  .parseCommandAndRun('${gallery.id}')
-                  .then((value) => showSnackBar(
-                      context, AppLocalizations.of(context)!.addTaskSuccess))
-                  .catchError((e) => showSnackBar(context, e.toString()),
-                      test: (error) => true);
-            },
-            child: Text(AppLocalizations.of(context)!.download));
-      } else {
-        button = OutlinedButton(
-            onPressed: () => Navigator.of(context).pushReplacementNamed(
-                GalleryDetailsView.routeName,
-                arguments: {'gallery': gallery, 'local': local}),
-            child: Text(AppLocalizations.of(context)!.downloaded));
-      }
-    }
-    return Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(gallery.name, style: Theme.of(context).textTheme.titleMedium),
-          Divider(color: Theme.of(context).primaryColor),
-          Text(gallery.languageLocalname ?? ''),
-          const SizedBox(height: 8),
-          Row(children: [
-            if (button != null) button,
-            const SizedBox(width: 16),
-            OutlinedButton(
-                onPressed: () => Navigator.of(context)
-                        .pushNamed(GalleryViewer.routeName, arguments: {
-                      'gallery': gallery,
-                      'index': 0,
-                      'local': local,
-                    }),
-                child: Text(AppLocalizations.of(context)!.read)),
-          ]),
-          for (var entry in gallery
-              .labels()
-              .groupListsBy((element) => element.type)
-              .entries)
-            Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Padding(
-                  padding: const EdgeInsets.only(top: 8),
-                  child: Text(mapTagType(context, entry.key),
-                      style: Theme.of(context).textTheme.labelLarge)),
-              const Divider(),
-              Expanded(
-                  child: Wrap(children: [
-                for (var label in entry.value)
-                  TextButton(
-                      child: Text(findMatchLabel(label)),
-                      onPressed: () => Navigator.of(context).pushNamed(
-                          GalleryListView.routeName,
-                          arguments: {'tag': label}))
-              ]))
-            ])
-        ]);
+    var entries = gallery
+        .labels()
+        .groupListsBy((element) => element.type)
+        .entries
+        .toList();
+    return SliverList.builder(itemBuilder: (context, index) {
+      var entry = entries[index];
+      return Row(crossAxisAlignment: CrossAxisAlignment.center, children: [
+        Text(mapTagType(context, entry.key),
+            style: Theme.of(context).textTheme.labelMedium),
+        Expanded(
+            child: Wrap(children: [
+          for (var label in entry.value)
+            TextButton(
+                child: Text(findMatchLabel(label)),
+                onPressed: () => Navigator.of(context).pushNamed(
+                    GalleryListView.routeName,
+                    arguments: {'tag': label}))
+        ]))
+      ]);
+    },itemCount: entries.length);
   }
 }
 
 class GalleryDetailHead extends StatelessWidget {
-  final TaskManager manager;
+  final SettingsController controller;
   final Gallery gallery;
   final bool local;
   const GalleryDetailHead(
       {super.key,
-      required this.manager,
+      required this.controller,
       required this.gallery,
       required this.local});
-
-  Future<MapEntry<Gallery?, List<Map<String, dynamic>>>>
-      fetchTransLate() async {
-    var api = manager.getApi(local: true);
-    return api
-        .findSimilarGalleryBySearch(gallery)
-        .then((value) async => MapEntry(
-            value.data.firstOrNull, await api.translate(gallery.labels())))
-        .catchError((e) => const MapEntry(null, <Map<String, dynamic>>[]),
-            test: (error) => true);
-  }
 
   @override
   Widget build(BuildContext context) {
     var entry = mapGalleryType(context, gallery.type);
-    final url = manager.getApi(local: local).buildImageUrl(gallery.files.first,
-        id: gallery.id,
-        proxy: true);
+    final url = controller
+        .hitomi(localDb: local)
+        .buildImageUrl(gallery.files.first, id: gallery.id, proxy: true);
     var header = buildRequestHeader(
         url, 'https://hitomi.la${Uri.encodeFull(gallery.galleryurl!)}');
+    FutureBuilder<List<Gallery>>? buttonBuilder;
+    if (!local) {
+      buttonBuilder = FutureBuilder(
+          future: controller
+              .hitomi(localDb: true)
+              .findSimilarGalleryBySearch(gallery)
+              .then((value) => value.data),
+          builder: (c, snap) {
+            if (snap.hasData && snap.data!.isNotEmpty) {
+              return OutlinedButton(
+                  onPressed: () => Navigator.of(context).pushReplacementNamed(
+                      GalleryDetailsView.routeName,
+                      arguments: {'gallery': snap.data!.first, 'local': local}),
+                  child: Text(AppLocalizations.of(context)!.downloaded));
+            } else if (snap.hasData) {
+              return OutlinedButton(
+                  onPressed: () async {
+                    await controller.manager
+                        .parseCommandAndRun('${gallery.id}')
+                        .then((value) => showSnackBar(context,
+                            AppLocalizations.of(context)!.addTaskSuccess))
+                        .catchError((e) => showSnackBar(context, e.toString()),
+                            test: (error) => true);
+                  },
+                  child: Text(AppLocalizations.of(context)!.download));
+            }
+            return Container();
+          });
+    }
     return SliverAppBar.large(
         excludeHeaderSemantics: true,
         backgroundColor: entry.value,
@@ -329,35 +321,43 @@ class GalleryDetailHead extends StatelessWidget {
         leading: Row(children: [
           BackButton(onPressed: () => Navigator.of(context).pop())
         ]),
-        expandedHeight: 400,
+        expandedHeight: 200,
         flexibleSpace: FlexibleSpaceBar(
-            background: Column(children: [
-          Container(
-              margin: const EdgeInsets.only(left: 56, top: 8),
-              child:
-                  Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                ThumbImageView(url,header: header,
-                    indexStr: gallery.files.length.toString()),
-                Expanded(
-                    child: Container(
-                        padding: const EdgeInsets.all(8),
-                        alignment: Alignment.centerLeft,
-                        child: FutureBuilder(
-                            future: fetchTransLate(),
-                            builder: (context, snap) {
-                              if (snap.hasData) {
-                                return GalleryDetailHeadInfo(
-                                  gallery: gallery,
-                                  extendedInfo: snap.data!,
-                                  manager: manager,
-                                  local: local,
-                                );
-                              } else {
-                                return const Center(
-                                    child: CircularProgressIndicator());
-                              }
-                            })))
-              ]))
-        ])));
+            background: Container(
+                margin: const EdgeInsets.only(left: 40, top: 24),
+                child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      SizedBox(
+                          width: 100,
+                          child: ThumbImageView(url,
+                              header: header,
+                              indexStr: gallery.files.length.toString())),
+                      Expanded(
+                          child: Column(children: [
+                        Text(gallery.name,
+                            style: Theme.of(context).textTheme.titleSmall),
+                        Divider(color: Theme.of(context).primaryColor),
+                        Text(gallery.languageLocalname ?? ''),
+                        Row(children: [
+                          if (buttonBuilder != null) buttonBuilder,
+                          const SizedBox(width: 16),
+                          OutlinedButton(
+                              onPressed: () => Navigator.of(context).pushNamed(
+                                      GalleryViewer.routeName,
+                                      arguments: {
+                                        'gallery': gallery,
+                                        'index': 0,
+                                        'local': local,
+                                      }),
+                              child: Text(AppLocalizations.of(context)!.read)),
+                        ]),
+                        Row(children: [
+                          Text(AppLocalizations.of(context)!.type),
+                          const SizedBox(width: 16),
+                          Text(entry.key),
+                        ])
+                      ])),
+                    ]))));
   }
 }

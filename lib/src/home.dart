@@ -8,6 +8,18 @@ import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'gallery_view/gallery_search.dart';
 
 class AyakaHome extends StatefulWidget {
+  final content = const [
+    Column(children: [
+      GallerySearch(localDb: false),
+      Expanded(child: GalleryListView())
+    ]),
+    Column(children: [
+      GallerySearch(localDb: true),
+      Expanded(child: GalleryListView(localDb: true))
+    ]),
+    GalleryTaskView(),
+    SettingsView()
+  ];
   const AyakaHome({super.key});
 
   @override
@@ -27,23 +39,11 @@ class _AyakaHome extends State<AyakaHome> {
 
   @override
   Widget build(BuildContext context) {
-    var content = switch (index) {
-      0 => Column(children: [
-          const GallerySearch(localDb: false),
-          Expanded(child: GalleryListView(key: ValueKey(index)))
-        ]),
-      1 => Column(children: [
-          const GallerySearch(localDb: true),
-          Expanded(child: GalleryListView(key: ValueKey(index), localDb: true))
-        ]),
-      2 => const GalleryTaskView(),
-      3 => const SettingsView(),
-      _ => throw UnsupportedError('')
-    };
     return Scaffold(
       body: SafeArea(
           child: switch (currentOrientation(context)) {
-        Orientation.portrait => content,
+        Orientation.portrait =>
+          IndexedStack(index: index, children: widget.content),
         _ => Row(children: [
             NavigationRail(
                 destinations: [
@@ -63,7 +63,8 @@ class _AyakaHome extends State<AyakaHome> {
                 selectedIndex: index,
                 onDestinationSelected: _handleIndexClick,
                 labelType: NavigationRailLabelType.selected),
-            Expanded(child: content)
+            Expanded(
+                child: IndexedStack(index: index, children: widget.content))
           ])
       }),
       bottomNavigationBar: currentOrientation(context) == Orientation.portrait

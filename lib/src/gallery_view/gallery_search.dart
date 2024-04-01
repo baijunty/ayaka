@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:hitomi/lib.dart';
 import 'package:provider/provider.dart';
 
+import '../ui/common_view.dart';
 import '../utils/debounce.dart';
 
 class GallerySearch extends StatefulWidget {
@@ -23,7 +24,7 @@ class _GallerySearch extends State<GallerySearch> {
   late Debounce _debounce;
   final types = <Map<String, dynamic>>[];
   final languages = <Map<String, dynamic>>[];
-  final _history = <Map<String, dynamic>>[];
+  final _history = <Map<String, dynamic>>{};
   Future<Iterable<Widget>> fetchLabels(SearchController controller) async {
     var key = controller.value;
     if (key.text.length < 2 || !zhAndJpCodeExp.hasMatch(key.text)) {
@@ -38,7 +39,7 @@ class _GallerySearch extends State<GallerySearch> {
             .fetchSuggestions(key.text)
             .then((value) => value.map((e) => _buildListTile(e, controller)));
       } catch (e) {
-        debugPrint('$e');
+        showSnackBar(context, 'err $e');
         return [];
       }
     });
@@ -82,29 +83,32 @@ class _GallerySearch extends State<GallerySearch> {
   }
 
   Widget _inputRow() {
-    return SearchAnchor.bar(
-      barHintText: AppLocalizations.of(context)!.search,
-      suggestionsBuilder: (context, controller) {
-        if (controller.text.isEmpty) {
-          if (_history.isNotEmpty) {
-            return getHistoryList(controller);
-          }
-          return <Widget>[
-            Center(
-              child: Text(AppLocalizations.of(context)!.emptyContent,
-                  style: const TextStyle(color: Colors.grey)),
-            )
-          ];
-        }
-        return fetchLabels(controller);
-      },
-      onSubmitted: (value) => Navigator.of(context)
-          .restorablePushNamed(GallerySearchResultView.routeName, arguments: {
-        'tags': [
-          {'type': '', 'name': value, 'include': true}
-        ],
-        'local': widget.localDb
-      }),
+    return Padding(
+      padding: const EdgeInsets.only(left: 8, right: 8),
+      child: SearchAnchor.bar(
+          barHintText: AppLocalizations.of(context)!.search,
+          suggestionsBuilder: (context, controller) {
+            if (controller.text.isEmpty) {
+              if (_history.isNotEmpty) {
+                return getHistoryList(controller);
+              }
+              return <Widget>[
+                Center(
+                  child: Text(AppLocalizations.of(context)!.emptyContent,
+                      style: const TextStyle(color: Colors.grey)),
+                )
+              ];
+            }
+            return fetchLabels(controller);
+          },
+          onSubmitted: (value) => Navigator.of(context).restorablePushNamed(
+                  GallerySearchResultView.routeName,
+                  arguments: {
+                    'tags': [
+                      {'type': '', 'name': value, 'include': true}
+                    ],
+                    'local': widget.localDb
+                  })),
     );
   }
 

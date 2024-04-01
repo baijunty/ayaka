@@ -42,9 +42,9 @@ class _GalleryListView extends State<GalleryListView> {
         _controller.finishRefresh();
       });
     }).catchError((e) {
-      debugPrint('error $e');
       _controller.finishLoad();
       _controller.finishRefresh();
+      showSnackBar(context, 'err $e');
     }, test: (error) => true);
   }
 

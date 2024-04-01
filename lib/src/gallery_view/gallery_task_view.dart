@@ -48,12 +48,12 @@ class _GalleryTaskView extends State<GalleryTaskView> {
         .parseCommandAndRun('-l')
         .then((value) => value as Map<String, dynamic>)
         .then((result) => setState(() {
-              debugPrint('$result');
               queryTask = result['queryTask'];
               pendingTask = result['pendingTask'];
               runningTask = result['runningTask'];
             }))
-        .catchError((e) => debugPrint(' $e'), test: (error) => true)
+        .catchError((e) => showSnackBar(context, 'err $e'),
+            test: (error) => true)
         .whenComplete(
             () => _debounce.runDebounce(_fetchTasks, duration: deration));
   }
@@ -63,20 +63,29 @@ class _GalleryTaskView extends State<GalleryTaskView> {
     var controller = context.read<SettingsController>();
     var api = controller.hitomi();
     return CustomScrollView(slivers: [
+      SliverList.list(children: [
+        Padding(
+            padding: const EdgeInsets.only(left: 8, right: 8),
+            child: Row(children: [
+              const Expanded(child: Divider()),
+              Text(AppLocalizations.of(context)!.runningTask),
+              const Expanded(child: Divider()),
+            ]))
+      ]),
       SliverGrid.builder(
           itemBuilder: (context, index) {
             var item = runningTask[index];
             Gallery gallery = item['gallery'];
             final url = api.buildImageUrl(gallery.files.first,
-                id: gallery.id,
-                size: ThumbnaiSize.smaill,
-                proxy: true);
+                id: gallery.id, size: ThumbnaiSize.smaill, proxy: true);
             var header = buildRequestHeader(
                 url, 'https://hitomi.la${Uri.encodeFull(gallery.galleryurl!)}');
             return Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                ThumbImageView(url,header: header,indexStr: (item['speed'] as double).toStringAsFixed(2)),
+                ThumbImageView(url,
+                    header: header,
+                    indexStr: (item['speed'] as double).toStringAsFixed(2)),
                 Expanded(
                     child: Column(children: [
                   Text(gallery.dirName),
@@ -91,13 +100,9 @@ class _GalleryTaskView extends State<GalleryTaskView> {
                             onTap: () {
                               manager.downLoader
                                   .removeTask(gallery.id)
-                                  .then((value) => gallery
-                                      .createDir(controller.config.output,
-                                          createDir: false)
-                                      .delete(recursive: true))
-                                  .then((value) => debugPrint(value.path))
                                   .catchError((e) {
-                                debugPrint('delete error m$e');
+                                showSnackBar(context, 'err $e');
+                                return false;
                               }, test: (error) => true);
                             }),
                       ];
@@ -108,10 +113,20 @@ class _GalleryTaskView extends State<GalleryTaskView> {
             );
           },
           gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-              maxCrossAxisExtent: 800,
+              maxCrossAxisExtent: 400,
+              mainAxisExtent: 200,
               mainAxisSpacing: 8,
               crossAxisSpacing: 8),
           itemCount: runningTask.length),
+      SliverList.list(children: [
+        Padding(
+            padding: const EdgeInsets.only(left: 8, right: 8),
+            child: Row(children: [
+              const Expanded(child: Divider()),
+              Text(AppLocalizations.of(context)!.pendingTask),
+              const Expanded(child: Divider()),
+            ]))
+      ]),
       SliverGrid.builder(
           itemBuilder: (context, index) {
             var item = pendingTask[index];
@@ -132,10 +147,20 @@ class _GalleryTaskView extends State<GalleryTaskView> {
                 }));
           },
           gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-              maxCrossAxisExtent: 450,
+              maxCrossAxisExtent: 400,
+              mainAxisExtent: 200,
               mainAxisSpacing: 16,
               crossAxisSpacing: 8),
           itemCount: pendingTask.length),
+      SliverList.list(children: [
+        Padding(
+            padding: const EdgeInsets.only(left: 8, right: 8),
+            child: Row(children: [
+              const Expanded(child: Divider()),
+              Text(AppLocalizations.of(context)!.queryTask),
+              const Expanded(child: Divider()),
+            ]))
+      ]),
       SliverAnimatedGrid(
           itemBuilder: (context, index, animation) {
             var item = pendingTask[index];
@@ -148,6 +173,7 @@ class _GalleryTaskView extends State<GalleryTaskView> {
           },
           gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
               maxCrossAxisExtent: 120,
+              mainAxisExtent: 40,
               mainAxisSpacing: 16,
               crossAxisSpacing: 8),
           initialItemCount: queryTask.length),

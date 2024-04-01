@@ -34,6 +34,8 @@ class SettingsService {
         return UserConfig.fromStr(value);
       }
       return getExternalStorageDirectory()
+          .catchError((e) => getApplicationSupportDirectory(),
+              test: (error) => true)
           .then(
               (value) async => value ?? await getApplicationSupportDirectory())
           .then((value) => value.path)

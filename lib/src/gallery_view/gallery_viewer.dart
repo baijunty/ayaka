@@ -70,7 +70,6 @@ class _GalleryViewer extends State<GalleryViewer>
                           pageController: controller),
                       onTap: () => setState(() {
                             showAppBar = !showAppBar;
-                            debugPrint('showAppBar $showAppBar');
                           })))),
           AnimatedOpacity(
               key: GlobalObjectKey(_gallery),

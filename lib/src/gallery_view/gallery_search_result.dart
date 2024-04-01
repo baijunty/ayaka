@@ -85,7 +85,6 @@ class _GallerySearchResultView extends State<GallerySearchResultView> {
           .then((value) {
         setState(() {
           data.addAll(value);
-          debugPrint('total $totalPage ${value.length} ${data.length}');
           _page++;
           _controller.finishLoad();
           _controller.finishRefresh();

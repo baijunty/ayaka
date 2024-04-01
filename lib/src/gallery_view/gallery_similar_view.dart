@@ -9,7 +9,7 @@ import 'package:hitomi/gallery/gallery.dart';
 import 'package:hitomi/lib.dart';
 import 'package:provider/provider.dart';
 
-class GallerySimilaerView extends StatefulWidget{
+class GallerySimilaerView extends StatefulWidget {
   const GallerySimilaerView({super.key});
   static const routeName = '/gallery_similar';
 
@@ -86,6 +86,7 @@ class _GallerySimilaerView extends State<GallerySimilaerView> {
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     const CircularProgressIndicator(),
+                    const SizedBox(height: 16),
                     Text(AppLocalizations.of(context)!.loading)
                   ],
                 ));

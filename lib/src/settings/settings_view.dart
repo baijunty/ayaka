@@ -152,10 +152,7 @@ class _StateSetting extends State<SettingsView> {
                     style: Theme.of(context).elevatedButtonTheme.style,
                     child: Text(AppLocalizations.of(context)!.confirm))
               ])),
-          const Divider(
-            height: 8,
-            color: Colors.transparent,
-          ),
+          const Divider(height: 8),
           FilledButton(
             onPressed: () async {
               setState(() {
@@ -169,9 +166,10 @@ class _StateSetting extends State<SettingsView> {
             },
             child: Text(AppLocalizations.of(context)!.updateDatabase),
           ),
+          const Divider(height: 8),
           Row(children: [
             Expanded(child: Text(controller.config.output)),
-            FilledButton(
+            OutlinedButton(
                 onPressed: () async {
                   var path = await FilePicker.platform.getDirectoryPath();
                   if (path?.isNotEmpty == true) {
@@ -182,6 +180,7 @@ class _StateSetting extends State<SettingsView> {
                 },
                 child: Text(AppLocalizations.of(context)!.select))
           ]),
+          const Divider(height: 8),
         ]),
         if (netLoading) const Center(child: CircularProgressIndicator()),
       ]),

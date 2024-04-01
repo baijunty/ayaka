@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:ayaka/src/gallery_view/gallery_details_view.dart';
 import 'package:ayaka/src/gallery_view/gallery_viewer.dart';
 import 'package:ayaka/src/settings/settings_controller.dart';
+import 'package:card_loading/card_loading.dart';
 import 'package:collection/collection.dart';
 import 'package:easy_refresh/easy_refresh.dart';
 import 'package:flutter/material.dart';
@@ -171,14 +172,14 @@ class GalleryInfo extends StatelessWidget {
                       SizedBox.fromSize(
                           size: const Size.fromWidth(100),
                           child: ThumbImageView(url,
-                              header: header,
-                              indexStr: gallery.files.length.toString())),
+                              header: header)),
                       Expanded(
                           child: Column(
                               mainAxisAlignment: MainAxisAlignment.start,
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                            Text(gallery.dirName, maxLines: 2, softWrap: true),
+                            Text(gallery.dirName,
+                                maxLines: 2, overflow: TextOverflow.ellipsis),
                             Text('${gallery.languageLocalname}'),
                             Text(entry.key),
                             Text(format.format(format.parse(gallery.date))),
@@ -228,12 +229,14 @@ class GalleryDetailHeadInfo extends StatelessWidget {
   final List<Map<String, dynamic>> extendedInfo;
   final SettingsController controller;
   final bool local;
+  final bool netLoading;
   const GalleryDetailHeadInfo(
       {super.key,
       required this.gallery,
       required this.extendedInfo,
       required this.controller,
-      required this.local});
+      required this.local,
+      required this.netLoading});
 
   String findMatchLabel(Label label) {
     var translate = extendedInfo.firstWhereOrNull((element) =>
@@ -252,19 +255,32 @@ class GalleryDetailHeadInfo extends StatelessWidget {
     return SliverList.builder(
         itemBuilder: (context, index) {
           var entry = entries[index];
-          return Row(crossAxisAlignment: CrossAxisAlignment.center, children: [
-            Text(mapTagType(context, entry.key),
-                style: Theme.of(context).textTheme.labelMedium),
-            Expanded(
-                child: Wrap(children: [
-              for (var label in entry.value)
-                TextButton(
-                    child: Text(findMatchLabel(label)),
-                    onPressed: () => Navigator.of(context).pushNamed(
-                        GalleryListView.routeName,
-                        arguments: {'tag': label}))
-            ]))
-          ]);
+          return netLoading
+              ? const CardLoading(
+                  height: 40,
+                  borderRadius: BorderRadius.all(Radius.circular(15)),
+                  width: 100,
+                  margin: EdgeInsets.only(bottom: 10))
+              : Column(children: [
+                  Padding(
+                      padding: const EdgeInsets.only(left: 8, right: 8),
+                      child: Row(children: [
+                        const Expanded(child: Divider()),
+                        const SizedBox(width: 8),
+                        Text(mapTagType(context, entry.key),
+                            style: Theme.of(context).textTheme.labelMedium),
+                        const SizedBox(width: 8),
+                        const Expanded(child: Divider()),
+                      ])),
+                  Wrap(children: [
+                    for (var label in entry.value)
+                      TextButton(
+                          child: Text(findMatchLabel(label)),
+                          onPressed: () => Navigator.of(context).pushNamed(
+                              GalleryListView.routeName,
+                              arguments: {'tag': label}))
+                  ]),
+                ]);
         },
         itemCount: entries.length);
   }
@@ -339,6 +355,8 @@ class GalleryDetailHead extends StatelessWidget {
                       Expanded(
                           child: Column(children: [
                         Text(gallery.name,
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
                             style: Theme.of(context).textTheme.titleSmall),
                         Divider(color: Theme.of(context).primaryColor),
                         Text(gallery.languageLocalname ?? ''),

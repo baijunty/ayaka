@@ -55,7 +55,6 @@ class SettingsController with ChangeNotifier {
   }
 
   Future<void> switchConn(bool useProxy) async {
-    debugPrint('save $useProxy');
     await _settingsService
         .saveConfig((prefs) => prefs.setBool('useProxy', useProxy));
     _useProxy = useProxy;
@@ -65,7 +64,6 @@ class SettingsController with ChangeNotifier {
     if (config == _config) return;
     _config = config;
     await _settingsService.saveUserConfig(config);
-    debugPrint('after save ${jsonEncode(_config)}');
     _manager = TaskManager(_config);
     if (!kIsWeb) {
       _server?.close(force: true);

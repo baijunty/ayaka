@@ -59,6 +59,7 @@ class MyApp extends StatelessWidget {
               },
             );
           } else {
+            debugPrint('${snap.error}');
             return const Center(child: CircularProgressIndicator());
           }
         });

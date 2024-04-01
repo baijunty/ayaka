@@ -34,7 +34,6 @@ class _GalleryDetailView extends State<GalleryDetailsView> {
             }))
         .catchError((e) {
       netLoading = false;
-      return translates;
     }, test: (error) => true);
   }
 
@@ -59,6 +58,7 @@ class _GalleryDetailView extends State<GalleryDetailsView> {
         extendedInfo: translates,
         controller: controller,
         local: local,
+        netLoading: netLoading,
       ),
       SliverGrid.builder(
           gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(

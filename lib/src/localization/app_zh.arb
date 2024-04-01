@@ -15,7 +15,7 @@
   "character":"人物",
   "group":"社团",
   "type":"类型",
-  "remoteAddr":"服务地址",
+  "remoteAddr":"远程地址",
   "emptyContent":"内容为空",
   "wrongHttp":"错误的地址",
   "read":"阅读",
@@ -57,5 +57,10 @@
   "direct":"本地直连",
   "proxy":"代理",
   "mode":"模式",
+  "runningTask":"下载中",
+  "pendingTask":"等待中",
+  "queryTask":"查询任务",
+  "themeMode":"主题模式",
+  "authToken":"校验码",
   "tag":"标签"
 }

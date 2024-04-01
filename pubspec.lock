@@ -240,8 +240,8 @@ packages:
   hitomi:
     dependency: "direct main"
     description:
-      path: "d:/dev/hitomi"
-      relative: false
+      path: "../hitomi"
+      relative: true
     source: path
     version: "0.0.0"
   http:

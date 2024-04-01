@@ -15,7 +15,7 @@ dependencies:
   flutter_localizations:
     sdk: flutter
   hitomi:
-    path: d:/dev/hitomi
+    path: ../hitomi
   shared_preferences: ^2.2.2
   path_provider: ^2.1.2
   path: ^1.8.2

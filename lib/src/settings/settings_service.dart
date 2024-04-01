@@ -1,71 +1,53 @@
 import 'dart:convert';
-import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:hitomi/lib.dart';
-import 'package:path/path.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
-/// A service that stores and retrieves user settings.
-///
-/// By default, this class does not persist user settings. If you'd like to
-/// persist the user settings locally, use the shared_preferences package. If
-/// you'd like to store settings on a web server, use the http package.
 class SettingsService {
-  /// Loads the User's preferred ThemeMode from local or remote storage.
+  Future<T> readConfig<T>(T Function(SharedPreferences prefs) dataRead) async {
+    return SharedPreferences.getInstance().then((value) => dataRead(value));
+  }
+
+  Future<bool> saveConfig(
+      Future<bool> Function(SharedPreferences prefs) dataSave) async {
+    return SharedPreferences.getInstance()
+        .then((value) => dataSave(value), onError: (e) => debugPrint(e));
+  }
+
   Future<ThemeMode> themeMode() async => ThemeMode.system;
 
-  Future<UserConfig> readConfig() async {
+  Future<UserConfig> readUserConfig() async {
     if (kIsWeb) {
       var config = UserConfig('',
           languages: const ["japanese", "chinese"],
           maxTasks: 5,
           remoteHttp: 'http://127.0.0.1:7890');
-      // var manager = TaskManager(config);
-      // return await manager.helper
-      //     .excuteSqlAsync(
-      //         'create table if not exists UserConfig(id integer PRIMARY KEY,content Text)',
-      //         [])
-      //     .then((value) => manager.helper
-      //         .querySql('select content from UserConfig where id=?', [1]))
-      //     .then((value) {
-      //       var row = value.firstOrNull;
-      //       if (row != null) {
-      //         return UserConfig.fromStr(row['content']);
-      //       }
-      //       return config;
-      //     })
-      //     .catchError((e) {
-      //       debugPrint('read db from web sqlite $e');
-      //       return config;
-      //     }, test: (error) => true);
       return config;
     }
-    final dir = await getExternalStorageDirectory().then((value) async => value??await getApplicationSupportDirectory()).then((value) => value.path);
-    var defaultConfig = UserConfig(dir,
-        languages: const ["japanese", "chinese"],
-        maxTasks: 5,
-        remoteHttp: 'http://127.0.0.1:7890',
-        proxy: '');
-    final configFile = File(join(dir, 'config.json'));
-    if (configFile.existsSync()) {
-      return configFile
-          .readAsString()
-          .then((value) => UserConfig.fromStr(value))
-          .catchError((e) => defaultConfig, test: (error) => true);
-    } else {
-      return defaultConfig;
-    }
+    return SharedPreferences.getInstance()
+        .then((value) => value.getString('config'))
+        .then((value) {
+      if (value != null) {
+        return UserConfig.fromStr(value);
+      }
+      return getExternalStorageDirectory()
+          .then(
+              (value) async => value ?? await getApplicationSupportDirectory())
+          .then((value) => value.path)
+          .then((value) => UserConfig(value,
+              languages: const ["japanese", "chinese"],
+              maxTasks: 5,
+              remoteHttp: 'http://127.0.0.1:7890',
+              proxy: ''));
+    });
   }
 
-  /// Persists the user's preferred ThemeMode to local or remote storage.
-  Future<void> updateThemeMode(ThemeMode theme) async {
-    // Use the shared_preferences package to persist settings locally or the
-    // http package to persist settings over the network.
-  }
+  Future<void> updateThemeMode(ThemeMode theme) async {}
 
-  Future<void> saveConfig(UserConfig config) async {
+  Future<void> saveUserConfig(UserConfig config) async {
     if (kIsWeb) {
       var manager = TaskManager(config);
       await manager.helper.excuteSqlAsync(
@@ -75,9 +57,8 @@ class SettingsService {
         return false;
       }, test: (error) => true);
     } else {
-      final dir = await getExternalStorageDirectory().then((value) async => value??await getApplicationSupportDirectory()).then((value) => value.path);
-      final configFile = File(join(dir, 'config.json'));
-      await configFile.writeAsString(json.encode(config),flush: true);
+      await SharedPreferences.getInstance()
+          .then((value) => value.setString('config', json.encode(config)));
     }
   }
 }

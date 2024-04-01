@@ -43,6 +43,7 @@ class _StateSetting extends State<SettingsView> {
     remoteAddrCon.text = controller.config.remoteHttp;
     proxyAddrCon.text = controller.config.proxy;
     authControl.text = controller.config.auth;
+    direct = controller.useProxy;
   }
 
   @override
@@ -96,22 +97,23 @@ class _StateSetting extends State<SettingsView> {
                     ),
                   ],
                 ),
-                TextFormField(
-                  decoration: InputDecoration(
-                    hintText: AppLocalizations.of(context)!.remoteAddr,
+                if (!direct)
+                  TextFormField(
+                    decoration: InputDecoration(
+                      hintText: AppLocalizations.of(context)!.remoteAddr,
+                    ),
+                    controller: remoteAddrCon,
+                    validator: (String? value) {
+                      if (value == null || value.isEmpty) {
+                        return AppLocalizations.of(context)!.emptyContent;
+                      }
+                      if (!value.startsWith('http')) {
+                        return AppLocalizations.of(context)!.wrongHttp;
+                      }
+                      return null;
+                    },
+                    keyboardType: TextInputType.url,
                   ),
-                  controller: remoteAddrCon,
-                  validator: (String? value) {
-                    if (value == null || value.isEmpty) {
-                      return AppLocalizations.of(context)!.emptyContent;
-                    }
-                    if (!value.startsWith('http')) {
-                      return AppLocalizations.of(context)!.wrongHttp;
-                    }
-                    return null;
-                  },
-                  keyboardType: TextInputType.url,
-                ),
                 TextFormField(
                   controller: proxyAddrCon,
                   decoration: InputDecoration(
@@ -128,21 +130,23 @@ class _StateSetting extends State<SettingsView> {
                   },
                   keyboardType: TextInputType.url,
                 ),
-                TextFormField(
-                  decoration: InputDecoration(
-                    hintText: AppLocalizations.of(context)!.remoteAddr,
+                if (!direct)
+                  TextFormField(
+                    decoration: InputDecoration(
+                      hintText: AppLocalizations.of(context)!.remoteAddr,
+                    ),
+                    controller: authControl,
+                    keyboardType: TextInputType.text,
                   ),
-                  controller: authControl,
-                  keyboardType: TextInputType.text,
-                ),
                 FilledButton(
-                    onPressed: () {
+                    onPressed: () async {
                       if (_formKey.currentState!.validate()) {
-                        controller.updateConfig(controller.config.copyWith(
-                            proxy: proxyAddrCon.text,
-                            auth: authControl.text,
-                            remoteHttp: remoteAddrCon.text));
-                        controller.useProxy = !direct;
+                        await controller.switchConn(!direct);
+                        await controller.updateConfig(controller.config
+                            .copyWith(
+                                proxy: proxyAddrCon.text,
+                                auth: authControl.text,
+                                remoteHttp: remoteAddrCon.text));
                       }
                     },
                     style: Theme.of(context).elevatedButtonTheme.style,

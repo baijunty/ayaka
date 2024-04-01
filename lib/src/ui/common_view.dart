@@ -70,7 +70,8 @@ class ThumbImageView extends StatelessWidget {
                           style: Theme.of(context)
                               .primaryTextTheme
                               .labelMedium
-                              ?.copyWith(color: Colors.pink),
+                              ?.copyWith(color: Colors.white),
+                          textScaler: const TextScaler.linear(1.2),
                         ))))
         ]));
   }
@@ -248,22 +249,24 @@ class GalleryDetailHeadInfo extends StatelessWidget {
         .groupListsBy((element) => element.type)
         .entries
         .toList();
-    return SliverList.builder(itemBuilder: (context, index) {
-      var entry = entries[index];
-      return Row(crossAxisAlignment: CrossAxisAlignment.center, children: [
-        Text(mapTagType(context, entry.key),
-            style: Theme.of(context).textTheme.labelMedium),
-        Expanded(
-            child: Wrap(children: [
-          for (var label in entry.value)
-            TextButton(
-                child: Text(findMatchLabel(label)),
-                onPressed: () => Navigator.of(context).pushNamed(
-                    GalleryListView.routeName,
-                    arguments: {'tag': label}))
-        ]))
-      ]);
-    },itemCount: entries.length);
+    return SliverList.builder(
+        itemBuilder: (context, index) {
+          var entry = entries[index];
+          return Row(crossAxisAlignment: CrossAxisAlignment.center, children: [
+            Text(mapTagType(context, entry.key),
+                style: Theme.of(context).textTheme.labelMedium),
+            Expanded(
+                child: Wrap(children: [
+              for (var label in entry.value)
+                TextButton(
+                    child: Text(findMatchLabel(label)),
+                    onPressed: () => Navigator.of(context).pushNamed(
+                        GalleryListView.routeName,
+                        arguments: {'tag': label}))
+            ]))
+          ]);
+        },
+        itemCount: entries.length);
   }
 }
 

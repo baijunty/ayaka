@@ -14,6 +14,7 @@ import 'gallery_details_view.dart';
 
 class GallerySearchResultView extends StatefulWidget {
   const GallerySearchResultView({super.key});
+
   static const routeName = '/gallery_search_result_view';
   @override
   State<StatefulWidget> createState() {

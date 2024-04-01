@@ -22,6 +22,7 @@ class _GalleryDetailView extends State<GalleryDetailsView> {
   late SettingsController controller = context.read<SettingsController>();
   late Gallery gallery;
   bool local = false;
+  bool netLoading = true;
   List<Map<String, dynamic>> translates = [];
   Future<void> _fetchTransLate() async {
     var api = controller.hitomi(localDb: true);
@@ -29,8 +30,12 @@ class _GalleryDetailView extends State<GalleryDetailsView> {
         .translate(gallery.labels())
         .then((value) => setState(() {
               translates.addAll(value);
+              netLoading = false;
             }))
-        .catchError((e) => translates, test: (error) => true);
+        .catchError((e) {
+      netLoading = false;
+      return translates;
+    }, test: (error) => true);
   }
 
   @override

@@ -22,13 +22,16 @@ class SettingsController with ChangeNotifier {
   ThemeMode get themeMode => _themeMode;
   TaskManager get manager => _manager;
   UserConfig get config => _config;
-  bool useProxy=kIsWeb;
+  bool _useProxy = kIsWeb;
+  bool get useProxy => _useProxy;
   Future<void> loadSettings() async {
     _themeMode = await _settingsService.themeMode();
     notifyListeners();
   }
 
-  Hitomi hitomi({bool localDb = false}) => useProxy?_manager.getApiFromProxy(localDb, _config.auth, _config.remoteHttp): _manager.getApiDirect(local: localDb);
+  Hitomi hitomi({bool localDb = false}) => useProxy
+      ? _manager.getApiFromProxy(localDb, _config.auth, _config.remoteHttp)
+      : _manager.getApiDirect(local: localDb);
 
   Future<void> updateThemeMode(ThemeMode? newThemeMode) async {
     if (newThemeMode == null) return;
@@ -39,7 +42,9 @@ class SettingsController with ChangeNotifier {
   }
 
   Future<UserConfig> loadConfig() async {
-    _config = await _settingsService.readConfig();
+    _config = await _settingsService.readUserConfig();
+    _useProxy = await _settingsService
+        .readConfig((prefs) => prefs.getBool('useProxy') ?? useProxy);
     debugPrint('load ${jsonEncode(_config)}');
     _manager = TaskManager(_config);
     if (!kIsWeb) {
@@ -49,10 +54,17 @@ class SettingsController with ChangeNotifier {
     return _config;
   }
 
+  Future<void> switchConn(bool useProxy) async {
+    debugPrint('save $useProxy');
+    await _settingsService
+        .saveConfig((prefs) => prefs.setBool('useProxy', useProxy));
+    _useProxy = useProxy;
+  }
+
   Future<void> updateConfig(UserConfig config) async {
     if (config == _config) return;
     _config = config;
-    await _settingsService.saveConfig(config);
+    await _settingsService.saveUserConfig(config);
     debugPrint('after save ${jsonEncode(_config)}');
     _manager = TaskManager(_config);
     if (!kIsWeb) {

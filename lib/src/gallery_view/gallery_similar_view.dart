@@ -9,7 +9,7 @@ import 'package:hitomi/gallery/gallery.dart';
 import 'package:hitomi/lib.dart';
 import 'package:provider/provider.dart';
 
-class GallerySimilaerView extends StatefulWidget {
+class GallerySimilaerView extends StatefulWidget{
   const GallerySimilaerView({super.key});
   static const routeName = '/gallery_similar';
 

@@ -28,27 +28,21 @@ class _AyakaHome extends State<AyakaHome> {
   @override
   Widget build(BuildContext context) {
     var content = switch (index) {
-      0 => GalleryListView(key: ValueKey(index)),
-      1 => GalleryListView(key: ValueKey(index), localDb: true),
+      0 => Column(children: [
+          const GallerySearch(localDb: false),
+          Expanded(child: GalleryListView(key: ValueKey(index)))
+        ]),
+      1 => Column(children: [
+          const GallerySearch(localDb: true),
+          Expanded(child: GalleryListView(key: ValueKey(index), localDb: true))
+        ]),
       2 => const GalleryTaskView(),
       3 => const SettingsView(),
       _ => throw UnsupportedError('')
     };
     return Scaffold(
-      appBar: AppBar(
-        title: Text(AppLocalizations.of(context)!.appTitle),
-        actions: [
-          if (index < 2)
-            IconButton(
-              icon: const Icon(Icons.search),
-              onPressed: () {
-                Navigator.pushNamed(context, GallerySearch.routeName);
-              },
-            ),
-        ],
-        backgroundColor: Theme.of(context).colorScheme.primary,
-      ),
-      body: switch (currentOrientation(context)) {
+      body: SafeArea(
+          child: switch (currentOrientation(context)) {
         Orientation.portrait => content,
         _ => Row(children: [
             NavigationRail(
@@ -71,7 +65,7 @@ class _AyakaHome extends State<AyakaHome> {
                 labelType: NavigationRailLabelType.selected),
             Expanded(child: content)
           ])
-      },
+      }),
       bottomNavigationBar: currentOrientation(context) == Orientation.portrait
           ? BottomNavigationBar(
               items: [

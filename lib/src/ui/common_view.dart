@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:ui';
 
 import 'package:ayaka/src/gallery_view/gallery_viewer.dart';
 import 'package:ayaka/src/settings/settings_controller.dart';
@@ -19,40 +20,57 @@ import '../utils/label_utils.dart';
 class ThumbImageView extends StatelessWidget {
   final String url;
   final Map<String, String>? header;
-  const ThumbImageView(this.url, {super.key, this.header});
+  final String? label;
+  const ThumbImageView(this.url, {super.key, this.header, this.label});
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.all(4),
-      child: AspectRatio(
-          aspectRatio: 9 / 16,
-          child: Image.network(
-            url,
-            headers: header,
-            errorBuilder: (context, error, stackTrace) {
-              return const Icon(Icons.error);
-            },
-            loadingBuilder: (context, child, loadingProgress) {
-              return loadingProgress == null
-                  ? child
-                  : const CircularProgressIndicator();
-            },
-            frameBuilder: (BuildContext context, Widget child, int? frame,
-                bool wasSynchronouslyLoaded) {
-              if (wasSynchronouslyLoaded) {
-                return child;
-              }
-              return AnimatedOpacity(
-                opacity: frame == null ? 0 : 1,
-                duration: const Duration(seconds: 1),
-                curve: Curves.easeOut,
-                child: child,
-              );
-            },
-            fit: BoxFit.cover,
-          )),
-    );
+    return Stack(children: [
+      AspectRatio(
+        aspectRatio: 9 / 16,
+        child: Image.network(
+          url,
+          headers: header,
+          errorBuilder: (context, error, stackTrace) {
+            return const Icon(Icons.error);
+          },
+          loadingBuilder: (context, child, loadingProgress) {
+            return loadingProgress == null
+                ? child
+                : const CircularProgressIndicator();
+          },
+          frameBuilder: (BuildContext context, Widget child, int? frame,
+              bool wasSynchronouslyLoaded) {
+            if (wasSynchronouslyLoaded) {
+              return child;
+            }
+            return AnimatedOpacity(
+              opacity: frame == null ? 0 : 1,
+              duration: const Duration(seconds: 1),
+              curve: Curves.easeOut,
+              child: child,
+            );
+          },
+          fit: BoxFit.cover,
+        ),
+      ),
+      if (label != null)
+        SizedBox(
+            width: 32,
+            height: 32,
+            child: Padding(
+                padding: const EdgeInsets.all(2),
+                child: DecoratedBox(
+                  decoration: const BoxDecoration(
+                      shape: BoxShape.circle, color: Colors.black45),
+                  child: Center(
+                      child: Text(label!,
+                          style: Theme.of(context)
+                              .textTheme
+                              .labelLarge
+                              ?.copyWith(color: Colors.deepOrange))),
+                )))
+    ]);
   }
 }
 
@@ -86,7 +104,7 @@ Widget buildGalleryListView(
     EasyRefreshController controller,
     List<Gallery> data,
     FutureOr<dynamic> Function() onLoad,
-    FutureOr<dynamic> Function() onRefresh,
+    FutureOr<dynamic> Function()? onRefresh,
     void Function(Gallery) click,
     Hitomi api,
     {ScrollController? scrollController,
@@ -149,7 +167,9 @@ class GalleryInfo extends StatelessWidget {
                     children: [
                       SizedBox.fromSize(
                           size: const Size.fromWidth(100),
-                          child: ThumbImageView(url, header: header)),
+                          child: ThumbImageView(url,
+                              header: header,
+                              label: gallery.files.length.toString())),
                       Expanded(
                           child: Column(
                               mainAxisAlignment: MainAxisAlignment.start,
@@ -166,7 +186,6 @@ class GalleryInfo extends StatelessWidget {
                                   Text(format
                                       .format(format.parse(gallery.date))),
                                 ]),
-                            Text(gallery.files.length.toString()),
                           ])),
                       if (menus != null) menus!
                     ]))));
@@ -265,7 +284,7 @@ class GalleryDetailHead extends StatelessWidget {
   final List<Map<String, dynamic>> extendedInfo;
   final bool netLoading;
   final bool exist;
-  final int readIndex;
+  final int? readIndex;
   const GalleryDetailHead(
       {super.key,
       required this.controller,
@@ -279,9 +298,11 @@ class GalleryDetailHead extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     var entry = mapGalleryType(context, gallery.type);
-    final url = controller
-        .hitomi(localDb: local)
-        .buildImageUrl(gallery.files.first, id: gallery.id, proxy: true);
+    final url = controller.hitomi(localDb: local).buildImageUrl(
+        gallery.files.first,
+        id: gallery.id,
+        proxy: true,
+        size: img.ThumbnaiSize.medium);
     var header = buildRequestHeader(
         url, 'https://hitomi.la${Uri.encodeFull(gallery.galleryurl!)}');
     var format = DateFormat('yyyy-MM-dd');
@@ -292,7 +313,7 @@ class GalleryDetailHead extends StatelessWidget {
     return SliverAppBar(
         backgroundColor: netLoading ? Colors.transparent : entry.value,
         automaticallyImplyLeading: false,
-        expandedHeight: 230,
+        expandedHeight: 240,
         flexibleSpace: FlexibleSpaceBar(
             background: SafeArea(
                 child: Column(children: [
@@ -310,7 +331,10 @@ class GalleryDetailHead extends StatelessWidget {
                 ])
               : Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
                   SizedBox(
-                      width: 100, child: ThumbImageView(url, header: header)),
+                      width: 100,
+                      child: ThumbImageView(url,
+                          header: header,
+                          label: gallery.files.length.toString())),
                   Expanded(
                       child: Column(mainAxisSize: MainAxisSize.min, children: [
                     Row(
@@ -407,9 +431,16 @@ class GalleryDetailHead extends StatelessWidget {
                         mainAxisAlignment: MainAxisAlignment.spaceAround,
                         children: [
                           Text(entry.key),
-                          Text(format.format(format.parse(gallery.date))),
-                          Text('$readIndex/${gallery.files.length.toString()}')
+                          Text(format.format(format.parse(gallery.date)))
                         ]),
+                    if (readIndex != null)
+                      Column(
+                          crossAxisAlignment: CrossAxisAlignment.end,
+                          children: [
+                            LinearProgressIndicator(
+                                value: readIndex! / gallery.files.length),
+                            Text('$readIndex/${gallery.files.length}')
+                          ])
                   ])),
                 ])
         ]))));

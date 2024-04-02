@@ -29,7 +29,6 @@ dependencies:
   intl: ^0.18.0
   file_picker: ^8.0.0+1
   card_loading: ^0.3.2
-  visibility_detector: ^0.4.0+2
   
 dev_dependencies:
   flutter_test:

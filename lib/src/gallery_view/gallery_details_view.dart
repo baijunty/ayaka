@@ -7,8 +7,6 @@ import 'package:hitomi/gallery/image.dart';
 import 'package:hitomi/lib.dart';
 import 'package:provider/provider.dart';
 
-import '../utils/common_define.dart';
-
 class GalleryDetailsView extends StatefulWidget {
   const GalleryDetailsView({super.key});
 
@@ -26,7 +24,7 @@ class _GalleryDetailView extends State<GalleryDetailsView> {
   bool local = false;
   bool exists = false;
   bool netLoading = true;
-  int readedIndex = 0;
+  int? readedIndex;
   List<Map<String, dynamic>> translates = [];
   Future<void> _fetchTransLate() async {
     var api = controller.hitomi(localDb: true);
@@ -58,9 +56,10 @@ class _GalleryDetailView extends State<GalleryDetailsView> {
       _fetchTransLate();
     }
     controller.manager.helper
-        .readlData<int>('UserLog', 'mark', {'id': gallery.id}).then((value) {
-      readedIndex = (value ?? 0) >> readMask;
-    });
+        .readlData<int>('UserLog', 'mark', {'id': gallery.id}).then(
+            (value) => setState(() {
+                  readedIndex = value;
+                }));
     debugPrint('didChangeDependencies');
   }
 

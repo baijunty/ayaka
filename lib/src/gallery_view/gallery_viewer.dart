@@ -1,5 +1,4 @@
 import 'package:ayaka/src/settings/settings_controller.dart';
-import 'package:ayaka/src/utils/common_define.dart';
 import 'package:easy_image_viewer/easy_image_viewer.dart';
 import 'package:flutter/material.dart';
 import 'package:hitomi/gallery/gallery.dart';
@@ -62,14 +61,14 @@ class _GalleryViewer extends State<GalleryViewer>
     if (index == 0) {
       _settingsController.manager.helper
           .readlData<int>('UserLog', 'mark', {'id': _gallery.id})
-          .then((value) => (value ?? 0) >> readMask)
+          .then((value) => (value ?? 0))
           .then((value) => controller.jumpToPage(value));
     }
   }
 
   void handlePageChange() async {
     await _settingsController.manager.helper.insertUserLog(
-        _gallery.id, controller.page!.toInt() << readMask,
+        _gallery.id, controller.page!.toInt(),
         content: _gallery.name);
   }
 

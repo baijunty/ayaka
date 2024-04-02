@@ -34,6 +34,7 @@ class _GallerySearchResultView extends State<GallerySearchResultView> {
   final _ids = <int>[];
   late PopupMenuButton<String> Function(Gallery gallery) menuBuilder;
   late bool local;
+  var title = '';
   @override
   void initState() {
     super.initState();
@@ -83,6 +84,13 @@ class _GallerySearchResultView extends State<GallerySearchResultView> {
     click = (g) => Navigator.pushNamed(context, GalleryDetailsView.routeName,
         arguments: {'gallery': g, 'local': local});
     api = context.watch<SettingsController>().hitomi(localDb: local);
+    title = _selected
+        .fold(
+            StringBuffer(),
+            (previousValue, element) => previousValue
+              ..write(element['translate'])
+              ..write(','))
+        .toString();
     if (data.isEmpty) {
       _fetchData();
     }
@@ -131,6 +139,7 @@ class _GallerySearchResultView extends State<GallerySearchResultView> {
     return Scaffold(
         appBar: AppBar(
           leading: BackButton(onPressed: () => Navigator.of(context).pop()),
+          title: Text(title),
         ),
         body: buildGalleryListView(_controller, data, () async {
           if (_page <= totalPage) {
@@ -140,11 +149,6 @@ class _GallerySearchResultView extends State<GallerySearchResultView> {
             _controller.finishLoad();
             _controller.finishRefresh();
           }
-        }, () async {
-          _ids.clear();
-          data.clear();
-          _page = 1;
-          await _fetchData();
-        }, click, api, menusBuilder: menuBuilder));
+        }, null, click, api, menusBuilder: menuBuilder));
   }
 }

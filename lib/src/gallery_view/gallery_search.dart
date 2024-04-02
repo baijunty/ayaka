@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math';
 import 'package:ayaka/src/gallery_view/gallery_search_result.dart';
 import 'package:ayaka/src/utils/label_utils.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
@@ -22,21 +23,35 @@ class GallerySearch extends StatefulWidget {
 class _GallerySearch extends State<GallerySearch> {
   bool useInclude = true;
   late Debounce _debounce;
-  final types = <Map<String, dynamic>>[];
-  final languages = <Map<String, dynamic>>[];
+  // final types = <Map<String, dynamic>>[];
+  // final languages = <Map<String, dynamic>>[];
+  final _selected = <Map<String, dynamic>>[];
   final _history = <Map<String, dynamic>>{};
   late Hitomi api;
+  Iterable<Widget> lastResult = const Iterable.empty();
+  String lastQuery = '';
   Future<Iterable<Widget>> fetchLabels(SearchController controller) async {
-    var key = controller.value;
-    if (key.text.length < 2 || !zhAndJpCodeExp.hasMatch(key.text)) {
+    var text = controller.value.text;
+    text = text.substring(min(text.lastIndexOf(',') + 1, text.length));
+    if (text.length < 2 || !zhAndJpCodeExp.hasMatch(text)) {
       return [];
     }
+    if (lastQuery == text) {
+      return lastResult;
+    }
+    lastQuery = text;
     return _debounce.runDebounce(() {
-      debugPrint('net fetch ${key.text}');
+      debugPrint('net fetch $text');
       try {
-        return api
-            .fetchSuggestions(key.text)
-            .then((value) => value.map((e) => _buildListTile(e, controller)));
+        return api.fetchSuggestions(text).then((value) {
+          if (lastQuery != text) {
+            return [];
+          }
+          lastResult = value.map((e) => _buildListTile(e, onTap: () {
+                handleSelection(e, controller);
+              }));
+          return lastResult;
+        });
       } catch (e) {
         showSnackBar(context, 'err $e');
         return [];
@@ -61,24 +76,28 @@ class _GallerySearch extends State<GallerySearch> {
     String type = map['type'];
     String translate = map['translate'];
     String showType = mapTagType(context, type);
-    return '$showType $translate';
+    return '$showType:$translate';
   }
 
-  Widget _buildListTile(
-      Map<String, dynamic> label, SearchController controller) {
+  Widget _buildListTile(Map<String, dynamic> label,
+      {void Function()? onTap, void Function()? onLongPress}) {
     var history = _showTranslate(label);
     return ListTile(
         leading: const Icon(Icons.history),
         title: Text(history),
-        onTap: () {
-          controller.closeView(history);
-          handleSelection(label, controller);
-        });
+        onLongPress: onLongPress,
+        onTap: onTap);
   }
 
   Iterable<Widget> getHistoryList(SearchController controller) {
     return _history.map((label) {
-      return _buildListTile(label, controller);
+      return _buildListTile(label,
+          onLongPress: () => setState(() {
+                _history.remove(label);
+              }),
+          onTap: () {
+            handleSelection(label, controller);
+          });
     });
   }
 
@@ -86,7 +105,7 @@ class _GallerySearch extends State<GallerySearch> {
     return Padding(
       padding: const EdgeInsets.only(left: 8, right: 8),
       child: SearchAnchor.bar(
-          barHintText: AppLocalizations.of(context)!.search,
+          barHintText: AppLocalizations.of(context)!.searchHint,
           suggestionsBuilder: (context, controller) {
             if (controller.text.isEmpty) {
               if (_history.isNotEmpty) {
@@ -101,14 +120,20 @@ class _GallerySearch extends State<GallerySearch> {
             }
             return fetchLabels(controller);
           },
-          onSubmitted: (value) => Navigator.of(context).restorablePushNamed(
-                  GallerySearchResultView.routeName,
-                  arguments: {
-                    'tags': [
-                      {'type': '', 'name': value, 'include': true}
-                    ],
-                    'local': widget.localDb
-                  })),
+          onSubmitted: (value) {
+            var queryKey = value.split(',').where(
+                (element) => element.isNotEmpty && !element.contains(':'));
+            Navigator.of(context).restorablePushNamed(
+                GallerySearchResultView.routeName,
+                arguments: {
+                  'tags': [
+                    ..._selected,
+                    ...queryKey
+                        .map((e) => {'type': '', 'name': e,'translate':e, 'include': true})
+                  ],
+                  'local': widget.localDb
+                });
+          }),
     );
   }
 
@@ -122,12 +147,16 @@ class _GallerySearch extends State<GallerySearch> {
     var useLabel = {...label, 'include': useInclude};
     setState(() {
       _history.add(label);
-      Navigator.of(context)
-          .restorablePushNamed(GallerySearchResultView.routeName, arguments: {
-        'tags': [useLabel],
-        'local': widget.localDb
-      });
-      controller.text = '';
+      _selected.add(useLabel);
+      var input =
+          controller.text.substring(0, controller.text.indexOf(',') + 1);
+      controller.closeView('$input${_showTranslate(useLabel)},');
+      // Navigator.of(context)
+      //     .restorablePushNamed(GallerySearchResultView.routeName, arguments: {
+      //   'tags': [useLabel],
+      //   'local': widget.localDb
+      // });
+      // controller.text = '';
     });
   }
 }

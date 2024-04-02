@@ -62,5 +62,8 @@
   "queryTask":"查询任务",
   "themeMode":"主题模式",
   "authToken":"校验码",
+  "searchHint":"输入关键词搜索,以逗号隔开",
+  "inputHint":"请输入内容",
+  "savePath":"保存目录",
   "tag":"标签"
 }

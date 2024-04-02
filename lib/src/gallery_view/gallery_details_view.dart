@@ -7,6 +7,8 @@ import 'package:hitomi/gallery/image.dart';
 import 'package:hitomi/lib.dart';
 import 'package:provider/provider.dart';
 
+import '../utils/common_define.dart';
+
 class GalleryDetailsView extends StatefulWidget {
   const GalleryDetailsView({super.key});
 
@@ -22,12 +24,19 @@ class _GalleryDetailView extends State<GalleryDetailsView> {
   late SettingsController controller = context.read<SettingsController>();
   late Gallery gallery;
   bool local = false;
+  bool exists = false;
   bool netLoading = true;
+  int readedIndex = 0;
   List<Map<String, dynamic>> translates = [];
   Future<void> _fetchTransLate() async {
     var api = controller.hitomi(localDb: true);
-    await api
-        .translate(gallery.labels())
+    await (local
+            ? Future.value(true)
+            : api.findSimilarGalleryBySearch(gallery).then((value) {
+                exists = value.data.isNotEmpty;
+                return exists;
+              }))
+        .then((value) => api.translate(gallery.labels()))
         .then((value) => setState(() {
               translates.addAll(value);
               netLoading = false;
@@ -45,14 +54,35 @@ class _GalleryDetailView extends State<GalleryDetailsView> {
         ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>;
     gallery = args['gallery'];
     local = args['local'] ?? local;
-    _fetchTransLate();
+    if (translates.isEmpty) {
+      _fetchTransLate();
+    }
+    controller.manager.helper
+        .readlData<int>('UserLog', 'mark', {'id': gallery.id}).then((value) {
+      readedIndex = (value ?? 0) >> readMask;
+    });
+    debugPrint('didChangeDependencies');
+  }
+
+  @override
+  void didUpdateWidget(covariant GalleryDetailsView oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    debugPrint('didUpdateWidget $oldWidget');
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
         body: CustomScrollView(slivers: [
-      GalleryDetailHead(controller: controller, gallery: gallery, local: local),
+      GalleryDetailHead(
+        controller: controller,
+        gallery: gallery,
+        local: local,
+        extendedInfo: translates,
+        netLoading: netLoading,
+        exist: exists,
+        readIndex: readedIndex,
+      ),
       GalleryDetailHeadInfo(
         gallery: gallery,
         extendedInfo: translates,
@@ -80,10 +110,7 @@ class _GalleryDetailView extends State<GalleryDetailsView> {
                       'local': local,
                     }),
                 child: Card.outlined(
-                    child: Center(
-                        child: ThumbImageView(url,
-                            header: header,
-                            indexStr: (index + 1).toString()))));
+                    child: Center(child: ThumbImageView(url, header: header))));
           })
     ]));
   }

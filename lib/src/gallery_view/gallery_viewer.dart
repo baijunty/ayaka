@@ -1,4 +1,5 @@
 import 'package:ayaka/src/settings/settings_controller.dart';
+import 'package:ayaka/src/utils/common_define.dart';
 import 'package:easy_image_viewer/easy_image_viewer.dart';
 import 'package:flutter/material.dart';
 import 'package:hitomi/gallery/gallery.dart';
@@ -35,9 +36,11 @@ class _GalleryViewer extends State<GalleryViewer>
   var showAppBar = false;
   late PageController controller;
   late _MultiImageProvider provider;
+  late SettingsController _settingsController;
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
+    _settingsController = context.read<SettingsController>();
     var args =
         ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>;
     _gallery = args['gallery'];
@@ -55,6 +58,25 @@ class _GalleryViewer extends State<GalleryViewer>
           return NetworkImage(url, headers: header);
         }).toList(),
         initialIndex: index);
+    controller.addListener(handlePageChange);
+    if (index == 0) {
+      _settingsController.manager.helper
+          .readlData<int>('UserLog', 'mark', {'id': _gallery.id})
+          .then((value) => (value ?? 0) >> readMask)
+          .then((value) => controller.jumpToPage(value));
+    }
+  }
+
+  void handlePageChange() async {
+    await _settingsController.manager.helper.insertUserLog(
+        _gallery.id, controller.page!.toInt() << readMask,
+        content: _gallery.name);
+  }
+
+  @override
+  void dispose() {
+    super.dispose();
+    controller.dispose();
   }
 
   @override

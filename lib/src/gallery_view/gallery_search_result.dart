@@ -11,6 +11,7 @@ import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import '../settings/settings_controller.dart';
 import '../ui/common_view.dart';
 import 'gallery_details_view.dart';
+import 'gallery_similar_view.dart';
 
 class GallerySearchResultView extends StatefulWidget {
   const GallerySearchResultView({super.key});
@@ -31,11 +32,39 @@ class _GallerySearchResultView extends State<GallerySearchResultView> {
   late EasyRefreshController _controller;
   late List<Map<String, dynamic>> _selected;
   final _ids = <int>[];
+  late PopupMenuButton<String> Function(Gallery gallery) menuBuilder;
+  late bool local;
   @override
   void initState() {
     super.initState();
     _controller = EasyRefreshController(
         controlFinishRefresh: true, controlFinishLoad: true);
+    menuBuilder = (g) => PopupMenuButton<String>(itemBuilder: (context) {
+          var settings = context.read<SettingsController>();
+          return [
+            if (!local)
+              PopupMenuItem(
+                  child: Text(AppLocalizations.of(context)!.download),
+                  onTap: () => settings.manager
+                      .parseCommandAndRun(g.id.toString())
+                      .then((value) => showSnackBar(
+                          context, AppLocalizations.of(context)!.success))),
+            PopupMenuItem(
+                child: Text(AppLocalizations.of(context)!.findSimiler),
+                onTap: () => Navigator.of(context)
+                    .pushNamed(GallerySimilaerView.routeName, arguments: g)),
+            if (local)
+              PopupMenuItem(
+                  child: Text(AppLocalizations.of(context)!.delete),
+                  onTap: () => settings.manager
+                      .parseCommandAndRun('-d ${g.id}')
+                      .then((value) => setState(() {
+                            data.removeWhere((element) => element.id == g.id);
+                            showSnackBar(
+                                context, AppLocalizations.of(context)!.success);
+                          })))
+          ];
+        });
   }
 
   @override
@@ -50,10 +79,10 @@ class _GallerySearchResultView extends State<GallerySearchResultView> {
     var args =
         ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>;
     _selected = args['tags'];
-    var locol = args['local'];
+    local = args['local'];
     click = (g) => Navigator.pushNamed(context, GalleryDetailsView.routeName,
-        arguments: {'gallery': g, 'local': locol});
-    api = context.watch<SettingsController>().hitomi(localDb: locol);
+        arguments: {'gallery': g, 'local': local});
+    api = context.watch<SettingsController>().hitomi(localDb: local);
     if (data.isEmpty) {
       _fetchData();
     }
@@ -116,6 +145,6 @@ class _GallerySearchResultView extends State<GallerySearchResultView> {
           data.clear();
           _page = 1;
           await _fetchData();
-        }, click, api));
+        }, click, api, menusBuilder: menuBuilder));
   }
 }

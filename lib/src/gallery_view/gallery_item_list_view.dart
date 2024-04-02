@@ -16,7 +16,7 @@ class GalleryListView extends StatefulWidget {
   final bool localDb;
   const GalleryListView({super.key, this.localDb = false});
 
-  static const routeName = '/';
+  static const routeName = '/gallery_list';
 
   @override
   State<StatefulWidget> createState() => _GalleryListView();
@@ -24,15 +24,18 @@ class GalleryListView extends StatefulWidget {
 
 class _GalleryListView extends State<GalleryListView> {
   List<Gallery> data = [];
-  Label? _label;
+  late Map<String, dynamic> _label;
   var _page = 1;
+  var showAppBar = false;
   int totalPage = 1;
   late void Function(Gallery) click;
   late Hitomi api;
   late EasyRefreshController _controller;
-  late PopupMenuButton<String> Function(Gallery) menuBuilder;
+  late PopupMenuButton<String> Function(Gallery gallery) menuBuilder;
   Future<void> _fetchData() async {
-    return api.viewByTag(_label!, page: _page).then((value) {
+    return api
+        .viewByTag(fromString(_label['type'], _label['name']), page: _page)
+        .then((value) {
       setState(() {
         data.addAll(value.data
             .where((element) => data.every((g) => g.id != element.id)));
@@ -44,7 +47,9 @@ class _GalleryListView extends State<GalleryListView> {
     }).catchError((e) {
       _controller.finishLoad();
       _controller.finishRefresh();
-      showSnackBar(context, 'err $e');
+      if (mounted) {
+        showSnackBar(context, 'err $e');
+      }
     }, test: (error) => true);
   }
 
@@ -55,25 +60,8 @@ class _GalleryListView extends State<GalleryListView> {
         arguments: {'gallery': g, 'local': widget.localDb});
     _controller = EasyRefreshController(
         controlFinishRefresh: true, controlFinishLoad: true);
-  }
-
-  @override
-  void dispose() {
-    super.dispose();
-    _controller.dispose();
-  }
-
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    if (_label == null) {
-      final args =
-          ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>?;
-      _label = (args?['tag'] ?? QueryText(''));
-    }
-    var settings = context.watch<SettingsController>();
-    api = settings.hitomi(localDb: widget.localDb);
     menuBuilder = (g) => PopupMenuButton<String>(itemBuilder: (context) {
+          var settings = context.read<SettingsController>();
           return [
             if (!widget.localDb)
               PopupMenuItem(
@@ -98,13 +86,29 @@ class _GalleryListView extends State<GalleryListView> {
                           })))
           ];
         });
+  }
+
+  @override
+  void dispose() {
+    super.dispose();
+    _controller.dispose();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final args =
+        ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>?;
+    _label = (args?['tag'] ?? QueryText('').toMap());
+    showAppBar = args != null;
+    var settings = context.watch<SettingsController>();
+    api = settings.hitomi(localDb: widget.localDb);
     if (data.isEmpty) {
       _fetchData();
     }
   }
 
-  @override
-  Widget build(BuildContext context) {
+  Widget _bodyContentList() {
     return buildGalleryListView(_controller, data, () async {
       if (_page <= totalPage) {
         await _fetchData();
@@ -119,5 +123,17 @@ class _GalleryListView extends State<GalleryListView> {
       await _fetchData();
       _page = before;
     }, click, api, menusBuilder: menuBuilder);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return showAppBar
+        ? Scaffold(
+            appBar: AppBar(
+                leading:
+                    BackButton(onPressed: () => Navigator.of(context).pop()),
+                title: Text('${_label['translate']}')),
+            body: _bodyContentList())
+        : _bodyContentList();
   }
 }

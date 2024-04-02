@@ -1,3 +1,4 @@
+import 'package:ayaka/src/gallery_view/gallery_item_list_view.dart';
 import 'package:ayaka/src/gallery_view/gallery_similar_view.dart';
 import 'package:ayaka/src/gallery_view/gallery_viewer.dart';
 import 'package:ayaka/src/home.dart';
@@ -77,6 +78,8 @@ class MyApp extends StatelessWidget {
         return const GalleryDetailsView();
       case GallerySimilaerView.routeName:
         return const GallerySimilaerView();
+      case GalleryListView.routeName:
+        return const GalleryListView();
       default:
         return const AyakaHome();
     }

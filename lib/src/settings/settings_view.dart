@@ -1,8 +1,13 @@
-import 'package:file_picker/file_picker.dart';
+import 'dart:io';
+
+import 'package:file_picker/file_picker.dart' show FilePicker;
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:provider/provider.dart' show ReadContext;
+import '../ui/common_view.dart';
 import 'settings_controller.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:path/path.dart' show join;
 
 /// Displays the various settings that can be customized by the user.
 ///
@@ -43,7 +48,7 @@ class _StateSetting extends State<SettingsView> {
     remoteAddrCon.text = controller.config.remoteHttp;
     proxyAddrCon.text = controller.config.proxy;
     authControl.text = controller.config.auth;
-    direct = controller.useProxy;
+    direct = !controller.useProxy;
   }
 
   @override
@@ -54,9 +59,16 @@ class _StateSetting extends State<SettingsView> {
     authControl.dispose();
   }
 
+  Future<bool> testWriteble(String path) {
+    return File(join(path, 'test.txt'))
+        .writeAsString('1', flush: true)
+        .then((value) => true);
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Padding(
+    return SingleChildScrollView(
+        child: Padding(
       padding: const EdgeInsets.all(16),
       child: Stack(children: [
         Column(children: [
@@ -141,12 +153,15 @@ class _StateSetting extends State<SettingsView> {
                 FilledButton(
                     onPressed: () async {
                       if (_formKey.currentState!.validate()) {
-                        await controller.switchConn(!direct);
-                        await controller.updateConfig(controller.config
-                            .copyWith(
-                                proxy: proxyAddrCon.text,
-                                auth: authControl.text,
-                                remoteHttp: remoteAddrCon.text));
+                        controller
+                            .switchConn(!direct)
+                            .then((value) => controller.updateConfig(
+                                controller.config.copyWith(
+                                    proxy: proxyAddrCon.text,
+                                    auth: authControl.text,
+                                    remoteHttp: remoteAddrCon.text)))
+                            .then((value) => showSnackBar(context,
+                                AppLocalizations.of(context)!.success));
                       }
                     },
                     style: Theme.of(context).elevatedButtonTheme.style,
@@ -171,12 +186,24 @@ class _StateSetting extends State<SettingsView> {
             Expanded(child: Text(controller.config.output)),
             OutlinedButton(
                 onPressed: () async {
-                  var path = await FilePicker.platform.getDirectoryPath();
+                  var initDir = await getExternalStorageDirectory()
+                      .catchError((e) => getApplicationSupportDirectory(),
+                          test: (error) => true)
+                      .then((value) async =>
+                          value ?? await getApplicationSupportDirectory());
+                  debugPrint(initDir.path);
+                  var path = await FilePicker.platform
+                      .getDirectoryPath(initialDirectory: initDir.path);
                   if (path?.isNotEmpty == true) {
-                    await controller.updateConfig(
-                        controller.config.copyWith(output: path!));
+                    await testWriteble(path!)
+                        .then((value) => controller.updateConfig(
+                            controller.config.copyWith(output: path)))
+                        .catchError(
+                            (e) => controller.updateConfig(controller.config
+                                .copyWith(output: initDir.path)),
+                            test: (error) => true)
+                        .then((value) => setState(() {}));
                   }
-                  setState(() {});
                 },
                 child: Text(AppLocalizations.of(context)!.select))
           ]),
@@ -184,6 +211,6 @@ class _StateSetting extends State<SettingsView> {
         ]),
         if (netLoading) const Center(child: CircularProgressIndicator()),
       ]),
-    );
+    ));
   }
 }

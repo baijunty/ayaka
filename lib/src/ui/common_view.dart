@@ -1,6 +1,5 @@
 import 'dart:async';
 
-import 'package:ayaka/src/gallery_view/gallery_details_view.dart';
 import 'package:ayaka/src/gallery_view/gallery_viewer.dart';
 import 'package:ayaka/src/settings/settings_controller.dart';
 import 'package:card_loading/card_loading.dart';
@@ -20,61 +19,40 @@ import '../utils/label_utils.dart';
 class ThumbImageView extends StatelessWidget {
   final String url;
   final Map<String, String>? header;
-  final String? indexStr;
-  const ThumbImageView(this.url, {super.key, this.header, this.indexStr});
+  const ThumbImageView(this.url, {super.key, this.header});
 
   @override
   Widget build(BuildContext context) {
     return Padding(
-        padding: const EdgeInsets.all(4),
-        child: Stack(children: [
-          AspectRatio(
-              aspectRatio: 9 / 16,
-              child: Image.network(
-                url,
-                headers: header,
-                errorBuilder: (context, error, stackTrace) {
-                  return Text(error.toString());
-                },
-                loadingBuilder: (context, child, loadingProgress) {
-                  return loadingProgress == null
-                      ? child
-                      : const CircularProgressIndicator();
-                },
-                frameBuilder: (BuildContext context, Widget child, int? frame,
-                    bool wasSynchronouslyLoaded) {
-                  if (wasSynchronouslyLoaded) {
-                    return child;
-                  }
-                  return AnimatedOpacity(
-                    opacity: frame == null ? 0 : 1,
-                    duration: const Duration(seconds: 1),
-                    curve: Curves.easeOut,
-                    child: child,
-                  );
-                },
-                fit: BoxFit.contain,
-              )),
-          if (indexStr != null)
-            Positioned(
-                left: 4,
-                top: 4,
-                child: DecoratedBox(
-                    decoration: const BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: Colors.black54,
-                    ),
-                    child: Padding(
-                        padding: const EdgeInsets.all(4),
-                        child: Text(
-                          indexStr!,
-                          style: Theme.of(context)
-                              .primaryTextTheme
-                              .labelMedium
-                              ?.copyWith(color: Colors.white),
-                          textScaler: const TextScaler.linear(1.2),
-                        ))))
-        ]));
+      padding: const EdgeInsets.all(4),
+      child: AspectRatio(
+          aspectRatio: 9 / 16,
+          child: Image.network(
+            url,
+            headers: header,
+            errorBuilder: (context, error, stackTrace) {
+              return const Icon(Icons.error);
+            },
+            loadingBuilder: (context, child, loadingProgress) {
+              return loadingProgress == null
+                  ? child
+                  : const CircularProgressIndicator();
+            },
+            frameBuilder: (BuildContext context, Widget child, int? frame,
+                bool wasSynchronouslyLoaded) {
+              if (wasSynchronouslyLoaded) {
+                return child;
+              }
+              return AnimatedOpacity(
+                opacity: frame == null ? 0 : 1,
+                duration: const Duration(seconds: 1),
+                curve: Curves.easeOut,
+                child: child,
+              );
+            },
+            fit: BoxFit.cover,
+          )),
+    );
   }
 }
 
@@ -112,7 +90,7 @@ Widget buildGalleryListView(
     void Function(Gallery) click,
     Hitomi api,
     {ScrollController? scrollController,
-    PopupMenuButton<String> Function(Gallery)? menusBuilder}) {
+    PopupMenuButton<String> Function(Gallery gallery)? menusBuilder}) {
   return EasyRefresh(
       key: ValueKey(controller),
       controller: controller,
@@ -171,8 +149,7 @@ class GalleryInfo extends StatelessWidget {
                     children: [
                       SizedBox.fromSize(
                           size: const Size.fromWidth(100),
-                          child: ThumbImageView(url,
-                              header: header)),
+                          child: ThumbImageView(url, header: header)),
                       Expanded(
                           child: Column(
                               mainAxisAlignment: MainAxisAlignment.start,
@@ -181,8 +158,15 @@ class GalleryInfo extends StatelessWidget {
                             Text(gallery.dirName,
                                 maxLines: 2, overflow: TextOverflow.ellipsis),
                             Text('${gallery.languageLocalname}'),
-                            Text(entry.key),
-                            Text(format.format(format.parse(gallery.date))),
+                            Row(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Text(entry.key),
+                                  Text(format
+                                      .format(format.parse(gallery.date))),
+                                ]),
+                            Text(gallery.files.length.toString()),
                           ])),
                       if (menus != null) menus!
                     ]))));
@@ -227,9 +211,18 @@ class MaxWidthBox extends StatelessWidget {
 class GalleryDetailHeadInfo extends StatelessWidget {
   final Gallery gallery;
   final List<Map<String, dynamic>> extendedInfo;
+  final bool netLoading;
   final SettingsController controller;
   final bool local;
-  final bool netLoading;
+  static final types = [
+    // 'artist',
+    // 'group',
+    'series',
+    'character',
+    'female',
+    'male',
+    'tag'
+  ];
   const GalleryDetailHeadInfo(
       {super.key,
       required this.gallery,
@@ -247,42 +240,21 @@ class GalleryDetailHeadInfo extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    var entries = gallery
-        .labels()
-        .groupListsBy((element) => element.type)
-        .entries
+    var entries = extendedInfo
+        .where((element) => types.contains(element['type']))
         .toList();
-    return SliverList.builder(
-        itemBuilder: (context, index) {
-          var entry = entries[index];
-          return netLoading
-              ? const CardLoading(
-                  height: 40,
-                  borderRadius: BorderRadius.all(Radius.circular(15)),
-                  width: 100,
-                  margin: EdgeInsets.only(bottom: 10))
-              : Column(children: [
-                  Padding(
-                      padding: const EdgeInsets.only(left: 8, right: 8),
-                      child: Row(children: [
-                        const Expanded(child: Divider()),
-                        const SizedBox(width: 8),
-                        Text(mapTagType(context, entry.key),
-                            style: Theme.of(context).textTheme.labelMedium),
-                        const SizedBox(width: 8),
-                        const Expanded(child: Divider()),
-                      ])),
-                  Wrap(children: [
-                    for (var label in entry.value)
-                      TextButton(
-                          child: Text(findMatchLabel(label)),
-                          onPressed: () => Navigator.of(context).pushNamed(
-                              GalleryListView.routeName,
-                              arguments: {'tag': label}))
-                  ]),
-                ]);
-        },
-        itemCount: entries.length);
+    return SliverList.list(children: [
+      netLoading
+          ? const CardLoading(height: 40)
+          : Wrap(children: [
+              for (var label in entries)
+                TextButton(
+                    child: Text('${label['translate']}'),
+                    onPressed: () => Navigator.of(context).pushNamed(
+                        GalleryListView.routeName,
+                        arguments: {'tag': label}))
+            ])
+    ]);
   }
 }
 
@@ -290,11 +262,19 @@ class GalleryDetailHead extends StatelessWidget {
   final SettingsController controller;
   final Gallery gallery;
   final bool local;
+  final List<Map<String, dynamic>> extendedInfo;
+  final bool netLoading;
+  final bool exist;
+  final int readIndex;
   const GalleryDetailHead(
       {super.key,
       required this.controller,
       required this.gallery,
-      required this.local});
+      required this.local,
+      required this.extendedInfo,
+      required this.netLoading,
+      required this.exist,
+      required this.readIndex});
 
   @override
   Widget build(BuildContext context) {
@@ -304,81 +284,134 @@ class GalleryDetailHead extends StatelessWidget {
         .buildImageUrl(gallery.files.first, id: gallery.id, proxy: true);
     var header = buildRequestHeader(
         url, 'https://hitomi.la${Uri.encodeFull(gallery.galleryurl!)}');
-    FutureBuilder<List<Gallery>>? buttonBuilder;
-    if (!local) {
-      buttonBuilder = FutureBuilder(
-          future: controller
-              .hitomi(localDb: true)
-              .findSimilarGalleryBySearch(gallery)
-              .then((value) => value.data),
-          builder: (c, snap) {
-            if (snap.hasData && snap.data!.isNotEmpty) {
-              return OutlinedButton(
-                  onPressed: () => Navigator.of(context).pushReplacementNamed(
-                      GalleryDetailsView.routeName,
-                      arguments: {'gallery': snap.data!.first, 'local': local}),
-                  child: Text(AppLocalizations.of(context)!.downloaded));
-            } else if (snap.hasData) {
-              return OutlinedButton(
-                  onPressed: () async {
-                    await controller.manager
-                        .parseCommandAndRun('${gallery.id}')
-                        .then((value) => showSnackBar(context,
-                            AppLocalizations.of(context)!.addTaskSuccess))
-                        .catchError((e) => showSnackBar(context, e.toString()),
-                            test: (error) => true);
-                  },
-                  child: Text(AppLocalizations.of(context)!.download));
-            }
-            return Container();
-          });
-    }
-    return SliverAppBar.large(
-        excludeHeaderSemantics: true,
-        backgroundColor: entry.value,
-        title: Text(gallery.name),
-        leading: Row(children: [
-          BackButton(onPressed: () => Navigator.of(context).pop())
-        ]),
-        expandedHeight: 200,
+    var format = DateFormat('yyyy-MM-dd');
+    var artists =
+        extendedInfo.where((element) => element['type'] == 'artist').take(2);
+    var groupes =
+        extendedInfo.where((element) => element['type'] == 'group').take(2);
+    return SliverAppBar(
+        backgroundColor: netLoading ? Colors.transparent : entry.value,
+        automaticallyImplyLeading: false,
+        expandedHeight: 230,
         flexibleSpace: FlexibleSpaceBar(
-            background: Container(
-                margin: const EdgeInsets.only(left: 40, top: 24),
-                child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      SizedBox(
-                          width: 100,
-                          child: ThumbImageView(url,
-                              header: header,
-                              indexStr: gallery.files.length.toString())),
-                      Expanded(
-                          child: Column(children: [
-                        Text(gallery.name,
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                            style: Theme.of(context).textTheme.titleSmall),
-                        Divider(color: Theme.of(context).primaryColor),
-                        Text(gallery.languageLocalname ?? ''),
-                        Row(children: [
-                          if (buttonBuilder != null) buttonBuilder,
-                          const SizedBox(width: 16),
-                          OutlinedButton(
-                              onPressed: () => Navigator.of(context).pushNamed(
-                                      GalleryViewer.routeName,
-                                      arguments: {
-                                        'gallery': gallery,
-                                        'index': 0,
-                                        'local': local,
-                                      }),
-                              child: Text(AppLocalizations.of(context)!.read)),
+            background: SafeArea(
+                child: Column(children: [
+          AppBar(
+              leading: BackButton(onPressed: () => Navigator.of(context).pop()),
+              actions: const [
+                IconButton(onPressed: null, icon: Icon(Icons.share))
+              ],
+              backgroundColor: entry.value),
+          netLoading
+              ? const Row(children: [
+                  CardLoading(height: 160, width: 100),
+                  SizedBox(width: 8),
+                  Expanded(child: CardLoading(height: 160)),
+                ])
+              : Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                  SizedBox(
+                      width: 100, child: ThumbImageView(url, header: header)),
+                  Expanded(
+                      child: Column(mainAxisSize: MainAxisSize.min, children: [
+                    Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(gallery.languageLocalname ?? ''),
+                          const SizedBox(width: 8),
+                          Expanded(
+                              child: Text(gallery.name,
+                                  maxLines: 2,
+                                  overflow: TextOverflow.ellipsis,
+                                  softWrap: true,
+                                  style:
+                                      Theme.of(context).textTheme.titleSmall))
                         ]),
-                        Row(children: [
-                          Text(AppLocalizations.of(context)!.type),
-                          const SizedBox(width: 16),
+                    if (artists.isNotEmpty)
+                      SizedBox(
+                          height: 28,
+                          child: Row(children: [
+                            for (var artist in artists)
+                              TextButton(
+                                  onPressed: () => Navigator.of(context)
+                                      .pushNamed(GalleryListView.routeName,
+                                          arguments: {'tag': artist}),
+                                  style: TextButton.styleFrom(
+                                    fixedSize: const Size.fromHeight(25),
+                                    padding: const EdgeInsets.all(4),
+                                    minimumSize: const Size(40, 25),
+                                  ),
+                                  child: Text(
+                                    '${artist['translate']}',
+                                    style: const TextStyle(fontSize: 12),
+                                  ))
+                          ])),
+                    if (groupes.isNotEmpty)
+                      SizedBox(
+                          height: 28,
+                          child: Row(children: [
+                            for (var group in groupes)
+                              TextButton(
+                                  onPressed: () => Navigator.of(context)
+                                      .pushNamed(GalleryListView.routeName,
+                                          arguments: {'tag': group}),
+                                  style: TextButton.styleFrom(
+                                    maximumSize: const Size.fromHeight(25),
+                                    padding: const EdgeInsets.all(4),
+                                    minimumSize: const Size(40, 25),
+                                  ),
+                                  child: Text(
+                                    '${group['translate']}',
+                                    style: const TextStyle(fontSize: 12),
+                                  ))
+                          ])),
+                    Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          const SizedBox(width: 8),
+                          if (!exist)
+                            Expanded(
+                                child: Padding(
+                                    padding: const EdgeInsets.only(right: 8),
+                                    child: OutlinedButton(
+                                        onPressed: () async {
+                                          await controller.manager
+                                              .parseCommandAndRun(
+                                                  '${gallery.id}')
+                                              .then((value) => showSnackBar(
+                                                  context,
+                                                  AppLocalizations.of(context)!
+                                                      .addTaskSuccess))
+                                              .catchError(
+                                                  (e) => showSnackBar(
+                                                      context, e.toString()),
+                                                  test: (error) => true);
+                                        },
+                                        child: Text(
+                                            AppLocalizations.of(context)!
+                                                .download)))),
+                          Expanded(
+                            child: FilledButton(
+                                onPressed: () => Navigator.of(context)
+                                        .pushNamed(GalleryViewer.routeName,
+                                            arguments: {
+                                          'gallery': gallery,
+                                          'index': 0,
+                                          'local': local,
+                                        }),
+                                child:
+                                    Text(AppLocalizations.of(context)!.read)),
+                          ),
+                          const SizedBox(width: 8),
+                        ]),
+                    Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceAround,
+                        children: [
                           Text(entry.key),
-                        ])
-                      ])),
-                    ]))));
+                          Text(format.format(format.parse(gallery.date))),
+                          Text('$readIndex/${gallery.files.length.toString()}')
+                        ]),
+                  ])),
+                ])
+        ]))));
   }
 }

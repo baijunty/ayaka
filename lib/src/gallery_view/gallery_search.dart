@@ -25,6 +25,7 @@ class _GallerySearch extends State<GallerySearch> {
   final types = <Map<String, dynamic>>[];
   final languages = <Map<String, dynamic>>[];
   final _history = <Map<String, dynamic>>{};
+  late Hitomi api;
   Future<Iterable<Widget>> fetchLabels(SearchController controller) async {
     var key = controller.value;
     if (key.text.length < 2 || !zhAndJpCodeExp.hasMatch(key.text)) {
@@ -33,9 +34,7 @@ class _GallerySearch extends State<GallerySearch> {
     return _debounce.runDebounce(() {
       debugPrint('net fetch ${key.text}');
       try {
-        return context
-            .read<SettingsController>()
-            .hitomi(localDb: true)
+        return api
             .fetchSuggestions(key.text)
             .then((value) => value.map((e) => _buildListTile(e, controller)));
       } catch (e) {
@@ -49,6 +48,7 @@ class _GallerySearch extends State<GallerySearch> {
   void didChangeDependencies() {
     super.didChangeDependencies();
     _debounce = Debounce();
+    api = context.read<SettingsController>().hitomi(localDb: true);
   }
 
   @override

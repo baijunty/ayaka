@@ -29,7 +29,7 @@ class _GalleryTaskView extends State<GalleryTaskView> {
   List<Map<String, dynamic>> runningTask = [];
   final Debounce _debounce = Debounce();
   final deration = const Duration(seconds: 2);
-
+  var _visible = true;
   @override
   void dispose() {
     super.dispose();
@@ -40,7 +40,6 @@ class _GalleryTaskView extends State<GalleryTaskView> {
   void didChangeDependencies() {
     super.didChangeDependencies();
     manager = context.read<SettingsController>().manager;
-    _debounce.runDebounce(_fetchTasks, duration: deration);
   }
 
   Future<void> _fetchTasks() async {
@@ -54,8 +53,16 @@ class _GalleryTaskView extends State<GalleryTaskView> {
             }))
         .catchError((e) => showSnackBar(context, 'err $e'),
             test: (error) => true)
-        .whenComplete(
-            () => _debounce.runDebounce(_fetchTasks, duration: deration));
+        .whenComplete(() => _handleVisible(_visible));
+  }
+
+  void _handleVisible(bool visible) {
+    _visible = visible;
+    if (visible) {
+      _debounce.runDebounce(_fetchTasks, duration: deration);
+    } else {
+      _debounce.dispose();
+    }
   }
 
   @override
@@ -83,15 +90,15 @@ class _GalleryTaskView extends State<GalleryTaskView> {
             return Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                ThumbImageView(url,
-                    header: header,
-                    indexStr: (item['speed'] as double).toStringAsFixed(2)),
+                ThumbImageView(url, header: header),
                 Expanded(
                     child: Column(children: [
                   Text(gallery.dirName),
                   LinearProgressIndicator(
                       value: item['current'] / gallery.files.length),
                   Row(mainAxisAlignment: MainAxisAlignment.end, children: [
+                    Text((item['speed'] as double).toStringAsFixed(2)),
+                    const SizedBox(width: 8),
                     Text('${item['current']}/${gallery.files.length}'),
                     PopupMenuButton<String>(itemBuilder: (context) {
                       return [
@@ -169,7 +176,7 @@ class _GalleryTaskView extends State<GalleryTaskView> {
                 child: Text(label.name),
                 onPressed: () => Navigator.of(context).pushNamed(
                     GalleryListView.routeName,
-                    arguments: {'tag': label}));
+                    arguments: {'tag': label.toMap()}));
           },
           gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
               maxCrossAxisExtent: 120,

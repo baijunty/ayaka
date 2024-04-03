@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:ayaka/src/ui/common_view.dart';
 import 'package:file_picker/file_picker.dart' show FilePicker;
 import 'package:flutter/material.dart';
 import 'package:path_provider/path_provider.dart';
@@ -26,13 +27,13 @@ class SettingsView extends StatefulWidget {
 class _StateSetting extends State<SettingsView> {
   late SettingsController controller;
   bool netLoading = false;
-  bool direct = true;
+  bool useProxyConn = true;
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
     controller = context.read<SettingsController>();
-    direct = !controller.useProxy;
+    useProxyConn = controller.useProxy;
   }
 
   Future<bool> testWriteble(String path) {
@@ -85,9 +86,10 @@ class _StateSetting extends State<SettingsView> {
                         : Text(AppLocalizations.of(context)!.darkTheme),
                     trailing: Switch.adaptive(
                         value: controller.themeMode == ThemeMode.light,
-                        onChanged: (b) async =>
-                            await controller.updateThemeMode(
-                                b ? ThemeMode.light : ThemeMode.dark))),
+                        onChanged: (b) => setState(() {
+                              controller.updateThemeMode(
+                                  b ? ThemeMode.light : ThemeMode.dark);
+                            }))),
                 ListTile(
                     leading:
                         const ImageIcon(AssetImage('assets/images/vpn.png')),
@@ -137,14 +139,14 @@ class _StateSetting extends State<SettingsView> {
                     leading: const ImageIcon(
                         AssetImage('assets/images/direction.png')),
                     title: Text(AppLocalizations.of(context)!.connectType),
-                    subtitle: Text(direct
-                        ? AppLocalizations.of(context)!.direct
-                        : AppLocalizations.of(context)!.proxy),
+                    subtitle: Text(useProxyConn
+                        ? AppLocalizations.of(context)!.proxy
+                        : AppLocalizations.of(context)!.direct),
                     trailing: Switch.adaptive(
-                        value: direct,
-                        onChanged: (b) async => setState(() async {
-                              direct = b;
-                              await controller.switchConn(b);
+                        value: useProxyConn,
+                        onChanged: (b) => setState(() {
+                              useProxyConn = b;
+                              controller.switchConn(b);
                             }))),
                 ListTile(
                     leading: const ImageIcon(
@@ -159,6 +161,7 @@ class _StateSetting extends State<SettingsView> {
                               .parseCommandAndRun('-u')
                               .then((value) => setState(() {
                                     netLoading = false;
+                                    showSnackBar(context, AppLocalizations.of(context)!.success);
                                   }));
                         },
                         icon: const ImageIcon(

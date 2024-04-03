@@ -60,10 +60,16 @@
   "runningTask":"下载中",
   "pendingTask":"等待中",
   "queryTask":"查询任务",
+  "incompleteTask":"未完成任务",
   "themeMode":"主题模式",
   "authToken":"校验码",
-  "searchHint":"输入关键词搜索,以逗号隔开",
+  "searchHint":"输入关键词搜索,以逗号分割",
   "inputHint":"请输入内容",
   "savePath":"保存目录",
+  "dateDefault":"默认",
+  "dateDesc":"日期倒序",
+  "popWeek":"本周热门",
+  "popMonth":"本月热门",
+  "popYear":"年度热门",
   "tag":"标签"
 }

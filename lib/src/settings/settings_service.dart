@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:collection/collection.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:hitomi/lib.dart';
@@ -17,7 +18,11 @@ class SettingsService {
         .then((value) => dataSave(value), onError: (e) => debugPrint(e));
   }
 
-  Future<ThemeMode> themeMode() async => ThemeMode.system;
+  Future<ThemeMode> themeMode() async =>
+      readConfig((prefs) => prefs.getString('themeMode')).then((value) =>
+          ThemeMode.values
+              .firstWhereOrNull((element) => element.name == value) ??
+          ThemeMode.light);
 
   Future<UserConfig> readUserConfig() async {
     if (kIsWeb) {
@@ -47,7 +52,9 @@ class SettingsService {
     });
   }
 
-  Future<void> updateThemeMode(ThemeMode theme) async {}
+  Future<void> updateThemeMode(ThemeMode theme) async {
+    await saveConfig((prefs) => prefs.setString('themeMode', theme.name));
+  }
 
   Future<void> saveUserConfig(UserConfig config) async {
     if (kIsWeb) {

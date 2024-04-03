@@ -58,7 +58,7 @@ class _GalleryViewer extends State<GalleryViewer>
         }).toList(),
         initialIndex: index);
     controller.addListener(handlePageChange);
-    if (index == 0) {
+    if (args['index'] == null) {
       _settingsController.manager.helper
           .readlData<int>('UserLog', 'mark', {'id': _gallery.id})
           .then((value) => (value ?? 0))

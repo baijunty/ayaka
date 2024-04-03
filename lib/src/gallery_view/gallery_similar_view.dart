@@ -9,6 +9,8 @@ import 'package:hitomi/gallery/gallery.dart';
 import 'package:hitomi/lib.dart';
 import 'package:provider/provider.dart';
 
+import '../model/task_controller.dart';
+
 class GallerySimilaerView extends StatefulWidget {
   const GallerySimilaerView({super.key});
   static const routeName = '/gallery_similar';
@@ -25,12 +27,17 @@ class _GallerySimilaerView extends State<GallerySimilaerView> {
   final EasyRefreshController controller = EasyRefreshController();
   late void Function(Gallery) click;
   final CancelToken _cancelToken = CancelToken();
+  late Future<List<Gallery>> _findSimilar;
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
     api = context.read<SettingsController>().hitomi();
     click = (g) => Navigator.of(context).pushNamed(GalleryDetailsView.routeName,
         arguments: {'gallery': g, 'local': false});
+    var gallery = ModalRoute.of(context)?.settings.arguments as Gallery;
+    _findSimilar = api
+        .findSimilarGalleryBySearch(gallery, token: _cancelToken)
+        .then((value) => value.data);
   }
 
   @override
@@ -42,40 +49,38 @@ class _GallerySimilaerView extends State<GallerySimilaerView> {
 
   @override
   Widget build(BuildContext context) {
-    var gallery = ModalRoute.of(context)?.settings.arguments as Gallery;
     return Scaffold(
         appBar: AppBar(
           leading: const BackButton(),
         ),
         body: FutureBuilder(
             key: ValueKey(data),
-            future:
-                api.findSimilarGalleryBySearch(gallery, token: _cancelToken),
-            builder: (context, data) {
-              if (data.hasData) {
-                return data.data!.data.isEmpty
+            future: _findSimilar,
+            builder: (context, snap) {
+              if (snap.hasData) {
+                return snap.data!.isEmpty
                     ? Center(
                         child: Text(AppLocalizations.of(context)!.emptyContent))
-                    : buildGalleryListView(controller, data.data!.data,
-                        () => null, () => null, click, api,
+                    : buildGalleryListView(controller, snap.data!, () => null,
+                        () => null, click, api,
                         menusBuilder: (g) =>
                             PopupMenuButton<String>(itemBuilder: (context) {
-                              var settings = context.read<SettingsController>();
                               return [
                                 PopupMenuItem(
                                     child: Text(
                                         AppLocalizations.of(context)!.download),
-                                    onTap: () => settings.manager
-                                        .parseCommandAndRun(g.id.toString())
+                                    onTap: () => context
+                                        .read<TaskController>()
+                                        .addTask(g)
                                         .then((value) => showSnackBar(
                                             context,
                                             AppLocalizations.of(context)!
                                                 .success))),
                               ];
                             }));
-              } else if (data.hasError) {
+              } else if (snap.hasError) {
                 return Center(
-                    child: Text(data.error.toString(),
+                    child: Text(snap.error.toString(),
                         style: Theme.of(context)
                             .textTheme
                             .labelLarge

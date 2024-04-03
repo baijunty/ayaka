@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:ui';
 
 import 'package:ayaka/src/gallery_view/gallery_viewer.dart';
 import 'package:ayaka/src/settings/settings_controller.dart';
@@ -13,21 +12,25 @@ import 'package:hitomi/gallery/image.dart' as img show ThumbnaiSize, Image;
 import 'package:hitomi/gallery/label.dart';
 import 'package:hitomi/lib.dart';
 import 'package:intl/intl.dart';
+import 'package:provider/provider.dart';
 
 import '../gallery_view/gallery_item_list_view.dart';
+import '../model/task_controller.dart';
 import '../utils/label_utils.dart';
 
 class ThumbImageView extends StatelessWidget {
   final String url;
   final Map<String, String>? header;
   final String? label;
-  const ThumbImageView(this.url, {super.key, this.header, this.label});
+  final double aspectRatio;
+  const ThumbImageView(this.url,
+      {super.key, this.header, this.label, this.aspectRatio = 9 / 16});
 
   @override
   Widget build(BuildContext context) {
     return Stack(children: [
       AspectRatio(
-        aspectRatio: 9 / 16,
+        aspectRatio: aspectRatio,
         child: Image.network(
           url,
           headers: header,
@@ -398,9 +401,9 @@ class GalleryDetailHead extends StatelessWidget {
                                     padding: const EdgeInsets.only(right: 8),
                                     child: OutlinedButton(
                                         onPressed: () async {
-                                          await controller.manager
-                                              .parseCommandAndRun(
-                                                  '${gallery.id}')
+                                          await context
+                                              .read<TaskController>()
+                                              .addTask(gallery)
                                               .then((value) => showSnackBar(
                                                   context,
                                                   AppLocalizations.of(context)!
@@ -419,7 +422,6 @@ class GalleryDetailHead extends StatelessWidget {
                                         .pushNamed(GalleryViewer.routeName,
                                             arguments: {
                                           'gallery': gallery,
-                                          'index': 0,
                                           'local': local,
                                         }),
                                 child:

@@ -24,10 +24,6 @@ class SettingsController with ChangeNotifier {
   UserConfig get config => _config;
   bool _useProxy = kIsWeb;
   bool get useProxy => _useProxy;
-  Future<void> loadSettings() async {
-    _themeMode = await _settingsService.themeMode();
-    notifyListeners();
-  }
 
   Hitomi hitomi({bool localDb = false}) => useProxy
       ? _manager.getApiFromProxy(localDb, _config.auth, _config.remoteHttp)
@@ -42,13 +38,13 @@ class SettingsController with ChangeNotifier {
   }
 
   Future<UserConfig> loadConfig() async {
+    _themeMode = await _settingsService.themeMode();
     _config = await _settingsService.readUserConfig();
     _useProxy = await _settingsService
         .readConfig((prefs) => prefs.getBool('useProxy') ?? useProxy);
     debugPrint('load ${jsonEncode(_config)}');
     _manager = TaskManager(_config);
-    if (!kIsWeb) {
-      _server?.close(force: true);
+    if (!kIsWeb && _server == null) {
       _server = await run_server(_manager);
     }
     return _config;
@@ -58,6 +54,7 @@ class SettingsController with ChangeNotifier {
     await _settingsService
         .saveConfig((prefs) => prefs.setBool('useProxy', useProxy));
     _useProxy = useProxy;
+    notifyListeners();
   }
 
   Future<void> updateConfig(UserConfig config) async {

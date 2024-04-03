@@ -5,18 +5,10 @@ import 'package:ayaka/src/utils/responsive_util.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
-import 'gallery_view/gallery_search.dart';
-
 class AyakaHome extends StatefulWidget {
   final content = const [
-    Column(children: [
-      GallerySearch(localDb: false),
-      Expanded(child: GalleryListView())
-    ]),
-    Column(children: [
-      GallerySearch(localDb: true),
-      Expanded(child: GalleryListView(localDb: true))
-    ]),
+    GalleryListView(),
+    GalleryListView(localDb: true),
     GalleryTaskView(),
     SettingsView()
   ];

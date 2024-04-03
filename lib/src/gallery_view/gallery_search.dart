@@ -30,6 +30,7 @@ class _GallerySearch extends State<GallerySearch> {
   late Hitomi api;
   Iterable<Widget> lastResult = const Iterable.empty();
   String lastQuery = '';
+  late SearchController controller;
   Future<Iterable<Widget>> fetchLabels(SearchController controller) async {
     var text = controller.value.text;
     text = text.substring(min(text.lastIndexOf(',') + 1, text.length));
@@ -60,6 +61,12 @@ class _GallerySearch extends State<GallerySearch> {
   }
 
   @override
+  void initState() {
+    super.initState();
+    controller = SearchController();
+  }
+
+  @override
   void didChangeDependencies() {
     super.didChangeDependencies();
     _debounce = Debounce();
@@ -70,6 +77,7 @@ class _GallerySearch extends State<GallerySearch> {
   void dispose() {
     super.dispose();
     _debounce.dispose();
+    controller.dispose();
   }
 
   String _showTranslate(Map<String, dynamic> map) {
@@ -85,6 +93,7 @@ class _GallerySearch extends State<GallerySearch> {
     return ListTile(
         leading: const Icon(Icons.history),
         title: Text(history),
+        trailing: const Icon(Icons.arrow_upward),
         onLongPress: onLongPress,
         onTap: onTap);
   }
@@ -120,6 +129,15 @@ class _GallerySearch extends State<GallerySearch> {
             }
             return fetchLabels(controller);
           },
+          searchController: controller,
+          viewTrailing: [
+            IconButton(
+                onPressed: () {
+                  controller.text = '';
+                  _selected.clear();
+                },
+                icon: const Icon(Icons.close))
+          ],
           onSubmitted: (value) {
             var queryKey = value.split(',').where(
                 (element) => element.isNotEmpty && !element.contains(':'));
@@ -128,8 +146,12 @@ class _GallerySearch extends State<GallerySearch> {
                 arguments: {
                   'tags': [
                     ..._selected,
-                    ...queryKey
-                        .map((e) => {'type': '', 'name': e,'translate':e, 'include': true})
+                    ...queryKey.map((e) => {
+                          'type': '',
+                          'name': e,
+                          'translate': e,
+                          'include': true
+                        })
                   ],
                   'local': widget.localDb
                 });

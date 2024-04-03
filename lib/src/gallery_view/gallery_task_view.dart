@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:ayaka/src/gallery_view/gallery_details_view.dart';
+import 'package:ayaka/src/model/task_controller.dart';
 import 'package:ayaka/src/utils/debounce.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:ayaka/src/settings/settings_controller.dart';
@@ -8,10 +9,8 @@ import 'package:ayaka/src/ui/common_view.dart';
 import 'package:flutter/material.dart';
 import 'package:hitomi/gallery/gallery.dart';
 import 'package:hitomi/gallery/image.dart';
-import 'package:hitomi/gallery/label.dart';
 import 'package:hitomi/lib.dart';
 import 'package:provider/provider.dart';
-import 'gallery_item_list_view.dart';
 
 class GalleryTaskView extends StatefulWidget {
   const GalleryTaskView({super.key});
@@ -24,12 +23,11 @@ class GalleryTaskView extends StatefulWidget {
 
 class _GalleryTaskView extends State<GalleryTaskView> {
   late TaskManager manager;
-  List<Map<String, dynamic>> queryTask = [];
   List<Map<String, dynamic>> pendingTask = [];
   List<Map<String, dynamic>> runningTask = [];
   final Debounce _debounce = Debounce();
   final deration = const Duration(seconds: 2);
-  var _visible = true;
+  late TaskController controller;
   @override
   void dispose() {
     super.dispose();
@@ -39,7 +37,9 @@ class _GalleryTaskView extends State<GalleryTaskView> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    manager = context.read<SettingsController>().manager;
+    controller = context.watch<TaskController>();
+    manager = controller.manager;
+    _handleVisible();
   }
 
   Future<void> _fetchTasks() async {
@@ -47,18 +47,16 @@ class _GalleryTaskView extends State<GalleryTaskView> {
         .parseCommandAndRun('-l')
         .then((value) => value as Map<String, dynamic>)
         .then((result) => setState(() {
-              queryTask = result['queryTask'];
               pendingTask = result['pendingTask'];
               runningTask = result['runningTask'];
             }))
         .catchError((e) => showSnackBar(context, 'err $e'),
             test: (error) => true)
-        .whenComplete(() => _handleVisible(_visible));
+        .whenComplete(() => _handleVisible());
   }
 
-  void _handleVisible(bool visible) {
-    _visible = visible;
-    if (visible) {
+  void _handleVisible() {
+    if (!controller.emptyTask) {
       _debounce.runDebounce(_fetchTasks, duration: deration);
     } else {
       _debounce.dispose();
@@ -90,14 +88,17 @@ class _GalleryTaskView extends State<GalleryTaskView> {
             return Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                ThumbImageView(url, header: header),
+                SizedBox(
+                    height: 100,
+                    width: 100,
+                    child: ThumbImageView(url, header: header, aspectRatio: 1)),
                 Expanded(
                     child: Column(children: [
                   Text(gallery.dirName),
                   LinearProgressIndicator(
                       value: item['current'] / gallery.files.length),
                   Row(mainAxisAlignment: MainAxisAlignment.end, children: [
-                    Text((item['speed'] as double).toStringAsFixed(2)),
+                    Text('${(item['speed'] as double).toStringAsFixed(2)}KB'),
                     const SizedBox(width: 8),
                     Text('${item['current']}/${gallery.files.length}'),
                     PopupMenuButton<String>(itemBuilder: (context) {
@@ -121,7 +122,7 @@ class _GalleryTaskView extends State<GalleryTaskView> {
           },
           gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
               maxCrossAxisExtent: 400,
-              mainAxisExtent: 200,
+              mainAxisExtent: 100,
               mainAxisSpacing: 8,
               crossAxisSpacing: 8),
           itemCount: runningTask.length),
@@ -159,31 +160,6 @@ class _GalleryTaskView extends State<GalleryTaskView> {
               mainAxisSpacing: 16,
               crossAxisSpacing: 8),
           itemCount: pendingTask.length),
-      SliverList.list(children: [
-        Padding(
-            padding: const EdgeInsets.only(left: 8, right: 8),
-            child: Row(children: [
-              const Expanded(child: Divider()),
-              Text(AppLocalizations.of(context)!.queryTask),
-              const Expanded(child: Divider()),
-            ]))
-      ]),
-      SliverAnimatedGrid(
-          itemBuilder: (context, index, animation) {
-            var item = pendingTask[index];
-            var label = fromString(item['type'], item['name']);
-            return TextButton(
-                child: Text(label.name),
-                onPressed: () => Navigator.of(context).pushNamed(
-                    GalleryListView.routeName,
-                    arguments: {'tag': label.toMap()}));
-          },
-          gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-              maxCrossAxisExtent: 120,
-              mainAxisExtent: 40,
-              mainAxisSpacing: 16,
-              crossAxisSpacing: 8),
-          initialItemCount: queryTask.length),
     ]);
   }
 }

@@ -1,4 +1,6 @@
 import 'package:ayaka/src/gallery_view/gallery_details_view.dart';
+import 'package:ayaka/src/model/task_controller.dart';
+import 'package:dio/dio.dart';
 import 'package:easy_refresh/easy_refresh.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:ayaka/src/ui/common_view.dart';
@@ -9,6 +11,7 @@ import 'package:hitomi/lib.dart';
 import 'package:provider/provider.dart';
 
 import '../settings/settings_controller.dart';
+import 'gallery_search.dart';
 import 'gallery_similar_view.dart';
 
 /// Displays a list of SampleItems.
@@ -32,9 +35,13 @@ class _GalleryListView extends State<GalleryListView> {
   late Hitomi api;
   late EasyRefreshController _controller;
   late PopupMenuButton<String> Function(Gallery gallery) menuBuilder;
+  SortEnum? sortEnum;
+  CancelToken? token;
   Future<void> _fetchData() async {
+    token = CancelToken();
     return api
-        .viewByTag(fromString(_label['type'], _label['name']), page: _page)
+        .viewByTag(fromString(_label['type'], _label['name']),
+            page: _page, sort: sortEnum, token: token)
         .then((value) {
       setState(() {
         data.addAll(value.data
@@ -61,14 +68,12 @@ class _GalleryListView extends State<GalleryListView> {
     _controller = EasyRefreshController(
         controlFinishRefresh: true, controlFinishLoad: true);
     menuBuilder = (g) => PopupMenuButton<String>(itemBuilder: (context) {
-          var settings = context.read<SettingsController>();
           return [
             if (!widget.localDb)
               PopupMenuItem(
                   child: Text(AppLocalizations.of(context)!.download),
-                  onTap: () => settings.manager
-                      .parseCommandAndRun(g.id.toString())
-                      .then((value) => showSnackBar(
+                  onTap: () => context.read<TaskController>().addTask(g).then(
+                      (value) => showSnackBar(
                           context, AppLocalizations.of(context)!.success))),
             PopupMenuItem(
                 child: Text(AppLocalizations.of(context)!.findSimiler),
@@ -77,8 +82,9 @@ class _GalleryListView extends State<GalleryListView> {
             if (widget.localDb)
               PopupMenuItem(
                   child: Text(AppLocalizations.of(context)!.delete),
-                  onTap: () => settings.manager
-                      .parseCommandAndRun('-d ${g.id}')
+                  onTap: () => context
+                      .read<TaskController>()
+                      .cancelTask(g.id)
                       .then((value) => setState(() {
                             data.removeWhere((element) => element.id == g.id);
                             showSnackBar(
@@ -92,6 +98,7 @@ class _GalleryListView extends State<GalleryListView> {
   void dispose() {
     super.dispose();
     _controller.dispose();
+    token?.cancel('dispose');
   }
 
   @override
@@ -109,31 +116,70 @@ class _GalleryListView extends State<GalleryListView> {
   }
 
   Widget _bodyContentList() {
-    return buildGalleryListView(_controller, data, () async {
-      if (_page <= totalPage) {
+    return Column(children: [
+      Row(children: [
+        if (showAppBar)
+          BackButton(onPressed: () => Navigator.of(context).pop()),
+        Expanded(
+            child: SizedBox(
+                height: 40, child: GallerySearch(localDb: widget.localDb))),
+        PopupMenuButton<SortEnum>(
+            itemBuilder: (context) {
+              if (widget.localDb) {
+                return <PopupMenuEntry<SortEnum>>[
+                  PopupMenuItem(
+                      value: SortEnum.Date,
+                      child: Text(AppLocalizations.of(context)!.dateDefault)),
+                  PopupMenuItem(
+                      value: SortEnum.DateDesc,
+                      child: Text(AppLocalizations.of(context)!.dateDesc)),
+                ];
+              }
+              return <PopupMenuEntry<SortEnum>>[
+                PopupMenuItem(
+                    value: SortEnum.Date,
+                    child: Text(AppLocalizations.of(context)!.dateDefault)),
+                PopupMenuItem(
+                    value: SortEnum.week,
+                    child: Text(AppLocalizations.of(context)!.popWeek)),
+                PopupMenuItem(
+                    value: SortEnum.month,
+                    child: Text(AppLocalizations.of(context)!.popMonth)),
+                PopupMenuItem(
+                    value: SortEnum.year,
+                    child: Text(AppLocalizations.of(context)!.popYear)),
+              ];
+            },
+            onSelected: (value) => setState(() {
+                  data.clear();
+                  _page = 1;
+                  sortEnum = value == SortEnum.Date ? null : value;
+                  _fetchData();
+                }),
+            icon: const Icon(Icons.sort))
+      ]),
+      Expanded(
+          child: buildGalleryListView(_controller, data, () async {
+        if (_page <= totalPage) {
+          await _fetchData();
+        } else {
+          showSnackBar(context, AppLocalizations.of(context)!.endOfPage);
+          _controller.finishLoad();
+          _controller.finishRefresh();
+        }
+      }, () async {
+        var before = _page;
+        _page = 1;
         await _fetchData();
-      } else {
-        showSnackBar(context, AppLocalizations.of(context)!.endOfPage);
-        _controller.finishLoad();
-        _controller.finishRefresh();
-      }
-    }, () async {
-      var before = _page;
-      _page = 1;
-      await _fetchData();
-      _page = before;
-    }, click, api, menusBuilder: menuBuilder);
+        _page = before;
+      }, click, api, menusBuilder: menuBuilder))
+    ]);
   }
 
   @override
   Widget build(BuildContext context) {
     return showAppBar
-        ? Scaffold(
-            appBar: AppBar(
-                leading:
-                    BackButton(onPressed: () => Navigator.of(context).pop()),
-                title: Text('${_label['translate']}')),
-            body: _bodyContentList())
+        ? Scaffold(body: SafeArea(child: _bodyContentList()))
         : _bodyContentList();
   }
 }

@@ -1,5 +1,6 @@
 import 'dart:math';
 
+import 'package:dio/dio.dart';
 import 'package:easy_refresh/easy_refresh.dart';
 import 'package:flutter/material.dart';
 import 'package:hitomi/gallery/gallery.dart';
@@ -8,6 +9,7 @@ import 'package:hitomi/lib.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
+import '../model/task_controller.dart';
 import '../settings/settings_controller.dart';
 import '../ui/common_view.dart';
 import 'gallery_details_view.dart';
@@ -35,20 +37,19 @@ class _GallerySearchResultView extends State<GallerySearchResultView> {
   late PopupMenuButton<String> Function(Gallery gallery) menuBuilder;
   late bool local;
   var title = '';
+  CancelToken? token;
   @override
   void initState() {
     super.initState();
     _controller = EasyRefreshController(
         controlFinishRefresh: true, controlFinishLoad: true);
     menuBuilder = (g) => PopupMenuButton<String>(itemBuilder: (context) {
-          var settings = context.read<SettingsController>();
           return [
             if (!local)
               PopupMenuItem(
                   child: Text(AppLocalizations.of(context)!.download),
-                  onTap: () => settings.manager
-                      .parseCommandAndRun(g.id.toString())
-                      .then((value) => showSnackBar(
+                  onTap: () => context.read<TaskController>().addTask(g).then(
+                      (value) => showSnackBar(
                           context, AppLocalizations.of(context)!.success))),
             PopupMenuItem(
                 child: Text(AppLocalizations.of(context)!.findSimiler),
@@ -57,8 +58,9 @@ class _GallerySearchResultView extends State<GallerySearchResultView> {
             if (local)
               PopupMenuItem(
                   child: Text(AppLocalizations.of(context)!.delete),
-                  onTap: () => settings.manager
-                      .parseCommandAndRun('-d ${g.id}')
+                  onTap: () => context
+                      .read<TaskController>()
+                      .cancelTask(g.id)
                       .then((value) => setState(() {
                             data.removeWhere((element) => element.id == g.id);
                             showSnackBar(
@@ -72,6 +74,7 @@ class _GallerySearchResultView extends State<GallerySearchResultView> {
   void dispose() {
     super.dispose();
     _controller.dispose();
+    token?.cancel('dispose');
   }
 
   @override
@@ -97,9 +100,11 @@ class _GallerySearchResultView extends State<GallerySearchResultView> {
   }
 
   Future<void> _fetchData() async {
+    token = CancelToken();
     if (_page <= totalPage) {
+      Future<List<int>> idsFuture;
       if (25 * _page > _ids.length) {
-        await api
+        idsFuture = api
             .search(
                 _selected
                     .where((element) => element['include'] == true)
@@ -109,16 +114,21 @@ class _GallerySearchResultView extends State<GallerySearchResultView> {
                     .where((element) => element['include'] == false)
                     .map((e) => fromString(e['type'], e['name']))
                     .toList(),
-                page: _page)
+                page: _page,
+                token: token)
             .then((value) {
           totalPage = (value.totalCount / 25).ceil();
           _ids.addAll(value.data);
+          return _ids;
         });
+      } else {
+        idsFuture = Future.value(_ids);
       }
-      await Future.value(_ids.sublist(
-              min(_page * 25 - 25, _ids.length), min(_ids.length, _page * 25)))
-          .then((value) => Future.wait(
-              value.map((e) => api.fetchGallery(e, usePrefence: false))))
+      idsFuture
+          .then((value) => value.sublist(min(_page * 25 - 25, value.length),
+              min(value.length, _page * 25)))
+          .then((value) => Future.wait(value.map(
+              (e) => api.fetchGallery(e, usePrefence: false, token: token))))
           .then((value) {
         setState(() {
           data.addAll(value);

@@ -4,7 +4,6 @@ import 'package:ayaka/src/gallery_view/gallery_details_view.dart';
 import 'package:ayaka/src/model/task_controller.dart';
 import 'package:ayaka/src/utils/debounce.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
-import 'package:ayaka/src/settings/settings_controller.dart';
 import 'package:ayaka/src/ui/common_view.dart';
 import 'package:flutter/material.dart';
 import 'package:hitomi/gallery/gallery.dart';
@@ -23,15 +22,18 @@ class GalleryTaskView extends StatefulWidget {
 
 class _GalleryTaskView extends State<GalleryTaskView> {
   late TaskManager manager;
-  List<Map<String, dynamic>> pendingTask = [];
+  List<Gallery> pendingTask = [];
   List<Map<String, dynamic>> runningTask = [];
   final Debounce _debounce = Debounce();
   final deration = const Duration(seconds: 2);
   late TaskController controller;
+  late Hitomi api;
+  bool _taskRunning = false;
   @override
   void dispose() {
     super.dispose();
     _debounce.dispose();
+    api.removeCallBack(_handleDownloadMsg);
   }
 
   @override
@@ -39,7 +41,22 @@ class _GalleryTaskView extends State<GalleryTaskView> {
     super.didChangeDependencies();
     controller = context.watch<TaskController>();
     manager = controller.manager;
-    _handleVisible();
+    api = manager.getApiDirect();
+    api.registerCallBack(_handleDownloadMsg);
+    manager
+        .remainTask()
+        .fold(<Gallery>[], (previous, element) => previous..add(element)).then(
+            (value) => setState(() {
+                  pendingTask = value;
+                }));
+  }
+
+  Future<bool> _handleDownloadMsg(Message msg) async {
+    if (!_taskRunning) {
+      _taskRunning = true;
+      _handleVisible();
+    }
+    return true;
   }
 
   Future<void> _fetchTasks() async {
@@ -47,8 +64,12 @@ class _GalleryTaskView extends State<GalleryTaskView> {
         .parseCommandAndRun('-l')
         .then((value) => value as Map<String, dynamic>)
         .then((result) => setState(() {
-              pendingTask = result['pendingTask'];
+              pendingTask =
+                  (result['pendingTask'] as List<Map<String, dynamic>>)
+                      .map((e) => e['gallery'] as Gallery)
+                      .toList();
               runningTask = result['runningTask'];
+              _taskRunning = runningTask.isNotEmpty;
             }))
         .catchError((e) => showSnackBar(context, 'err $e'),
             test: (error) => true)
@@ -56,17 +77,57 @@ class _GalleryTaskView extends State<GalleryTaskView> {
   }
 
   void _handleVisible() {
-    if (!controller.emptyTask) {
+    if (_taskRunning) {
       _debounce.runDebounce(_fetchTasks, duration: deration);
     } else {
       _debounce.dispose();
     }
   }
 
+  Widget _buildRunnintTaskItem(Map<String, dynamic> item) {
+    Gallery gallery = item['gallery'];
+    final url = api.buildImageUrl(gallery.files.first,
+        id: gallery.id, size: ThumbnaiSize.smaill, proxy: true);
+    var header = buildRequestHeader(url,
+        'https://hitomi.la${gallery.galleryurl != null ? Uri.encodeFull(gallery.galleryurl!) : '${gallery.id}.html'}');
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        SizedBox(
+            height: 100,
+            width: 100,
+            child: ThumbImageView(url, header: header, aspectRatio: 1)),
+        Expanded(
+            child: Column(children: [
+          Text(gallery.dirName),
+          LinearProgressIndicator(
+              value: item['current'] / gallery.files.length),
+          Row(mainAxisAlignment: MainAxisAlignment.end, children: [
+            Text('${(item['speed'] as double).toStringAsFixed(2)}KB'),
+            const SizedBox(width: 8),
+            Text('${item['current']}/${gallery.files.length}'),
+            PopupMenuButton<String>(itemBuilder: (context) {
+              return [
+                PopupMenuItem(
+                    child: Text(AppLocalizations.of(context)!.cancel),
+                    onTap: () {
+                      controller.cancelTask(gallery.id);
+                    }),
+                PopupMenuItem(
+                    child: Text(AppLocalizations.of(context)!.delete),
+                    onTap: () {
+                      controller.deleteTask(gallery.id);
+                    }),
+              ];
+            })
+          ])
+        ]))
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    var controller = context.read<SettingsController>();
-    var api = controller.hitomi();
     return CustomScrollView(slivers: [
       SliverList.list(children: [
         Padding(
@@ -80,45 +141,7 @@ class _GalleryTaskView extends State<GalleryTaskView> {
       SliverGrid.builder(
           itemBuilder: (context, index) {
             var item = runningTask[index];
-            Gallery gallery = item['gallery'];
-            final url = api.buildImageUrl(gallery.files.first,
-                id: gallery.id, size: ThumbnaiSize.smaill, proxy: true);
-            var header = buildRequestHeader(
-                url, 'https://hitomi.la${Uri.encodeFull(gallery.galleryurl!)}');
-            return Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                SizedBox(
-                    height: 100,
-                    width: 100,
-                    child: ThumbImageView(url, header: header, aspectRatio: 1)),
-                Expanded(
-                    child: Column(children: [
-                  Text(gallery.dirName),
-                  LinearProgressIndicator(
-                      value: item['current'] / gallery.files.length),
-                  Row(mainAxisAlignment: MainAxisAlignment.end, children: [
-                    Text('${(item['speed'] as double).toStringAsFixed(2)}KB'),
-                    const SizedBox(width: 8),
-                    Text('${item['current']}/${gallery.files.length}'),
-                    PopupMenuButton<String>(itemBuilder: (context) {
-                      return [
-                        PopupMenuItem(
-                            child: Text(AppLocalizations.of(context)!.cancel),
-                            onTap: () {
-                              manager.downLoader
-                                  .removeTask(gallery.id)
-                                  .catchError((e) {
-                                showSnackBar(context, 'err $e');
-                                return false;
-                              }, test: (error) => true);
-                            }),
-                      ];
-                    })
-                  ])
-                ]))
-              ],
-            );
+            return _buildRunnintTaskItem(item);
           },
           gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
               maxCrossAxisExtent: 400,
@@ -137,8 +160,7 @@ class _GalleryTaskView extends State<GalleryTaskView> {
       ]),
       SliverGrid.builder(
           itemBuilder: (context, index) {
-            var item = pendingTask[index];
-            Gallery gallery = item['gallery'];
+            var gallery = pendingTask[index];
             return GalleryInfo(
                 gallery: gallery,
                 image: gallery.files.first,
@@ -149,8 +171,21 @@ class _GalleryTaskView extends State<GalleryTaskView> {
                 menus: PopupMenuButton<String>(itemBuilder: (context) {
                   return [
                     PopupMenuItem(
-                        child: Text(AppLocalizations.of(context)!.cancel),
-                        onTap: () => manager.downLoader.removeTask(gallery.id)),
+                        child: Text(AppLocalizations.of(context)!.delete),
+                        onTap: () => controller
+                                .deleteTask(gallery.id)
+                                .then((value) => setState(() {
+                                      pendingTask.remove(gallery);
+                                    }))
+                                .catchError((e) {
+                              debugPrint(e);
+                            }, test: (error) => true)),
+                    PopupMenuItem(
+                        child: Text(AppLocalizations.of(context)!.download),
+                        onTap: () =>
+                            controller.addTask(gallery).catchError((e) {
+                              debugPrint(e);
+                            }, test: (error) => true)),
                   ];
                 }));
           },

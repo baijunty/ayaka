@@ -20,8 +20,7 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     final settingsController = context.watch<SettingsController>();
     return FutureBuilder(
-        future: settingsController.loadConfig().then((value) =>
-            Future.delayed(const Duration(milliseconds: 2000), () => true)),
+        future: settingsController.loadConfig(),
         builder: (context, snap) {
           debugPrint('load result ${snap.data}');
           if (snap.hasData) {
@@ -52,8 +51,7 @@ class MyApp extends StatelessWidget {
                     return MaterialPageRoute<void>(
                       settings: routeSettings,
                       builder: (BuildContext context) {
-                        return _buildRoute(
-                            routeSettings.name ?? '/', settingsController);
+                        return _buildRoute(routeSettings.name ?? '/');
                       },
                     );
                   },
@@ -67,7 +65,7 @@ class MyApp extends StatelessWidget {
         });
   }
 
-  Widget _buildRoute(String route, SettingsController controller) {
+  Widget _buildRoute(String route) {
     switch (route) {
       case GalleryViewer.routeName:
         return const GalleryViewer();

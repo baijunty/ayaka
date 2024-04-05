@@ -33,25 +33,27 @@ class _GalleryListView extends State<GalleryListView> {
   int totalPage = 1;
   late void Function(Gallery) click;
   late Hitomi api;
+  bool local = false;
   late EasyRefreshController _controller;
   late PopupMenuButton<String> Function(Gallery gallery) menuBuilder;
   SortEnum? sortEnum;
   CancelToken? token;
-  Future<void> _fetchData() async {
+  Future<void> _fetchData({bool refresh = false}) async {
     token = CancelToken();
     return api
         .viewByTag(fromString(_label['type'], _label['name']),
             page: _page, sort: sortEnum, token: token)
-        .then((value) {
-      setState(() {
-        data.addAll(value.data
-            .where((element) => data.every((g) => g.id != element.id)));
-        _page++;
-        totalPage = (value.totalCount / 25).ceil();
-        _controller.finishLoad();
-        _controller.finishRefresh();
-      });
-    }).catchError((e) {
+        .then((value) => setState(() {
+              var insertList = value.data
+                  .where((element) => data.every((g) => g.id != element.id));
+              refresh ? data.insertAll(0, insertList) : data.addAll(insertList);
+              _page++;
+              totalPage = (value.totalCount / 25).ceil();
+              _controller.finishLoad();
+              _controller.finishRefresh();
+            }))
+        .catchError((e) {
+      debugPrint(e);
       _controller.finishLoad();
       _controller.finishRefresh();
       if (mounted) {
@@ -64,27 +66,26 @@ class _GalleryListView extends State<GalleryListView> {
   void initState() {
     super.initState();
     click = (g) => Navigator.pushNamed(context, GalleryDetailsView.routeName,
-        arguments: {'gallery': g, 'local': widget.localDb});
+        arguments: {'gallery': g, 'local': local});
     _controller = EasyRefreshController(
         controlFinishRefresh: true, controlFinishLoad: true);
     menuBuilder = (g) => PopupMenuButton<String>(itemBuilder: (context) {
           return [
-            if (!widget.localDb)
-              PopupMenuItem(
-                  child: Text(AppLocalizations.of(context)!.download),
-                  onTap: () => context.read<TaskController>().addTask(g).then(
-                      (value) => showSnackBar(
-                          context, AppLocalizations.of(context)!.success))),
+            PopupMenuItem(
+                child: Text(AppLocalizations.of(context)!.download),
+                onTap: () => context.read<TaskController>().addTask(g).then(
+                    (value) => showSnackBar(
+                        context, AppLocalizations.of(context)!.success))),
             PopupMenuItem(
                 child: Text(AppLocalizations.of(context)!.findSimiler),
                 onTap: () => Navigator.of(context)
                     .pushNamed(GallerySimilaerView.routeName, arguments: g)),
-            if (widget.localDb)
+            if (local)
               PopupMenuItem(
                   child: Text(AppLocalizations.of(context)!.delete),
                   onTap: () => context
                       .read<TaskController>()
-                      .cancelTask(g.id)
+                      .deleteTask(g.id)
                       .then((value) => setState(() {
                             data.removeWhere((element) => element.id == g.id);
                             showSnackBar(
@@ -107,9 +108,10 @@ class _GalleryListView extends State<GalleryListView> {
     final args =
         ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>?;
     _label = (args?['tag'] ?? QueryText('').toMap());
+    local = (args?['local'] ?? widget.localDb);
     showAppBar = args != null;
     var settings = context.watch<SettingsController>();
-    api = settings.hitomi(localDb: widget.localDb);
+    api = settings.hitomi(localDb: local);
     if (data.isEmpty) {
       _fetchData();
     }
@@ -120,12 +122,10 @@ class _GalleryListView extends State<GalleryListView> {
       Row(children: [
         if (showAppBar)
           BackButton(onPressed: () => Navigator.of(context).pop()),
-        Expanded(
-            child: SizedBox(
-                height: 40, child: GallerySearch(localDb: widget.localDb))),
+        Expanded(child: GallerySearch(localDb: local)),
         PopupMenuButton<SortEnum>(
             itemBuilder: (context) {
-              if (widget.localDb) {
+              if (local) {
                 return <PopupMenuEntry<SortEnum>>[
                   PopupMenuItem(
                       value: SortEnum.Date,
@@ -170,7 +170,7 @@ class _GalleryListView extends State<GalleryListView> {
       }, () async {
         var before = _page;
         _page = 1;
-        await _fetchData();
+        await _fetchData(refresh: true);
         _page = before;
       }, click, api, menusBuilder: menuBuilder))
     ]);

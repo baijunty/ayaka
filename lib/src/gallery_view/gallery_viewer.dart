@@ -52,8 +52,8 @@ class _GalleryViewer extends State<GalleryViewer>
         _gallery.files.map((e) {
           final url = settings.hitomi(localDb: args['local']).buildImageUrl(e,
               id: _gallery.id, size: ThumbnaiSize.origin, proxy: true);
-          var header = buildRequestHeader(
-              url, 'https://hitomi.la${Uri.encodeFull(_gallery.galleryurl!)}');
+          var header = buildRequestHeader(url,
+              'https://hitomi.la${_gallery.galleryurl != null ? Uri.encodeFull(_gallery.galleryurl!) : '${_gallery.id}.html'}');
           return NetworkImage(url, headers: header);
         }).toList(),
         initialIndex: index);

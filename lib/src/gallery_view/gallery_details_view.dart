@@ -60,13 +60,6 @@ class _GalleryDetailView extends State<GalleryDetailsView> {
             (value) => setState(() {
                   readedIndex = value;
                 }));
-    debugPrint('didChangeDependencies');
-  }
-
-  @override
-  void didUpdateWidget(covariant GalleryDetailsView oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    debugPrint('didUpdateWidget $oldWidget');
   }
 
   @override
@@ -82,7 +75,7 @@ class _GalleryDetailView extends State<GalleryDetailsView> {
         exist: exists,
         readIndex: readedIndex,
       ),
-      GalleryDetailHeadInfo(
+      GalleryTagDetailInfo(
         gallery: gallery,
         extendedInfo: translates,
         controller: controller,
@@ -94,22 +87,27 @@ class _GalleryDetailView extends State<GalleryDetailsView> {
               maxCrossAxisExtent: 300),
           itemCount: gallery.files.length,
           itemBuilder: (context, index) {
-            final url = controller.hitomi(localDb: local).buildImageUrl(
-                gallery.files[index],
-                id: gallery.id,
-                size: ThumbnaiSize.medium,
-                proxy: true);
-            var header = buildRequestHeader(
-                url, 'https://hitomi.la${Uri.encodeFull(gallery.galleryurl!)}');
+            var image = gallery.files[index];
+            final url = controller.hitomi(localDb: local).buildImageUrl(image,
+                id: gallery.id, size: ThumbnaiSize.medium, proxy: true);
+            var header = buildRequestHeader(url,
+                'https://hitomi.la${gallery.galleryurl != null ? Uri.encodeFull(gallery.galleryurl!) : '${gallery.id}.html'}');
             return GestureDetector(
                 onTap: () async => await Navigator.pushNamed(
-                        context, GalleryViewer.routeName, arguments: {
-                      'gallery': gallery,
-                      'index': index,
-                      'local': local,
-                    }),
+                        context, GalleryViewer.routeName,
+                        arguments: {
+                          'gallery': gallery,
+                          'index': index,
+                          'local': local,
+                        }),
                 child: Card.outlined(
-                    child: Center(child: ThumbImageView(url, header: header))));
+                    child: Center(
+                        child: ThumbImageView(
+                  url,
+                  header: header,
+                  label: '${index + 1}',
+                  aspectRatio: image.width / image.height,
+                ))));
           })
     ]));
   }

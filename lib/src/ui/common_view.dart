@@ -122,7 +122,7 @@ Widget buildGalleryListView(
       child: GridView.builder(
           controller: scrollController,
           gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-              maxCrossAxisExtent: 400, mainAxisExtent: 160),
+              maxCrossAxisExtent: 450, mainAxisExtent: 180),
           itemCount: data.length,
           itemBuilder: (BuildContext context, int index) {
             final item = data[index];
@@ -155,10 +155,11 @@ class GalleryInfo extends StatelessWidget {
   Widget build(BuildContext context) {
     var entry = mapGalleryType(context, gallery.type);
     var format = DateFormat('yyyy-MM-dd');
-    final url = api.buildImageUrl(gallery.files.first,
+    var image = gallery.files.first;
+    final url = api.buildImageUrl(image,
         id: gallery.id, size: img.ThumbnaiSize.medium, proxy: true);
-    var header = buildRequestHeader(
-        url, 'https://hitomi.la${Uri.encodeFull(gallery.galleryurl!)}');
+    var header = buildRequestHeader(url,
+        'https://hitomi.la${gallery.galleryurl != null ? Uri.encodeFull(gallery.galleryurl!) : '${gallery.id}.html'}');
     return InkWell(
         key: ValueKey(gallery.id),
         onTap: () => click(gallery),
@@ -168,11 +169,13 @@ class GalleryInfo extends StatelessWidget {
                 child: Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      SizedBox.fromSize(
-                          size: const Size.fromWidth(100),
+                      MaxWidthBox(
+                          maxWidth: 120,
                           child: ThumbImageView(url,
                               header: header,
-                              label: gallery.files.length.toString())),
+                              label: gallery.files.length.toString(),
+                              aspectRatio: image.width / image.height)),
+                      const SizedBox(width: 8),
                       Expanded(
                           child: Column(
                               mainAxisAlignment: MainAxisAlignment.start,
@@ -180,7 +183,8 @@ class GalleryInfo extends StatelessWidget {
                               children: [
                             Text(gallery.dirName,
                                 maxLines: 2, overflow: TextOverflow.ellipsis),
-                            Text('${gallery.languageLocalname}'),
+                            Text(mapLangugeType(
+                                context, gallery.language ?? '')),
                             Row(
                                 mainAxisAlignment:
                                     MainAxisAlignment.spaceBetween,
@@ -230,7 +234,7 @@ class MaxWidthBox extends StatelessWidget {
   }
 }
 
-class GalleryDetailHeadInfo extends StatelessWidget {
+class GalleryTagDetailInfo extends StatelessWidget {
   final Gallery gallery;
   final List<Map<String, dynamic>> extendedInfo;
   final bool netLoading;
@@ -245,7 +249,7 @@ class GalleryDetailHeadInfo extends StatelessWidget {
     'male',
     'tag'
   ];
-  const GalleryDetailHeadInfo(
+  const GalleryTagDetailInfo(
       {super.key,
       required this.gallery,
       required this.extendedInfo,
@@ -274,7 +278,7 @@ class GalleryDetailHeadInfo extends StatelessWidget {
                     child: Text('${label['translate']}'),
                     onPressed: () => Navigator.of(context).pushNamed(
                         GalleryListView.routeName,
-                        arguments: {'tag': label}))
+                        arguments: {'tag': label, 'local': local}))
             ])
     ]);
   }
@@ -306,8 +310,8 @@ class GalleryDetailHead extends StatelessWidget {
         id: gallery.id,
         proxy: true,
         size: img.ThumbnaiSize.medium);
-    var header = buildRequestHeader(
-        url, 'https://hitomi.la${Uri.encodeFull(gallery.galleryurl!)}');
+    var header = buildRequestHeader(url,
+        'https://hitomi.la${gallery.galleryurl != null ? Uri.encodeFull(gallery.galleryurl!) : '${gallery.id}.html'}');
     var format = DateFormat('yyyy-MM-dd');
     var artists =
         extendedInfo.where((element) => element['type'] == 'artist').take(2);
@@ -335,15 +339,19 @@ class GalleryDetailHead extends StatelessWidget {
               : Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
                   SizedBox(
                       width: 100,
-                      child: ThumbImageView(url,
-                          header: header,
-                          label: gallery.files.length.toString())),
+                      child: ThumbImageView(
+                        url,
+                        header: header,
+                        label: gallery.files.length.toString(),
+                        aspectRatio: gallery.files.first.width /
+                            gallery.files.first.height,
+                      )),
                   Expanded(
                       child: Column(mainAxisSize: MainAxisSize.min, children: [
                     Row(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(gallery.languageLocalname ?? ''),
+                          Text(mapLangugeType(context, gallery.language ?? '')),
                           const SizedBox(width: 8),
                           Expanded(
                               child: Text(gallery.name,
@@ -360,8 +368,11 @@ class GalleryDetailHead extends StatelessWidget {
                             for (var artist in artists)
                               TextButton(
                                   onPressed: () => Navigator.of(context)
-                                      .pushNamed(GalleryListView.routeName,
-                                          arguments: {'tag': artist}),
+                                          .pushNamed(GalleryListView.routeName,
+                                              arguments: {
+                                            'tag': artist,
+                                            'local': local
+                                          }),
                                   style: TextButton.styleFrom(
                                     fixedSize: const Size.fromHeight(25),
                                     padding: const EdgeInsets.all(4),
@@ -379,8 +390,11 @@ class GalleryDetailHead extends StatelessWidget {
                             for (var group in groupes)
                               TextButton(
                                   onPressed: () => Navigator.of(context)
-                                      .pushNamed(GalleryListView.routeName,
-                                          arguments: {'tag': group}),
+                                          .pushNamed(GalleryListView.routeName,
+                                              arguments: {
+                                            'tag': group,
+                                            'local': local
+                                          }),
                                   style: TextButton.styleFrom(
                                     maximumSize: const Size.fromHeight(25),
                                     padding: const EdgeInsets.all(4),
@@ -440,8 +454,8 @@ class GalleryDetailHead extends StatelessWidget {
                           crossAxisAlignment: CrossAxisAlignment.end,
                           children: [
                             LinearProgressIndicator(
-                                value: readIndex! / gallery.files.length),
-                            Text('$readIndex/${gallery.files.length}')
+                                value: (readIndex! + 1) / gallery.files.length),
+                            Text('${(readIndex! + 1)}/${gallery.files.length}')
                           ])
                   ])),
                 ])

@@ -43,8 +43,9 @@ class _StateSetting extends State<SettingsView> {
   }
 
   Future<String?> _showDialogInput(
-      {TextInputType type = TextInputType.text}) async {
-    var controller = TextEditingController();
+      {TextInputType type = TextInputType.text,
+      String defaultValue = ''}) async {
+    var controller = TextEditingController(text: defaultValue);
     return showDialog<String?>(
         context: context,
         builder: (context) => AlertDialog.adaptive(
@@ -97,8 +98,9 @@ class _StateSetting extends State<SettingsView> {
                     subtitle: Text(controller.config.proxy),
                     trailing: IconButton(
                         onPressed: () async {
-                          var s =
-                              await _showDialogInput(type: TextInputType.url);
+                          var s = await _showDialogInput(
+                              type: TextInputType.url,
+                              defaultValue: controller.config.proxy);
                           if (s?.isNotEmpty == true) {
                             await controller.updateConfig(
                                 controller.config.copyWith(proxy: s!));
@@ -112,8 +114,9 @@ class _StateSetting extends State<SettingsView> {
                     subtitle: Text(controller.config.remoteHttp),
                     trailing: IconButton(
                         onPressed: () async {
-                          var s =
-                              await _showDialogInput(type: TextInputType.url);
+                          var s = await _showDialogInput(
+                              type: TextInputType.url,
+                              defaultValue: controller.config.remoteHttp);
                           if (s?.isNotEmpty == true) {
                             await controller.updateConfig(
                                 controller.config.copyWith(remoteHttp: s!));
@@ -127,8 +130,9 @@ class _StateSetting extends State<SettingsView> {
                     subtitle: Text(controller.config.auth),
                     trailing: IconButton(
                         onPressed: () async {
-                          var s =
-                              await _showDialogInput(type: TextInputType.url);
+                          var s = await _showDialogInput(
+                              type: TextInputType.url,
+                              defaultValue: controller.config.auth);
                           if (s?.isNotEmpty == true) {
                             await controller.updateConfig(
                                 controller.config.copyWith(auth: s!));
@@ -161,7 +165,8 @@ class _StateSetting extends State<SettingsView> {
                               .parseCommandAndRun('-u')
                               .then((value) => setState(() {
                                     netLoading = false;
-                                    showSnackBar(context, AppLocalizations.of(context)!.success);
+                                    showSnackBar(context,
+                                        AppLocalizations.of(context)!.success);
                                   }));
                         },
                         icon: const ImageIcon(

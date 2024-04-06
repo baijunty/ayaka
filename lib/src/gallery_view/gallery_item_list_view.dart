@@ -15,9 +15,9 @@ import 'gallery_search.dart';
 import 'gallery_similar_view.dart';
 
 /// Displays a list of SampleItems.
-class GalleryListView extends StatefulWidget {
+class GalleryItemListView extends StatefulWidget {
   final bool localDb;
-  const GalleryListView({super.key, this.localDb = false});
+  const GalleryItemListView({super.key, this.localDb = false});
 
   static const routeName = '/gallery_list';
 
@@ -25,7 +25,7 @@ class GalleryListView extends StatefulWidget {
   State<StatefulWidget> createState() => _GalleryListView();
 }
 
-class _GalleryListView extends State<GalleryListView> {
+class _GalleryListView extends State<GalleryItemListView> {
   List<Gallery> data = [];
   late Map<String, dynamic> _label;
   var _page = 1;
@@ -159,20 +159,28 @@ class _GalleryListView extends State<GalleryListView> {
             icon: const Icon(Icons.sort))
       ]),
       Expanded(
-          child: buildGalleryListView(_controller, data, () async {
-        if (_page <= totalPage) {
-          await _fetchData();
-        } else {
-          showSnackBar(context, AppLocalizations.of(context)!.endOfPage);
-          _controller.finishLoad();
-          _controller.finishRefresh();
-        }
-      }, () async {
-        var before = _page;
-        _page = 1;
-        await _fetchData(refresh: true);
-        _page = before;
-      }, click, api, menusBuilder: menuBuilder))
+          child: GalleryListView(
+              controller: _controller,
+              data: data,
+              onLoad: () async {
+                if (_page <= totalPage) {
+                  await _fetchData();
+                } else {
+                  showSnackBar(
+                      context, AppLocalizations.of(context)!.endOfPage);
+                  _controller.finishLoad();
+                  _controller.finishRefresh();
+                }
+              },
+              onRefresh: () async {
+                var before = _page;
+                _page = 1;
+                await _fetchData(refresh: true);
+                _page = before;
+              },
+              click: click,
+              api: api,
+              menusBuilder: menuBuilder))
     ]);
   }
 

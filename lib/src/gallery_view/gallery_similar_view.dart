@@ -61,8 +61,13 @@ class _GallerySimilaerView extends State<GallerySimilaerView> {
                 return snap.data!.isEmpty
                     ? Center(
                         child: Text(AppLocalizations.of(context)!.emptyContent))
-                    : buildGalleryListView(controller, snap.data!, () => null,
-                        () => null, click, api,
+                    : GalleryListView(
+                        controller: controller,
+                        data: snap.data!,
+                        onLoad: null,
+                        onRefresh: null,
+                        click: click,
+                        api: api,
                         menusBuilder: (g) =>
                             PopupMenuButton<String>(itemBuilder: (context) {
                               return [

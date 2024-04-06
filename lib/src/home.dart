@@ -7,8 +7,8 @@ import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 class AyakaHome extends StatefulWidget {
   final content = const [
-    GalleryListView(),
-    GalleryListView(localDb: true),
+    GalleryItemListView(),
+    GalleryItemListView(localDb: true),
     GalleryTaskView(),
     SettingsView()
   ];

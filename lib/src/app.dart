@@ -77,8 +77,8 @@ class MyApp extends StatelessWidget {
         return const GalleryDetailsView();
       case GallerySimilaerView.routeName:
         return const GallerySimilaerView();
-      case GalleryListView.routeName:
-        return const GalleryListView();
+      case GalleryItemListView.routeName:
+        return const GalleryItemListView();
       default:
         return const AyakaHome();
     }

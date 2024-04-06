@@ -151,14 +151,21 @@ class _GallerySearchResultView extends State<GallerySearchResultView> {
           leading: BackButton(onPressed: () => Navigator.of(context).pop()),
           title: Text(title),
         ),
-        body: buildGalleryListView(_controller, data, () async {
-          if (_page <= totalPage) {
-            await _fetchData();
-          } else {
-            showSnackBar(context, AppLocalizations.of(context)!.endOfPage);
-            _controller.finishLoad();
-            _controller.finishRefresh();
-          }
-        }, null, click, api, menusBuilder: menuBuilder));
+        body: GalleryListView(
+            controller: _controller,
+            data: data,
+            onLoad: () async {
+              if (_page <= totalPage) {
+                await _fetchData();
+              } else {
+                showSnackBar(context, AppLocalizations.of(context)!.endOfPage);
+                _controller.finishLoad();
+                _controller.finishRefresh();
+              }
+            },
+            onRefresh: null,
+            click: click,
+            api: api,
+            menusBuilder: menuBuilder));
   }
 }

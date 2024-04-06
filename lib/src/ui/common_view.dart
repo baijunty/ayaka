@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math';
 
 import 'package:ayaka/src/gallery_view/gallery_viewer.dart';
 import 'package:ayaka/src/settings/settings_controller.dart';
@@ -7,6 +8,7 @@ import 'package:collection/collection.dart';
 import 'package:easy_refresh/easy_refresh.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 import 'package:hitomi/gallery/gallery.dart';
 import 'package:hitomi/gallery/image.dart' as img show ThumbnaiSize, Image;
 import 'package:hitomi/gallery/label.dart';
@@ -103,38 +105,56 @@ String takeTranslateText(String input) {
   return input;
 }
 
-Widget buildGalleryListView(
-    EasyRefreshController controller,
-    List<Gallery> data,
-    FutureOr<dynamic> Function() onLoad,
-    FutureOr<dynamic> Function()? onRefresh,
-    void Function(Gallery) click,
-    Hitomi api,
-    {ScrollController? scrollController,
-    PopupMenuButton<String> Function(Gallery gallery)? menusBuilder}) {
-  return EasyRefresh(
-      key: ValueKey(controller),
-      controller: controller,
-      header: const MaterialHeader(),
-      footer: const MaterialFooter(),
-      onLoad: onLoad,
-      onRefresh: onRefresh,
-      child: GridView.builder(
-          controller: scrollController,
-          gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-              maxCrossAxisExtent: 450, mainAxisExtent: 180),
-          itemCount: data.length,
-          itemBuilder: (BuildContext context, int index) {
-            final item = data[index];
-            return GalleryInfo(
-              key: ValueKey(item.id),
-              gallery: item,
-              image: item.files.first,
-              click: click,
-              api: api,
-              menus: menusBuilder?.call(item),
-            );
-          }));
+class GalleryListView extends StatelessWidget {
+  final EasyRefreshController controller;
+  final List<Gallery> data;
+  final FutureOr<dynamic> Function()? onLoad;
+  final FutureOr<dynamic> Function()? onRefresh;
+  final void Function(Gallery) click;
+  final Hitomi api;
+  final ScrollController? scrollController;
+  final PopupMenuButton<String> Function(Gallery gallery)? menusBuilder;
+
+  const GalleryListView(
+      {super.key,
+      required this.controller,
+      required this.data,
+      required this.onLoad,
+      this.onRefresh,
+      required this.click,
+      required this.api,
+      this.scrollController,
+      this.menusBuilder});
+
+  @override
+  Widget build(BuildContext context) {
+    var width = MediaQuery.of(context).size.width;
+    debugPrint('screen $width');
+    return EasyRefresh(
+        key: ValueKey(controller),
+        controller: controller,
+        header: const MaterialHeader(),
+        footer: const MaterialFooter(),
+        onLoad: onLoad,
+        onRefresh: onRefresh,
+        child: MasonryGridView.count(
+            controller: scrollController,
+            mainAxisSpacing: 4,
+            crossAxisSpacing: 4,
+            crossAxisCount: max(width ~/ 400, 1),
+            itemCount: data.length,
+            itemBuilder: (BuildContext context, int index) {
+              final item = data[index];
+              return GalleryInfo(
+                key: ValueKey(item.id),
+                gallery: item,
+                image: item.files.first,
+                click: click,
+                api: api,
+                menus: menusBuilder?.call(item),
+              );
+            }));
+  }
 }
 
 class GalleryInfo extends StatelessWidget {
@@ -170,7 +190,7 @@ class GalleryInfo extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       MaxWidthBox(
-                          maxWidth: 120,
+                          maxWidth: 100,
                           child: ThumbImageView(url,
                               header: header,
                               label: gallery.files.length.toString(),
@@ -182,7 +202,9 @@ class GalleryInfo extends StatelessWidget {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                             Text(gallery.dirName,
-                                maxLines: 2, overflow: TextOverflow.ellipsis),
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                                softWrap: true),
                             Text(mapLangugeType(
                                 context, gallery.language ?? '')),
                             Row(
@@ -277,7 +299,7 @@ class GalleryTagDetailInfo extends StatelessWidget {
                 TextButton(
                     child: Text('${label['translate']}'),
                     onPressed: () => Navigator.of(context).pushNamed(
-                        GalleryListView.routeName,
+                        GalleryItemListView.routeName,
                         arguments: {'tag': label, 'local': local}))
             ])
     ]);
@@ -368,7 +390,8 @@ class GalleryDetailHead extends StatelessWidget {
                             for (var artist in artists)
                               TextButton(
                                   onPressed: () => Navigator.of(context)
-                                          .pushNamed(GalleryListView.routeName,
+                                          .pushNamed(
+                                              GalleryItemListView.routeName,
                                               arguments: {
                                             'tag': artist,
                                             'local': local
@@ -390,7 +413,8 @@ class GalleryDetailHead extends StatelessWidget {
                             for (var group in groupes)
                               TextButton(
                                   onPressed: () => Navigator.of(context)
-                                          .pushNamed(GalleryListView.routeName,
+                                          .pushNamed(
+                                              GalleryItemListView.routeName,
                                               arguments: {
                                             'tag': group,
                                             'local': local

@@ -45,10 +45,11 @@ class _GalleryTaskView extends State<GalleryTaskView> {
     api.registerCallBack(_handleDownloadMsg);
     manager
         .remainTask()
-        .fold(<Gallery>[], (previous, element) => previous..add(element)).then(
-            (value) => setState(() {
-                  pendingTask = value;
-                }));
+        .then((value) => value
+            .fold(<Gallery>[], (previous, element) => previous..add(element)))
+        .then((value) => setState(() {
+              pendingTask = value;
+            }));
   }
 
   Future<bool> _handleDownloadMsg(Message msg) async {
@@ -190,8 +191,8 @@ class _GalleryTaskView extends State<GalleryTaskView> {
                 }));
           },
           gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-              maxCrossAxisExtent: 400,
-              mainAxisExtent: 200,
+              maxCrossAxisExtent: 600,
+              mainAxisExtent: 180,
               mainAxisSpacing: 16,
               crossAxisSpacing: 8),
           itemCount: pendingTask.length),

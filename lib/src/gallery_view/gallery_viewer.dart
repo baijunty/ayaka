@@ -26,6 +26,16 @@ class _MultiImageProvider extends MultiImageProvider {
     pageChage(index);
     return super.imageBuilder(context, index);
   }
+
+  @override
+  Widget errorWidgetBuilder(
+      BuildContext context, int index, Object error, StackTrace? stackTrace) {
+    return Center(
+        child: Column(children: [
+      const Icon(Icons.broken_image, color: Colors.red, size: 120.0),
+      Text(Error.safeToString(error))
+    ]));
+  }
 }
 
 class _GalleryViewer extends State<GalleryViewer>
@@ -100,7 +110,12 @@ class _GalleryViewer extends State<GalleryViewer>
               child: SizedBox(
                   height: 56,
                   child: AppBar(
-                      title: Text(_gallery.name),
+                      title: Column(children: [
+                        Text(
+                            '${_gallery.name}-${index + 1}/${_gallery.files.length}'),
+                        LinearProgressIndicator(
+                            value: (index + 1) / _gallery.files.length)
+                      ]),
                       backgroundColor: Theme.of(context).primaryColor,
                       leading: BackButton(
                           onPressed: () => Navigator.of(context).pop())))),

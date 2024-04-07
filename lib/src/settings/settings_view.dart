@@ -39,6 +39,7 @@ class _StateSetting extends State<SettingsView> {
   Future<bool> testWriteble(String path) {
     return File(join(path, 'test.txt'))
         .writeAsString('1', flush: true)
+        .then((value) => value.delete())
         .then((value) => true);
   }
 

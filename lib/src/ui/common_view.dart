@@ -6,6 +6,7 @@ import 'package:ayaka/src/settings/settings_controller.dart';
 import 'package:card_loading/card_loading.dart';
 import 'package:collection/collection.dart';
 import 'package:easy_refresh/easy_refresh.dart';
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
@@ -15,6 +16,7 @@ import 'package:hitomi/gallery/label.dart';
 import 'package:hitomi/lib.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../gallery_view/gallery_item_list_view.dart';
 import '../model/task_controller.dart';
@@ -298,11 +300,91 @@ class GalleryTagDetailInfo extends StatelessWidget {
               for (var label in entries)
                 TextButton(
                     child: Text('${label['translate']}'),
+                    onLongPress: () => showModalBottomSheet(
+                        context: context,
+                        builder: (context) => TagDetail(tag: label)),
                     onPressed: () => Navigator.of(context).pushNamed(
                         GalleryItemListView.routeName,
                         arguments: {'tag': label, 'local': local}))
             ])
     ]);
+  }
+}
+
+class TagDetail extends StatelessWidget {
+  final Map<String, dynamic> tag;
+  static final urlExp =
+      RegExp(r'!?\[(?<name>.*?)\]\(#*\s*\"?(?<url>\S+?)\"?\)');
+  const TagDetail({super.key, required this.tag});
+
+  List<MapEntry<String, String>> takeUrls(String input) {
+    var urls = <MapEntry<String, String>>[];
+    var sb = StringBuffer();
+    var start = 0;
+    for (var e in urlExp.allMatches(input)) {
+      sb.write(input.substring(start, e.start));
+      urls.add(MapEntry(e.namedGroup('name')!, e.namedGroup('url')!));
+      start = e.end;
+    }
+    sb.write(input.substring(start, input.length));
+    urls.add(MapEntry(sb.toString(), ''));
+    return urls;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    var imgs = takeUrls(tag['intro'] ?? '')
+        .where((element) => imageExtension
+            .any((extension) => element.value.endsWith(extension)))
+        .toList();
+    var text = takeUrls(tag['intro'] ?? '')
+        .where((element) => !imageExtension
+            .any((extension) => element.value.endsWith(extension)))
+        .toList();
+    var links = takeUrls(tag['links'] ?? '')
+        .where((element) => !imageExtension
+            .any((extension) => element.value.endsWith(extension)))
+        .toList();
+    return SizedBox(
+        height: MediaQuery.of(context).size.height / 2,
+        child: CustomScrollView(slivers: [
+          SliverList.list(children: [
+            Padding(
+                padding: const EdgeInsets.only(left: 16, right: 16),
+                child: Row(children: [
+                  const Expanded(child: Divider()),
+                  Text('${tag['translate']}'),
+                  const Expanded(child: Divider()),
+                ]))
+          ]),
+          SliverGrid.extent(
+              maxCrossAxisExtent: 300,
+              children: [for (var url in imgs) Image.network(url.value)]),
+          SliverList.list(children: [
+            const SizedBox(height: 8),
+            Center(
+                child: RichText(
+                    text: TextSpan(children: [
+              for (var url in text)
+                TextSpan(
+                    text: url.key,
+                    style: url.value.isNotEmpty
+                        ? const TextStyle(color: Colors.blue)
+                        : const TextStyle(color: Colors.black),
+                    recognizer: url.value.isNotEmpty
+                        ? (TapGestureRecognizer()
+                          ..onTap = () => launchUrl(Uri.parse(url.value)))
+                        : null)
+            ]))),
+            Row(mainAxisAlignment: MainAxisAlignment.spaceAround, children: [
+              for (var url in links)
+                TextButton(
+                  child: Text(url.key),
+                  onPressed: () => launchUrl(Uri.parse(url.value)),
+                )
+            ]),
+          ])
+        ]));
   }
 }
 

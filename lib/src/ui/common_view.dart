@@ -203,7 +203,7 @@ class GalleryInfo extends StatelessWidget {
                               mainAxisAlignment: MainAxisAlignment.start,
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                            Text(gallery.dirName,
+                            Text(gallery.name,
                                 maxLines: 2,
                                 overflow: TextOverflow.ellipsis,
                                 softWrap: true),
@@ -465,7 +465,7 @@ class GalleryDetailHead extends StatelessWidget {
                                   style:
                                       Theme.of(context).textTheme.titleSmall))
                         ]),
-                    if (artists.isNotEmpty)
+                    if (artists.isNotEmpty || groupes.isNotEmpty)
                       SizedBox(
                           height: 28,
                           child: Row(children: [
@@ -486,12 +486,7 @@ class GalleryDetailHead extends StatelessWidget {
                                   child: Text(
                                     '${artist['translate']}',
                                     style: const TextStyle(fontSize: 12),
-                                  ))
-                          ])),
-                    if (groupes.isNotEmpty)
-                      SizedBox(
-                          height: 28,
-                          child: Row(children: [
+                                  )),
                             for (var group in groupes)
                               TextButton(
                                   onPressed: () => Navigator.of(context)

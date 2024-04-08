@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:collection/collection.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:hitomi/lib.dart';
@@ -33,16 +34,25 @@ class SettingsController with ChangeNotifier {
     if (newThemeMode == null) return;
     if (newThemeMode == _themeMode) return;
     _themeMode = newThemeMode;
-    await _settingsService.updateThemeMode(newThemeMode);
+    await _settingsService.saveConfig('themeMode', newThemeMode.name);
     notifyListeners();
   }
 
   Future<UserConfig> loadConfig() async {
-    _themeMode = await _settingsService.themeMode();
-    _config = await _settingsService.readUserConfig();
-    _useProxy = await _settingsService
-        .readConfig((prefs) => prefs.getBool('useProxy') ?? useProxy);
-    debugPrint('load ${jsonEncode(_config)}');
+    _themeMode = await _settingsService.readConfig<String>('themeMode').then(
+            (value) => ThemeMode.values
+                .firstWhereOrNull((element) => element.name == value)) ??
+        ThemeMode.system;
+    _config = await _settingsService.readConfig<String>('config').then((value) {
+      return UserConfig.fromStr(value ?? '');
+    }).catchError(
+        (e) => UserConfig('',
+            languages: const ["japanese", "chinese"],
+            maxTasks: 5,
+            remoteHttp: 'http://127.0.0.1:7890'),
+        test: (error) => true);
+    _useProxy =
+        await _settingsService.readConfig<bool>('useProxy') ?? _useProxy;
     _manager = TaskManager(_config);
     if (!kIsWeb && _server == null) {
       _server = await run_server(_manager);
@@ -51,8 +61,7 @@ class SettingsController with ChangeNotifier {
   }
 
   Future<void> switchConn(bool useProxy) async {
-    await _settingsService
-        .saveConfig((prefs) => prefs.setBool('useProxy', useProxy));
+    await _settingsService.saveConfig('useProxy', useProxy);
     _useProxy = useProxy;
     notifyListeners();
   }
@@ -60,7 +69,7 @@ class SettingsController with ChangeNotifier {
   Future<void> updateConfig(UserConfig config) async {
     if (config == _config) return;
     _config = config;
-    await _settingsService.saveUserConfig(config);
+    await _settingsService.saveConfig('config', json.encode(config.toJson()));
     _manager = TaskManager(_config);
     if (!kIsWeb) {
       _server?.close(force: true);

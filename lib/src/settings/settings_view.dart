@@ -4,7 +4,7 @@ import 'package:ayaka/src/ui/common_view.dart';
 import 'package:file_picker/file_picker.dart' show FilePicker;
 import 'package:flutter/material.dart';
 import 'package:path_provider/path_provider.dart';
-import 'package:provider/provider.dart' show ReadContext;
+import 'package:provider/provider.dart' show WatchContext;
 import 'settings_controller.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:path/path.dart' show join;
@@ -28,11 +28,24 @@ class _StateSetting extends State<SettingsView> {
   late SettingsController controller;
   bool netLoading = false;
   bool useProxyConn = true;
+  late TextEditingController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = TextEditingController();
+  }
+
+  @override
+  void dispose() {
+    super.dispose();
+    _controller.dispose();
+  }
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    controller = context.read<SettingsController>();
+    controller = context.watch<SettingsController>();
     useProxyConn = controller.useProxy;
   }
 
@@ -46,26 +59,26 @@ class _StateSetting extends State<SettingsView> {
   Future<String?> _showDialogInput(
       {TextInputType type = TextInputType.text,
       String defaultValue = ''}) async {
-    var controller = TextEditingController(text: defaultValue);
+    _controller.text = defaultValue;
     return showDialog<String?>(
         context: context,
         builder: (context) => AlertDialog.adaptive(
                 title: Text(AppLocalizations.of(context)!.inputHint),
                 content: TextField(
-                  controller: controller,
+                  controller: _controller,
                   keyboardType: type,
                 ),
                 actions: [
                   TextButton(
                       onPressed: () {
-                        Navigator.of(context).pop(controller.text);
-                        controller.dispose();
+                        Navigator.of(context).pop(_controller.text);
+                        _controller.dispose();
                       },
                       child: Text(AppLocalizations.of(context)!.confirm)),
                   TextButton(
                       onPressed: () {
                         Navigator.of(context).pop();
-                        controller.dispose();
+                        _controller.dispose();
                       },
                       child: Text(AppLocalizations.of(context)!.cancel))
                 ]));

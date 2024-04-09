@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:ayaka/src/settings/settings_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -12,21 +14,21 @@ class SettingsServiceNativeImpl implements SettingsService {
   Future<T?> readConfig<T>(String key, {T? defaultValue}) async {
     return SharedPreferences.getInstance().then((pref) {
       if (T is int) {
-        return pref.getInt(key) as T ?? defaultValue;
+        return pref.getInt(key) as T? ?? defaultValue;
       }
       if (T is bool) {
-        return pref.getBool(key) as T ?? defaultValue;
+        return pref.getBool(key) as T? ?? defaultValue;
       }
       if (T is double) {
-        return pref.getDouble(key) as T ?? defaultValue;
+        return pref.getDouble(key) as T? ?? defaultValue;
       }
       if (T is String) {
-        return pref.getString(key) as T ?? defaultValue;
+        return pref.getString(key) as T? ?? defaultValue;
       }
       if (T is List<String>) {
-        return pref.getStringList(key) as T ?? defaultValue;
+        return pref.getStringList(key) as T? ?? defaultValue;
       } else {
-        return pref.get(key) as T ?? defaultValue;
+        return pref.get(key) as T? ?? defaultValue;
       }
     });
   }
@@ -49,7 +51,7 @@ class SettingsServiceNativeImpl implements SettingsService {
       if (value is List<String>) {
         return pref.setStringList(key, value);
       }
-      throw UnsupportedError('unsupport ${value.runtimeType}');
+      return pref.setString(key, json.encode(value));
     });
   }
 }

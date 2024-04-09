@@ -17,15 +17,15 @@ class WebSettingsService implements SettingsService {
       return defaultValue;
     }
     if (T is int) {
-      return int.tryParse(v) as T ?? defaultValue;
+      return int.tryParse(v) as T? ?? defaultValue;
     }
     if (T is bool) {
-      return bool.tryParse(v) as T ?? defaultValue;
+      return bool.tryParse(v) as T? ?? defaultValue;
     }
     if (T is double) {
-      return double.tryParse(v) as T ?? defaultValue;
+      return double.tryParse(v) as T? ?? defaultValue;
     }
-    return v as T ?? defaultValue;
+    return v as T? ?? defaultValue;
   }
 
   @override

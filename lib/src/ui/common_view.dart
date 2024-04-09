@@ -130,32 +130,34 @@ class GalleryListView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    var width = MediaQuery.of(context).size.width;
-    debugPrint('screen $width');
-    return EasyRefresh(
-        key: ValueKey(controller),
-        controller: controller,
-        header: const MaterialHeader(),
-        footer: const MaterialFooter(),
-        onLoad: onLoad,
-        onRefresh: onRefresh,
-        child: MasonryGridView.count(
-            controller: scrollController,
-            mainAxisSpacing: 4,
-            crossAxisSpacing: 4,
-            crossAxisCount: max(width ~/ 400, 1),
-            itemCount: data.length,
-            itemBuilder: (BuildContext context, int index) {
-              final item = data[index];
-              return GalleryInfo(
-                key: ValueKey(item.id),
-                gallery: item,
-                image: item.files.first,
-                click: click,
-                api: api,
-                menus: menusBuilder?.call(item),
-              );
-            }));
+    return MaxWidthBox(
+        maxWidth: 1200,
+        child: EasyRefresh(
+            key: ValueKey(controller),
+            controller: controller,
+            header: const MaterialHeader(),
+            footer: const MaterialFooter(),
+            onLoad: onLoad,
+            onRefresh: onRefresh,
+            child: LayoutBuilder(builder: (c, cons) {
+              return MasonryGridView.count(
+                  controller: scrollController,
+                  mainAxisSpacing: 4,
+                  crossAxisSpacing: 4,
+                  crossAxisCount: max(cons.maxWidth ~/ 450, 1),
+                  itemCount: data.length,
+                  itemBuilder: (BuildContext context, int index) {
+                    final item = data[index];
+                    return GalleryInfo(
+                      key: ValueKey(item.id),
+                      gallery: item,
+                      image: item.files.first,
+                      click: click,
+                      api: api,
+                      menus: menusBuilder?.call(item),
+                    );
+                  });
+            })));
   }
 }
 
@@ -182,6 +184,7 @@ class GalleryInfo extends StatelessWidget {
         id: gallery.id, size: img.ThumbnaiSize.medium, proxy: true);
     var header = buildRequestHeader(url,
         'https://hitomi.la${gallery.galleryurl != null ? Uri.encodeFull(gallery.galleryurl!) : '${gallery.id}.html'}');
+    debugPrint('width ${MediaQuery.of(context).size.width}');
     return InkWell(
         key: ValueKey(gallery.id),
         onTap: () => click(gallery),
@@ -192,7 +195,8 @@ class GalleryInfo extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       MaxWidthBox(
-                          maxWidth: 100,
+                          maxWidth:
+                              min(MediaQuery.of(context).size.width / 3, 200),
                           child: ThumbImageView(url,
                               header: header,
                               label: gallery.files.length.toString(),

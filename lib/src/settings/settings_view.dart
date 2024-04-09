@@ -72,13 +72,11 @@ class _StateSetting extends State<SettingsView> {
                   TextButton(
                       onPressed: () {
                         Navigator.of(context).pop(_controller.text);
-                        _controller.dispose();
                       },
                       child: Text(AppLocalizations.of(context)!.confirm)),
                   TextButton(
                       onPressed: () {
                         Navigator.of(context).pop();
-                        _controller.dispose();
                       },
                       child: Text(AppLocalizations.of(context)!.cancel))
                 ]));

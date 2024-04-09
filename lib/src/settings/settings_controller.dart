@@ -49,6 +49,7 @@ class SettingsController with ChangeNotifier {
         (e) => UserConfig('',
             languages: const ["japanese", "chinese"],
             maxTasks: 5,
+            dateLimit: "2013-01-01",
             remoteHttp: 'http://127.0.0.1:7890'),
         test: (error) => true);
     _useProxy =

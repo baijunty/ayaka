@@ -1,4 +1,5 @@
 import 'package:ayaka/src/settings/settings_service.dart';
+// ignore: avoid_web_libraries_in_flutter
 import 'dart:html' show window;
 
 import 'package:flutter/material.dart';

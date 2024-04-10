@@ -25,28 +25,26 @@ class SettingsView extends StatefulWidget {
 }
 
 class _StateSetting extends State<SettingsView> {
-  late SettingsController controller;
+  late SettingsController _settingsController;
   bool netLoading = false;
-  bool useProxyConn = true;
-  late TextEditingController _controller;
+  late TextEditingController _textController;
 
   @override
   void initState() {
     super.initState();
-    _controller = TextEditingController();
+    _textController = TextEditingController();
   }
 
   @override
   void dispose() {
     super.dispose();
-    _controller.dispose();
+    _textController.dispose();
   }
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    controller = context.watch<SettingsController>();
-    useProxyConn = controller.useProxy;
+    _settingsController = context.watch<SettingsController>();
   }
 
   Future<bool> testWriteble(String path) {
@@ -59,19 +57,19 @@ class _StateSetting extends State<SettingsView> {
   Future<String?> _showDialogInput(
       {TextInputType type = TextInputType.text,
       String defaultValue = ''}) async {
-    _controller.text = defaultValue;
+    _textController.text = defaultValue;
     return showDialog<String?>(
         context: context,
         builder: (context) => AlertDialog.adaptive(
                 title: Text(AppLocalizations.of(context)!.inputHint),
                 content: TextField(
-                  controller: _controller,
+                  controller: _textController,
                   keyboardType: type,
                 ),
                 actions: [
                   TextButton(
                       onPressed: () {
-                        Navigator.of(context).pop(_controller.text);
+                        Navigator.of(context).pop(_textController.text);
                       },
                       child: Text(AppLocalizations.of(context)!.confirm)),
                   TextButton(
@@ -90,32 +88,33 @@ class _StateSetting extends State<SettingsView> {
             child: Stack(children: [
               Column(children: [
                 ListTile(
-                    leading: Icon(controller.themeMode == ThemeMode.light
-                        ? Icons.light_mode
-                        : Icons.mode_night),
+                    leading: Icon(
+                        _settingsController.themeMode == ThemeMode.light
+                            ? Icons.light_mode
+                            : Icons.mode_night),
                     title: Text(AppLocalizations.of(context)!.themeMode),
-                    subtitle: controller.themeMode == ThemeMode.light
+                    subtitle: _settingsController.themeMode == ThemeMode.light
                         ? Text(AppLocalizations.of(context)!.dayTheme)
                         : Text(AppLocalizations.of(context)!.darkTheme),
                     trailing: Switch.adaptive(
-                        value: controller.themeMode == ThemeMode.light,
+                        value: _settingsController.themeMode == ThemeMode.light,
                         onChanged: (b) => setState(() {
-                              controller.updateThemeMode(
+                              _settingsController.updateThemeMode(
                                   b ? ThemeMode.light : ThemeMode.dark);
                             }))),
                 ListTile(
                     leading:
                         const ImageIcon(AssetImage('assets/images/vpn.png')),
                     title: Text(AppLocalizations.of(context)!.proxy),
-                    subtitle: Text(controller.config.proxy),
+                    subtitle: Text(_settingsController.config.proxy),
                     trailing: IconButton(
                         onPressed: () async {
                           var s = await _showDialogInput(
                               type: TextInputType.url,
-                              defaultValue: controller.config.proxy);
+                              defaultValue: _settingsController.config.proxy);
                           if (s?.isNotEmpty == true) {
-                            await controller.updateConfig(
-                                controller.config.copyWith(proxy: s!));
+                            await _settingsController.updateConfig(
+                                _settingsController.config.copyWith(proxy: s!));
                           }
                         },
                         icon: const Icon(Icons.edit))),
@@ -123,15 +122,17 @@ class _StateSetting extends State<SettingsView> {
                     leading:
                         const ImageIcon(AssetImage('assets/images/url.png')),
                     title: Text(AppLocalizations.of(context)!.remoteAddr),
-                    subtitle: Text(controller.config.remoteHttp),
+                    subtitle: Text(_settingsController.config.remoteHttp),
                     trailing: IconButton(
                         onPressed: () async {
                           var s = await _showDialogInput(
                               type: TextInputType.url,
-                              defaultValue: controller.config.remoteHttp);
+                              defaultValue:
+                                  _settingsController.config.remoteHttp);
                           if (s?.isNotEmpty == true) {
-                            await controller.updateConfig(
-                                controller.config.copyWith(remoteHttp: s!));
+                            await _settingsController.updateConfig(
+                                _settingsController.config
+                                    .copyWith(remoteHttp: s!));
                           }
                         },
                         icon: const Icon(Icons.edit))),
@@ -139,15 +140,15 @@ class _StateSetting extends State<SettingsView> {
                     leading: const ImageIcon(
                         AssetImage('assets/images/user-authentication.png')),
                     title: Text(AppLocalizations.of(context)!.authToken),
-                    subtitle: Text(controller.config.auth),
+                    subtitle: Text(_settingsController.config.auth),
                     trailing: IconButton(
                         onPressed: () async {
                           var s = await _showDialogInput(
                               type: TextInputType.url,
-                              defaultValue: controller.config.auth);
+                              defaultValue: _settingsController.config.auth);
                           if (s?.isNotEmpty == true) {
-                            await controller.updateConfig(
-                                controller.config.copyWith(auth: s!));
+                            await _settingsController.updateConfig(
+                                _settingsController.config.copyWith(auth: s!));
                           }
                         },
                         icon: const Icon(Icons.edit))),
@@ -155,14 +156,13 @@ class _StateSetting extends State<SettingsView> {
                     leading: const ImageIcon(
                         AssetImage('assets/images/direction.png')),
                     title: Text(AppLocalizations.of(context)!.connectType),
-                    subtitle: Text(useProxyConn
+                    subtitle: Text(_settingsController.useProxy
                         ? AppLocalizations.of(context)!.proxy
                         : AppLocalizations.of(context)!.direct),
                     trailing: Switch.adaptive(
-                        value: useProxyConn,
+                        value: _settingsController.useProxy,
                         onChanged: (b) => setState(() {
-                              useProxyConn = b;
-                              controller.switchConn(b);
+                              _settingsController.switchConn(b);
                             }))),
                 ListTile(
                     leading: const ImageIcon(
@@ -173,7 +173,7 @@ class _StateSetting extends State<SettingsView> {
                           setState(() {
                             netLoading = true;
                           });
-                          await controller.manager
+                          await _settingsController.manager
                               .parseCommandAndRun('-u')
                               .then((value) => setState(() {
                                     netLoading = false;
@@ -187,7 +187,7 @@ class _StateSetting extends State<SettingsView> {
                     leading: const ImageIcon(
                         AssetImage('assets/images/open-folder.png')),
                     title: Text(AppLocalizations.of(context)!.savePath),
-                    subtitle: Text(controller.config.output),
+                    subtitle: Text(_settingsController.config.output),
                     trailing: IconButton(
                         onPressed: () async {
                           var initDir = await getExternalStorageDirectory()
@@ -202,12 +202,13 @@ class _StateSetting extends State<SettingsView> {
                               .getDirectoryPath(initialDirectory: initDir.path);
                           if (path?.isNotEmpty == true) {
                             await testWriteble(path!)
-                                .then((value) => controller.updateConfig(
-                                    controller.config.copyWith(output: path)))
+                                .then((value) => _settingsController
+                                    .updateConfig(_settingsController.config
+                                        .copyWith(output: path)))
                                 .catchError(
-                                    (e) => controller.updateConfig(controller
-                                        .config
-                                        .copyWith(output: initDir.path)),
+                                    (e) => _settingsController.updateConfig(
+                                        _settingsController.config
+                                            .copyWith(output: initDir.path)),
                                     test: (error) => true)
                                 .then((value) => setState(() {}));
                           }

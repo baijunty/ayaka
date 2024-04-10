@@ -6,6 +6,7 @@ import 'package:ayaka/src/settings/settings_controller.dart';
 import 'package:card_loading/card_loading.dart';
 import 'package:collection/collection.dart';
 import 'package:easy_refresh/easy_refresh.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
@@ -514,7 +515,7 @@ class GalleryDetailHead extends StatelessWidget {
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           const SizedBox(width: 8),
-                          if (!exist)
+                          if (!exist && !kIsWeb)
                             Expanded(
                                 child: Padding(
                                     padding: const EdgeInsets.only(right: 8),

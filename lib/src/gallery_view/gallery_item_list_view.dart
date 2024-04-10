@@ -2,6 +2,7 @@ import 'package:ayaka/src/gallery_view/gallery_details_view.dart';
 import 'package:ayaka/src/model/task_controller.dart';
 import 'package:dio/dio.dart';
 import 'package:easy_refresh/easy_refresh.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:ayaka/src/ui/common_view.dart';
 import 'package:flutter/material.dart';
@@ -35,9 +36,10 @@ class _GalleryListView extends State<GalleryItemListView> {
   late Hitomi api;
   bool local = false;
   late EasyRefreshController _controller;
-  late PopupMenuButton<String> Function(Gallery gallery) menuBuilder;
+  late PopupMenuButton<String> Function(Gallery gallery)? menuBuilder;
   SortEnum? sortEnum;
   CancelToken? token;
+  late SettingsController settingsController;
   Future<void> _fetchData({bool refresh = false}) async {
     token = CancelToken();
     return api
@@ -69,30 +71,34 @@ class _GalleryListView extends State<GalleryItemListView> {
         arguments: {'gallery': g, 'local': local});
     _controller = EasyRefreshController(
         controlFinishRefresh: true, controlFinishLoad: true);
-    menuBuilder = (g) => PopupMenuButton<String>(itemBuilder: (context) {
-          return [
-            PopupMenuItem(
-                child: Text(AppLocalizations.of(context)!.download),
-                onTap: () => context.read<TaskController>().addTask(g).then(
-                    (value) => showSnackBar(
-                        context, AppLocalizations.of(context)!.success))),
-            PopupMenuItem(
-                child: Text(AppLocalizations.of(context)!.findSimiler),
-                onTap: () => Navigator.of(context)
-                    .pushNamed(GallerySimilaerView.routeName, arguments: g)),
-            if (local)
-              PopupMenuItem(
-                  child: Text(AppLocalizations.of(context)!.delete),
-                  onTap: () => context
-                      .read<TaskController>()
-                      .deleteTask(g.id)
-                      .then((value) => setState(() {
-                            data.removeWhere((element) => element.id == g.id);
-                            showSnackBar(
-                                context, AppLocalizations.of(context)!.success);
-                          })))
-          ];
-        });
+    menuBuilder = kIsWeb
+        ? null
+        : (g) => PopupMenuButton<String>(itemBuilder: (context) {
+              return [
+                PopupMenuItem(
+                    child: Text(AppLocalizations.of(context)!.download),
+                    onTap: () => context.read<TaskController>().addTask(g).then(
+                        (value) => showSnackBar(
+                            context, AppLocalizations.of(context)!.success))),
+                PopupMenuItem(
+                    child: Text(AppLocalizations.of(context)!.findSimiler),
+                    onTap: () => Navigator.of(context).pushNamed(
+                        GallerySimilaerView.routeName,
+                        arguments: g)),
+                if (local)
+                  PopupMenuItem(
+                      child: Text(AppLocalizations.of(context)!.delete),
+                      onTap: () => context
+                          .read<TaskController>()
+                          .deleteTask(g.id)
+                          .then((value) => setState(() {
+                                data.removeWhere(
+                                    (element) => element.id == g.id);
+                                showSnackBar(context,
+                                    AppLocalizations.of(context)!.success);
+                              })))
+              ];
+            });
   }
 
   @override
@@ -110,8 +116,8 @@ class _GalleryListView extends State<GalleryItemListView> {
     _label = (args?['tag'] ?? QueryText('').toMap());
     local = (args?['local'] ?? widget.localDb);
     showAppBar = args != null;
-    var settings = context.watch<SettingsController>();
-    api = settings.hitomi(localDb: local);
+    settingsController = context.watch<SettingsController>();
+    api = settingsController.hitomi(localDb: local);
     if (data.isEmpty) {
       _fetchData();
     }
@@ -123,13 +129,27 @@ class _GalleryListView extends State<GalleryItemListView> {
         if (showAppBar)
           BackButton(onPressed: () => Navigator.of(context).pop()),
         Expanded(child: GallerySearch(localDb: local)),
-        PopupMenuButton<SortEnum>(
+        if (kIsWeb)
+          IconButton(
+              onPressed: () => setState(() {
+                    settingsController.updateThemeMode(
+                        settingsController.themeMode != ThemeMode.light
+                            ? ThemeMode.light
+                            : ThemeMode.dark);
+                  }),
+              icon: Icon(settingsController.themeMode == ThemeMode.light
+                  ? Icons.light_mode
+                  : Icons.mode_night)),
+        PopupMenuButton<SortEnum?>(
             itemBuilder: (context) {
               if (local) {
-                return <PopupMenuEntry<SortEnum>>[
+                return <PopupMenuEntry<SortEnum?>>[
+                  PopupMenuItem(
+                      value: null,
+                      child: Text(AppLocalizations.of(context)!.dateDefault)),
                   PopupMenuItem(
                       value: SortEnum.Date,
-                      child: Text(AppLocalizations.of(context)!.dateDefault)),
+                      child: Text(AppLocalizations.of(context)!.dateAsc)),
                   PopupMenuItem(
                       value: SortEnum.DateDesc,
                       child: Text(AppLocalizations.of(context)!.dateDesc)),
@@ -137,7 +157,7 @@ class _GalleryListView extends State<GalleryItemListView> {
               }
               return <PopupMenuEntry<SortEnum>>[
                 PopupMenuItem(
-                    value: SortEnum.Date,
+                    value: null,
                     child: Text(AppLocalizations.of(context)!.dateDefault)),
                 PopupMenuItem(
                     value: SortEnum.week,
@@ -153,7 +173,7 @@ class _GalleryListView extends State<GalleryItemListView> {
             onSelected: (value) => setState(() {
                   data.clear();
                   _page = 1;
-                  sortEnum = value == SortEnum.Date ? null : value;
+                  sortEnum = value;
                   _fetchData();
                 }),
             icon: const Icon(Icons.sort))

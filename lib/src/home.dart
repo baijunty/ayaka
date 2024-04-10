@@ -2,6 +2,7 @@ import 'package:ayaka/src/gallery_view/gallery_item_list_view.dart';
 import 'package:ayaka/src/gallery_view/gallery_task_view.dart';
 import 'package:ayaka/src/settings/settings_view.dart';
 import 'package:ayaka/src/utils/responsive_util.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
@@ -33,32 +34,39 @@ class _AyakaHome extends State<AyakaHome> {
   Widget build(BuildContext context) {
     return Scaffold(
       body: SafeArea(
-          child: switch (currentOrientation(context)) {
-        Orientation.portrait =>
-          IndexedStack(index: index, children: widget.content),
-        _ => Row(children: [
-            NavigationRail(
-                destinations: [
-                  NavigationRailDestination(
-                      icon: const Icon(Icons.home),
-                      label: Text(AppLocalizations.of(context)!.network)),
-                  NavigationRailDestination(
-                      icon: const Icon(Icons.local_library),
-                      label: Text(AppLocalizations.of(context)!.local)),
-                  NavigationRailDestination(
-                      icon: const Icon(Icons.download),
-                      label: Text(AppLocalizations.of(context)!.download)),
-                  NavigationRailDestination(
-                      icon: const Icon(Icons.settings),
-                      label: Text(AppLocalizations.of(context)!.setting)),
-                ],
-                selectedIndex: index,
-                onDestinationSelected: _handleIndexClick,
-                labelType: NavigationRailLabelType.selected),
-            Expanded(
-                child: IndexedStack(index: index, children: widget.content))
-          ])
-      }),
+          child: kIsWeb
+              ? const GalleryItemListView(localDb: true)
+              : switch (currentOrientation(context)) {
+                  Orientation.portrait =>
+                    IndexedStack(index: index, children: widget.content),
+                  _ => Row(children: [
+                      NavigationRail(
+                          destinations: [
+                            NavigationRailDestination(
+                                icon: const Icon(Icons.home),
+                                label: Text(
+                                    AppLocalizations.of(context)!.network)),
+                            NavigationRailDestination(
+                                icon: const Icon(Icons.local_library),
+                                label:
+                                    Text(AppLocalizations.of(context)!.local)),
+                            NavigationRailDestination(
+                                icon: const Icon(Icons.download),
+                                label: Text(
+                                    AppLocalizations.of(context)!.download)),
+                            NavigationRailDestination(
+                                icon: const Icon(Icons.settings),
+                                label: Text(
+                                    AppLocalizations.of(context)!.setting)),
+                          ],
+                          selectedIndex: index,
+                          onDestinationSelected: _handleIndexClick,
+                          labelType: NavigationRailLabelType.selected),
+                      Expanded(
+                          child: IndexedStack(
+                              index: index, children: widget.content))
+                    ])
+                }),
       bottomNavigationBar: currentOrientation(context) == Orientation.portrait
           ? BottomNavigationBar(
               items: [

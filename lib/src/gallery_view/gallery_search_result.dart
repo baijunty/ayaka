@@ -2,6 +2,7 @@ import 'dart:math';
 
 import 'package:dio/dio.dart';
 import 'package:easy_refresh/easy_refresh.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:hitomi/gallery/gallery.dart';
 import 'package:hitomi/gallery/label.dart';
@@ -34,7 +35,7 @@ class _GallerySearchResultView extends State<GallerySearchResultView> {
   late EasyRefreshController _controller;
   late List<Map<String, dynamic>> _selected;
   final _ids = <int>[];
-  late PopupMenuButton<String> Function(Gallery gallery) menuBuilder;
+  late PopupMenuButton<String> Function(Gallery gallery)? menuBuilder;
   late bool local;
   var title = '';
   CancelToken? token;
@@ -43,31 +44,37 @@ class _GallerySearchResultView extends State<GallerySearchResultView> {
     super.initState();
     _controller = EasyRefreshController(
         controlFinishRefresh: true, controlFinishLoad: true);
-    menuBuilder = (g) => PopupMenuButton<String>(itemBuilder: (context) {
-          return [
-            if (!local)
-              PopupMenuItem(
-                  child: Text(AppLocalizations.of(context)!.download),
-                  onTap: () => context.read<TaskController>().addTask(g).then(
-                      (value) => showSnackBar(
-                          context, AppLocalizations.of(context)!.success))),
-            PopupMenuItem(
-                child: Text(AppLocalizations.of(context)!.findSimiler),
-                onTap: () => Navigator.of(context)
-                    .pushNamed(GallerySimilaerView.routeName, arguments: g)),
-            if (local)
-              PopupMenuItem(
-                  child: Text(AppLocalizations.of(context)!.delete),
-                  onTap: () => context
-                      .read<TaskController>()
-                      .cancelTask(g.id)
-                      .then((value) => setState(() {
-                            data.removeWhere((element) => element.id == g.id);
-                            showSnackBar(
-                                context, AppLocalizations.of(context)!.success);
-                          })))
-          ];
-        });
+    menuBuilder = kIsWeb
+        ? null
+        : (g) => PopupMenuButton<String>(itemBuilder: (context) {
+              return [
+                if (!local)
+                  PopupMenuItem(
+                      child: Text(AppLocalizations.of(context)!.download),
+                      onTap: () => context
+                          .read<TaskController>()
+                          .addTask(g)
+                          .then((value) => showSnackBar(
+                              context, AppLocalizations.of(context)!.success))),
+                PopupMenuItem(
+                    child: Text(AppLocalizations.of(context)!.findSimiler),
+                    onTap: () => Navigator.of(context).pushNamed(
+                        GallerySimilaerView.routeName,
+                        arguments: g)),
+                if (local)
+                  PopupMenuItem(
+                      child: Text(AppLocalizations.of(context)!.delete),
+                      onTap: () => context
+                          .read<TaskController>()
+                          .cancelTask(g.id)
+                          .then((value) => setState(() {
+                                data.removeWhere(
+                                    (element) => element.id == g.id);
+                                showSnackBar(context,
+                                    AppLocalizations.of(context)!.success);
+                              })))
+              ];
+            });
   }
 
   @override
@@ -151,21 +158,29 @@ class _GallerySearchResultView extends State<GallerySearchResultView> {
           leading: BackButton(onPressed: () => Navigator.of(context).pop()),
           title: Text(title),
         ),
-        body: GalleryListView(
-            controller: _controller,
-            data: data,
-            onLoad: () async {
-              if (_page <= totalPage) {
-                await _fetchData();
-              } else {
-                showSnackBar(context, AppLocalizations.of(context)!.endOfPage);
-                _controller.finishLoad();
-                _controller.finishRefresh();
-              }
-            },
-            onRefresh: null,
-            click: click,
-            api: api,
-            menusBuilder: menuBuilder));
+        body: Center(
+            child: data.isEmpty
+                ? Text(AppLocalizations.of(context)!.emptyContent,
+                    style: Theme.of(context)
+                        .textTheme
+                        .bodyLarge
+                        ?.copyWith(color: Colors.red))
+                : GalleryListView(
+                    controller: _controller,
+                    data: data,
+                    onLoad: () async {
+                      if (_page <= totalPage) {
+                        await _fetchData();
+                      } else {
+                        showSnackBar(
+                            context, AppLocalizations.of(context)!.endOfPage);
+                        _controller.finishLoad();
+                        _controller.finishRefresh();
+                      }
+                    },
+                    onRefresh: null,
+                    click: click,
+                    api: api,
+                    menusBuilder: menuBuilder)));
   }
 }

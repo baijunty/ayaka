@@ -100,13 +100,13 @@ class _GallerySearch extends State<GallerySearch> {
 
   Iterable<Widget> getHistoryList(SearchController controller) {
     return _history.map((label) {
-      return _buildListTile(label,
-          onLongPress: () => setState(() {
-                _history.remove(label);
-              }),
-          onTap: () {
-            handleSelection(label, controller);
-          });
+      return _buildListTile(label, onLongPress: () {
+        _history.remove(label);
+        Navigator.of(context).pop();
+        controller.openView();
+      }, onTap: () {
+        handleSelection(label, controller);
+      });
     });
   }
 

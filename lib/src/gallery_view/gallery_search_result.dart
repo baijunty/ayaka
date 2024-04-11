@@ -39,6 +39,7 @@ class _GallerySearchResultView extends State<GallerySearchResultView> {
   late bool local;
   var title = '';
   CancelToken? token;
+  var netLoading = false;
   @override
   void initState() {
     super.initState();
@@ -108,6 +109,9 @@ class _GallerySearchResultView extends State<GallerySearchResultView> {
 
   Future<void> _fetchData() async {
     token = CancelToken();
+    setState(() {
+      netLoading = true;
+    });
     if (_page <= totalPage) {
       Future<List<int>> idsFuture;
       if (25 * _page > _ids.length) {
@@ -138,15 +142,19 @@ class _GallerySearchResultView extends State<GallerySearchResultView> {
               (e) => api.fetchGallery(e, usePrefence: false, token: token))))
           .then((value) {
         setState(() {
+          netLoading = false;
           data.addAll(value);
           _page++;
           _controller.finishLoad();
           _controller.finishRefresh();
         });
       }).catchError((e) {
-        showSnackBar(context, '$e');
-        _controller.finishLoad();
-        _controller.finishRefresh();
+        setState(() {
+          showSnackBar(context, '$e');
+          netLoading = false;
+          _controller.finishLoad();
+          _controller.finishRefresh();
+        });
       }, test: (error) => true);
     }
   }
@@ -159,28 +167,30 @@ class _GallerySearchResultView extends State<GallerySearchResultView> {
           title: Text(title),
         ),
         body: Center(
-            child: data.isEmpty
-                ? Text(AppLocalizations.of(context)!.emptyContent,
-                    style: Theme.of(context)
-                        .textTheme
-                        .bodyLarge
-                        ?.copyWith(color: Colors.red))
-                : GalleryListView(
-                    controller: _controller,
-                    data: data,
-                    onLoad: () async {
-                      if (_page <= totalPage) {
-                        await _fetchData();
-                      } else {
-                        showSnackBar(
-                            context, AppLocalizations.of(context)!.endOfPage);
-                        _controller.finishLoad();
-                        _controller.finishRefresh();
-                      }
-                    },
-                    onRefresh: null,
-                    click: click,
-                    api: api,
-                    menusBuilder: menuBuilder)));
+            child: netLoading
+                ? const CircularProgressIndicator()
+                : data.isEmpty
+                    ? Text(AppLocalizations.of(context)!.emptyContent,
+                        style: Theme.of(context)
+                            .textTheme
+                            .bodyLarge
+                            ?.copyWith(color: Colors.red))
+                    : GalleryListView(
+                        controller: _controller,
+                        data: data,
+                        onLoad: () async {
+                          if (_page <= totalPage) {
+                            await _fetchData();
+                          } else {
+                            showSnackBar(context,
+                                AppLocalizations.of(context)!.endOfPage);
+                            _controller.finishLoad();
+                            _controller.finishRefresh();
+                          }
+                        },
+                        onRefresh: null,
+                        click: click,
+                        api: api,
+                        menusBuilder: menuBuilder)));
   }
 }

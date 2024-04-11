@@ -88,9 +88,10 @@ class ThumbImageView extends StatelessWidget {
 
 void showSnackBar(BuildContext context, String msg) {
   ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-      content: Text(msg),
+      content: Text(msg, style: Theme.of(context).textTheme.labelMedium),
       duration: const Duration(milliseconds: 2000),
       behavior: SnackBarBehavior.floating,
+      backgroundColor: Theme.of(context).colorScheme.background,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(8.0),
       )));

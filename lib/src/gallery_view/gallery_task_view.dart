@@ -7,9 +7,10 @@ import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:ayaka/src/ui/common_view.dart';
 import 'package:flutter/material.dart';
 import 'package:hitomi/gallery/gallery.dart';
-import 'package:hitomi/gallery/image.dart';
 import 'package:hitomi/lib.dart';
 import 'package:provider/provider.dart';
+
+import '../utils/proxy_netwrok_image.dart';
 
 class GalleryTaskView extends StatefulWidget {
   const GalleryTaskView({super.key});
@@ -87,17 +88,15 @@ class _GalleryTaskView extends State<GalleryTaskView> {
 
   Widget _buildRunnintTaskItem(Map<String, dynamic> item) {
     Gallery gallery = item['gallery'];
-    final url = api.buildImageUrl(gallery.files.first,
-        id: gallery.id, size: ThumbnaiSize.smaill, proxy: true);
-    var header = buildRequestHeader(url,
-        'https://hitomi.la${gallery.galleryurl != null ? Uri.encodeFull(gallery.galleryurl!) : '${gallery.id}.html'}');
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         SizedBox(
             height: 100,
             width: 100,
-            child: ThumbImageView(url, header: header, aspectRatio: 1)),
+            child: ThumbImageView(
+                ProxyNetworkImage(gallery.id, gallery.files.first, api),
+                aspectRatio: 1)),
         Expanded(
             child: Column(children: [
           Text(gallery.dirName),

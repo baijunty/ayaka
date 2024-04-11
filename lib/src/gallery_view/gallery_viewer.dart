@@ -3,8 +3,9 @@ import 'package:easy_image_viewer/easy_image_viewer.dart';
 import 'package:flutter/material.dart';
 import 'package:hitomi/gallery/gallery.dart';
 import 'package:hitomi/gallery/image.dart' show ThumbnaiSize;
-import 'package:hitomi/lib.dart';
 import 'package:provider/provider.dart';
+
+import '../utils/proxy_netwrok_image.dart';
 
 class GalleryViewer extends StatefulWidget {
   const GalleryViewer({super.key});
@@ -56,15 +57,13 @@ class _GalleryViewer extends State<GalleryViewer>
     index = args['index'] ?? 0;
     controller = PageController(initialPage: index);
     var settings = context.read<SettingsController>();
+    final api = settings.hitomi(localDb: args['local']);
     provider = _MultiImageProvider((page) {
       index = page;
     },
         _gallery.files.map((e) {
-          final url = settings.hitomi(localDb: args['local']).buildImageUrl(e,
-              id: _gallery.id, size: ThumbnaiSize.origin, proxy: true);
-          var header = buildRequestHeader(url,
-              'https://hitomi.la${_gallery.galleryurl != null ? Uri.encodeFull(_gallery.galleryurl!) : '${_gallery.id}.html'}');
-          return NetworkImage(url, headers: header);
+          return ProxyNetworkImage(_gallery.id, e, api,
+              size: ThumbnaiSize.origin);
         }).toList(),
         initialIndex: index);
     controller.addListener(handlePageChange);
@@ -90,36 +89,36 @@ class _GalleryViewer extends State<GalleryViewer>
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-        home: Stack(children: [
-          SizedBox.expand(
-              child: Center(
-                  child: GestureDetector(
-                      child: EasyImageViewPager(
-                          easyImageProvider: provider,
-                          doubleTapZoomable: true,
-                          pageController: controller),
-                      onTap: () => setState(() {
-                            showAppBar = !showAppBar;
-                          })))),
-          AnimatedOpacity(
-              key: GlobalObjectKey(_gallery),
-              duration: const Duration(milliseconds: 250),
-              opacity: showAppBar ? 1.0 : 0.0,
-              curve: Curves.easeInOut,
-              child: SizedBox(
-                  height: 56,
-                  child: AppBar(
-                      title: Column(children: [
-                        Text(
-                            '${_gallery.name}-${index + 1}/${_gallery.files.length}'),
-                        LinearProgressIndicator(
-                            value: (index + 1) / _gallery.files.length)
-                      ]),
-                      backgroundColor: Theme.of(context).primaryColor,
-                      leading: BackButton(
-                          onPressed: () => Navigator.of(context).pop())))),
-        ]),
-        theme: ThemeData.dark());
+    return Scaffold(
+        body: SafeArea(
+            child: Stack(children: [
+      SizedBox.expand(
+          child: Center(
+              child: GestureDetector(
+                  child: EasyImageViewPager(
+                      easyImageProvider: provider,
+                      doubleTapZoomable: true,
+                      pageController: controller),
+                  onTap: () => setState(() {
+                        showAppBar = !showAppBar;
+                      })))),
+      AnimatedOpacity(
+          key: GlobalObjectKey(_gallery),
+          duration: const Duration(milliseconds: 250),
+          opacity: showAppBar ? 1.0 : 0.0,
+          curve: Curves.easeInOut,
+          child: SizedBox(
+              height: 56,
+              child: AppBar(
+                  title: Column(children: [
+                    Text(
+                        '${_gallery.name}-${index + 1}/${_gallery.files.length}'),
+                    LinearProgressIndicator(
+                        value: (index + 1) / _gallery.files.length)
+                  ]),
+                  backgroundColor: Theme.of(context).primaryColor,
+                  leading: BackButton(
+                      onPressed: () => Navigator.of(context).pop())))),
+    ])));
   }
 }

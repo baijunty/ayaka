@@ -3,6 +3,7 @@ import 'dart:math';
 
 import 'package:ayaka/src/gallery_view/gallery_viewer.dart';
 import 'package:ayaka/src/settings/settings_controller.dart';
+import 'package:ayaka/src/utils/proxy_netwrok_image.dart';
 import 'package:card_loading/card_loading.dart';
 import 'package:collection/collection.dart';
 import 'package:easy_refresh/easy_refresh.dart';
@@ -12,7 +13,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 import 'package:hitomi/gallery/gallery.dart';
-import 'package:hitomi/gallery/image.dart' as img show ThumbnaiSize, Image;
+import 'package:hitomi/gallery/image.dart' as img show Image;
 import 'package:hitomi/gallery/label.dart';
 import 'package:hitomi/lib.dart';
 import 'package:intl/intl.dart';
@@ -24,28 +25,31 @@ import '../model/task_controller.dart';
 import '../utils/label_utils.dart';
 
 class ThumbImageView extends StatelessWidget {
-  final String url;
-  final Map<String, String>? header;
+  final ImageProvider provider;
   final String? label;
   final double aspectRatio;
-  const ThumbImageView(this.url,
-      {super.key, this.header, this.label, this.aspectRatio = 9 / 16});
+  const ThumbImageView(this.provider,
+      {super.key, this.label, this.aspectRatio = 9 / 16});
 
   @override
   Widget build(BuildContext context) {
     return Stack(children: [
       AspectRatio(
         aspectRatio: aspectRatio,
-        child: Image.network(
-          url,
-          headers: header,
+        child: Image(
+          image: provider,
           errorBuilder: (context, error, stackTrace) {
             return const Icon(Icons.error);
           },
           loadingBuilder: (context, child, loadingProgress) {
             return loadingProgress == null
                 ? child
-                : const CircularProgressIndicator();
+                : Center(
+                    child: CircularProgressIndicator(
+                        value: loadingProgress.expectedTotalBytes != null
+                            ? loadingProgress.cumulativeBytesLoaded /
+                                loadingProgress.expectedTotalBytes!
+                            : null));
           },
           frameBuilder: (BuildContext context, Widget child, int? frame,
               bool wasSynchronouslyLoaded) {
@@ -181,11 +185,6 @@ class GalleryInfo extends StatelessWidget {
     var entry = mapGalleryType(context, gallery.type);
     var format = DateFormat('yyyy-MM-dd');
     var image = gallery.files.first;
-    final url = api.buildImageUrl(image,
-        id: gallery.id, size: img.ThumbnaiSize.medium, proxy: true);
-    var header = buildRequestHeader(url,
-        'https://hitomi.la${gallery.galleryurl != null ? Uri.encodeFull(gallery.galleryurl!) : '${gallery.id}.html'}');
-    debugPrint('width ${MediaQuery.of(context).size.width}');
     return InkWell(
         key: ValueKey(gallery.id),
         onTap: () => click(gallery),
@@ -198,8 +197,9 @@ class GalleryInfo extends StatelessWidget {
                       MaxWidthBox(
                           maxWidth:
                               min(MediaQuery.of(context).size.width / 3, 200),
-                          child: ThumbImageView(url,
-                              header: header,
+                          child: ThumbImageView(
+                              ProxyNetworkImage(
+                                  gallery.id, gallery.files.first, api),
                               label: gallery.files.length.toString(),
                               aspectRatio: image.width / image.height)),
                       const SizedBox(width: 8),
@@ -394,16 +394,16 @@ class TagDetail extends StatelessWidget {
 }
 
 class GalleryDetailHead extends StatelessWidget {
-  final SettingsController controller;
   final Gallery gallery;
   final bool local;
   final List<Map<String, dynamic>> extendedInfo;
   final bool netLoading;
   final bool exist;
   final int? readIndex;
+  final Hitomi api;
   const GalleryDetailHead(
       {super.key,
-      required this.controller,
+      required this.api,
       required this.gallery,
       required this.local,
       required this.extendedInfo,
@@ -414,13 +414,6 @@ class GalleryDetailHead extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     var entry = mapGalleryType(context, gallery.type);
-    final url = controller.hitomi(localDb: local).buildImageUrl(
-        gallery.files.first,
-        id: gallery.id,
-        proxy: true,
-        size: img.ThumbnaiSize.medium);
-    var header = buildRequestHeader(url,
-        'https://hitomi.la${gallery.galleryurl != null ? Uri.encodeFull(gallery.galleryurl!) : '${gallery.id}.html'}');
     var format = DateFormat('yyyy-MM-dd');
     var artists =
         extendedInfo.where((element) => element['type'] == 'artist').take(2);
@@ -449,8 +442,7 @@ class GalleryDetailHead extends StatelessWidget {
                   SizedBox(
                       width: 100,
                       child: ThumbImageView(
-                        url,
-                        header: header,
+                        ProxyNetworkImage(gallery.id, gallery.files.first, api),
                         label: gallery.files.length.toString(),
                         aspectRatio: gallery.files.first.width /
                             gallery.files.first.height,

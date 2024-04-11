@@ -3,9 +3,9 @@ import 'package:ayaka/src/settings/settings_controller.dart';
 import 'package:ayaka/src/ui/common_view.dart';
 import 'package:flutter/material.dart';
 import 'package:hitomi/gallery/gallery.dart';
-import 'package:hitomi/gallery/image.dart';
-import 'package:hitomi/lib.dart';
 import 'package:provider/provider.dart';
+
+import '../utils/proxy_netwrok_image.dart';
 
 class GalleryDetailsView extends StatefulWidget {
   const GalleryDetailsView({super.key});
@@ -67,7 +67,7 @@ class _GalleryDetailView extends State<GalleryDetailsView> {
     return Scaffold(
         body: CustomScrollView(slivers: [
       GalleryDetailHead(
-        controller: controller,
+        api: controller.hitomi(localDb: local),
         gallery: gallery,
         local: local,
         extendedInfo: translates,
@@ -88,10 +88,6 @@ class _GalleryDetailView extends State<GalleryDetailsView> {
           itemCount: gallery.files.length,
           itemBuilder: (context, index) {
             var image = gallery.files[index];
-            final url = controller.hitomi(localDb: local).buildImageUrl(image,
-                id: gallery.id, size: ThumbnaiSize.medium, proxy: true);
-            var header = buildRequestHeader(url,
-                'https://hitomi.la${gallery.galleryurl != null ? Uri.encodeFull(gallery.galleryurl!) : '${gallery.id}.html'}');
             return GestureDetector(
                 onTap: () async => await Navigator.pushNamed(
                         context, GalleryViewer.routeName,
@@ -103,8 +99,8 @@ class _GalleryDetailView extends State<GalleryDetailsView> {
                 child: Card.outlined(
                     child: Center(
                         child: ThumbImageView(
-                  url,
-                  header: header,
+                  ProxyNetworkImage(
+                      gallery.id, image, controller.hitomi(localDb: local)),
                   label: '${index + 1}',
                   aspectRatio: image.width / image.height,
                 ))));

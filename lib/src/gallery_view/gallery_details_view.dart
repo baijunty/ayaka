@@ -65,46 +65,51 @@ class _GalleryDetailView extends State<GalleryDetailsView> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-        body: CustomScrollView(slivers: [
-      GalleryDetailHead(
-        api: controller.hitomi(localDb: local),
-        gallery: gallery,
-        local: local,
-        extendedInfo: translates,
-        netLoading: netLoading,
-        exist: exists,
-        readIndex: readedIndex,
-      ),
-      GalleryTagDetailInfo(
-        gallery: gallery,
-        extendedInfo: translates,
-        controller: controller,
-        local: local,
-        netLoading: netLoading,
-      ),
-      SliverGrid.builder(
-          gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-              maxCrossAxisExtent: 300),
-          itemCount: gallery.files.length,
-          itemBuilder: (context, index) {
-            var image = gallery.files[index];
-            return GestureDetector(
-                onTap: () async => await Navigator.pushNamed(
-                        context, GalleryViewer.routeName,
-                        arguments: {
-                          'gallery': gallery,
-                          'index': index,
-                          'local': local,
-                        }),
-                child: Card.outlined(
-                    child: Center(
-                        child: ThumbImageView(
-                  ProxyNetworkImage(
-                      gallery.id, image, controller.hitomi(localDb: local)),
-                  label: '${index + 1}',
-                  aspectRatio: image.width / image.height,
-                ))));
-          })
-    ]));
+        body: SafeArea(
+            child: Center(
+      child: MaxWidthBox(
+          maxWidth: 1200,
+          child: CustomScrollView(slivers: [
+            GalleryDetailHead(
+              api: controller.hitomi(localDb: local),
+              gallery: gallery,
+              local: local,
+              extendedInfo: translates,
+              netLoading: netLoading,
+              exist: exists,
+              readIndex: readedIndex,
+            ),
+            GalleryTagDetailInfo(
+              gallery: gallery,
+              extendedInfo: translates,
+              controller: controller,
+              local: local,
+              netLoading: netLoading,
+            ),
+            SliverGrid.builder(
+                gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
+                    maxCrossAxisExtent: 300),
+                itemCount: gallery.files.length,
+                itemBuilder: (context, index) {
+                  var image = gallery.files[index];
+                  return GestureDetector(
+                      onTap: () async => await Navigator.pushNamed(
+                              context, GalleryViewer.routeName,
+                              arguments: {
+                                'gallery': gallery,
+                                'index': index,
+                                'local': local,
+                              }),
+                      child: Card.outlined(
+                          child: Center(
+                              child: ThumbImageView(
+                        ProxyNetworkImage(gallery.id, image,
+                            controller.hitomi(localDb: local)),
+                        label: '${index + 1}',
+                        aspectRatio: image.width / image.height,
+                      ))));
+                })
+          ])),
+    )));
   }
 }

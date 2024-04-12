@@ -61,28 +61,33 @@ class _GallerySimilaerView extends State<GallerySimilaerView> {
                 return snap.data!.isEmpty
                     ? Center(
                         child: Text(AppLocalizations.of(context)!.emptyContent))
-                    : GalleryListView(
-                        controller: controller,
-                        data: snap.data!,
-                        onLoad: null,
-                        onRefresh: null,
-                        click: click,
-                        api: api,
-                        menusBuilder: (g) =>
-                            PopupMenuButton<String>(itemBuilder: (context) {
-                              return [
-                                PopupMenuItem(
-                                    child: Text(
-                                        AppLocalizations.of(context)!.download),
-                                    onTap: () => context
-                                        .read<TaskController>()
-                                        .addTask(g)
-                                        .then((value) => showSnackBar(
-                                            context,
-                                            AppLocalizations.of(context)!
-                                                .success))),
-                              ];
-                            }));
+                    : Center(
+                        child: MaxWidthBox(
+                            maxWidth: 1200,
+                            child: GalleryListView(
+                                controller: controller,
+                                data: snap.data!,
+                                onLoad: null,
+                                onRefresh: null,
+                                click: click,
+                                api: api,
+                                menusBuilder: (g) => PopupMenuButton<String>(
+                                        itemBuilder: (context) {
+                                      return [
+                                        PopupMenuItem(
+                                            child: Text(
+                                                AppLocalizations.of(context)!
+                                                    .download),
+                                            onTap: () => context
+                                                .read<TaskController>()
+                                                .addTask(g)
+                                                .then((value) => showSnackBar(
+                                                    context,
+                                                    AppLocalizations.of(
+                                                            context)!
+                                                        .success))),
+                                      ];
+                                    }))));
               } else if (snap.hasError) {
                 return Center(
                     child: Text(snap.error.toString(),

@@ -136,34 +136,48 @@ class GalleryListView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaxWidthBox(
-        maxWidth: 1200,
-        child: EasyRefresh(
-            key: ValueKey(controller),
-            controller: controller,
-            header: const MaterialHeader(),
-            footer: const MaterialFooter(),
-            onLoad: onLoad,
-            onRefresh: onRefresh,
-            child: LayoutBuilder(builder: (c, cons) {
-              return MasonryGridView.count(
-                  controller: scrollController,
-                  mainAxisSpacing: 4,
-                  crossAxisSpacing: 4,
-                  crossAxisCount: max(cons.maxWidth ~/ 450, 1),
-                  itemCount: data.length,
-                  itemBuilder: (BuildContext context, int index) {
-                    final item = data[index];
-                    return GalleryInfo(
-                      key: ValueKey(item.id),
-                      gallery: item,
-                      image: item.files.first,
-                      click: click,
-                      api: api,
-                      menus: menusBuilder?.call(item),
-                    );
-                  });
-            })));
+    return EasyRefresh(
+        key: ValueKey(controller),
+        controller: controller,
+        header: ClassicHeader(
+            dragText: AppLocalizations.of(context)!.pullToRefresh,
+            armedText: AppLocalizations.of(context)!.releaseReady,
+            readyText: AppLocalizations.of(context)!.releaseReady,
+            processingText: AppLocalizations.of(context)!.refreshing,
+            processedText: AppLocalizations.of(context)!.success,
+            noMoreText: AppLocalizations.of(context)!.noMore,
+            failedText: AppLocalizations.of(context)!.failed,
+            messageText: AppLocalizations.of(context)!.lastUpdatedAt),
+        footer: ClassicFooter(
+            dragText: AppLocalizations.of(context)!.pullToRefresh,
+            armedText: AppLocalizations.of(context)!.releaseReady,
+            readyText: AppLocalizations.of(context)!.releaseReady,
+            processingText: AppLocalizations.of(context)!.refreshing,
+            processedText: AppLocalizations.of(context)!.success,
+            noMoreText: AppLocalizations.of(context)!.noMore,
+            failedText: AppLocalizations.of(context)!.failed,
+            messageText: AppLocalizations.of(context)!.lastUpdatedAt),
+        onLoad: onLoad,
+        onRefresh: onRefresh,
+        child: LayoutBuilder(builder: (c, cons) {
+          return MasonryGridView.count(
+              controller: scrollController,
+              mainAxisSpacing: 4,
+              crossAxisSpacing: 4,
+              crossAxisCount: max(cons.maxWidth ~/ 450, 1),
+              itemCount: data.length,
+              itemBuilder: (BuildContext context, int index) {
+                final item = data[index];
+                return GalleryInfo(
+                  key: ValueKey(item.id),
+                  gallery: item,
+                  image: item.files.first,
+                  click: click,
+                  api: api,
+                  menus: menusBuilder?.call(item),
+                );
+              });
+        }));
   }
 }
 

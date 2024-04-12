@@ -169,28 +169,30 @@ class _GallerySearchResultView extends State<GallerySearchResultView> {
         body: Center(
             child: netLoading
                 ? const CircularProgressIndicator()
-                : data.isEmpty
-                    ? Text(AppLocalizations.of(context)!.emptyContent,
-                        style: Theme.of(context)
-                            .textTheme
-                            .bodyLarge
-                            ?.copyWith(color: Colors.red))
-                    : GalleryListView(
-                        controller: _controller,
-                        data: data,
-                        onLoad: () async {
-                          if (_page <= totalPage) {
-                            await _fetchData();
-                          } else {
-                            showSnackBar(context,
-                                AppLocalizations.of(context)!.endOfPage);
-                            _controller.finishLoad();
-                            _controller.finishRefresh();
-                          }
-                        },
-                        onRefresh: null,
-                        click: click,
-                        api: api,
-                        menusBuilder: menuBuilder)));
+                : MaxWidthBox(
+                    maxWidth: 1200,
+                    child: data.isEmpty
+                        ? Text(AppLocalizations.of(context)!.emptyContent,
+                            style: Theme.of(context)
+                                .textTheme
+                                .bodyLarge
+                                ?.copyWith(color: Colors.red))
+                        : GalleryListView(
+                            controller: _controller,
+                            data: data,
+                            onLoad: () async {
+                              if (_page <= totalPage) {
+                                await _fetchData();
+                              } else {
+                                showSnackBar(context,
+                                    AppLocalizations.of(context)!.endOfPage);
+                                _controller.finishLoad();
+                                _controller.finishRefresh();
+                              }
+                            },
+                            onRefresh: null,
+                            click: click,
+                            api: api,
+                            menusBuilder: menuBuilder))));
   }
 }

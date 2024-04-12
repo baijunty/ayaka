@@ -53,41 +53,51 @@ class _AyakaHome extends State<AyakaHome> {
         },
         child: Scaffold(
           body: SafeArea(
-              child: kIsWeb
-                  ? const GalleryItemListView(localDb: true)
-                  : switch (currentOrientation(context)) {
-                      Orientation.portrait =>
-                        IndexedStack(index: index, children: widget.content),
-                      _ => Row(children: [
-                          NavigationRail(
-                              destinations: [
-                                NavigationRailDestination(
-                                    icon: const Icon(Icons.home),
-                                    label: Text(
-                                        AppLocalizations.of(context)!.network)),
-                                NavigationRailDestination(
-                                    icon: const Icon(Icons.local_library),
-                                    label: Text(
-                                        AppLocalizations.of(context)!.local)),
-                                NavigationRailDestination(
-                                    icon: const Icon(Icons.download),
-                                    label: Text(AppLocalizations.of(context)!
-                                        .download)),
-                                NavigationRailDestination(
-                                    icon: const Icon(Icons.settings),
-                                    label: Text(
-                                        AppLocalizations.of(context)!.setting)),
-                              ],
-                              selectedIndex: index,
-                              onDestinationSelected: _handleIndexClick,
-                              labelType: NavigationRailLabelType.selected),
-                          Expanded(
-                              child: IndexedStack(
-                                  index: index, children: widget.content))
-                        ])
-                    }),
+              child: Center(
+                  child: MaxWidthBox(
+                      maxWidth: 1200,
+                      child: kIsWeb
+                          ? const GalleryItemListView(localDb: true)
+                          : switch (currentOrientation(context)) {
+                              Orientation.portrait => IndexedStack(
+                                  index: index, children: widget.content),
+                              _ => Row(children: [
+                                  NavigationRail(
+                                      destinations: [
+                                        NavigationRailDestination(
+                                            icon: const Icon(Icons.home),
+                                            label: Text(
+                                                AppLocalizations.of(context)!
+                                                    .network)),
+                                        NavigationRailDestination(
+                                            icon:
+                                                const Icon(Icons.local_library),
+                                            label: Text(
+                                                AppLocalizations.of(context)!
+                                                    .local)),
+                                        NavigationRailDestination(
+                                            icon: const Icon(Icons.download),
+                                            label: Text(
+                                                AppLocalizations.of(context)!
+                                                    .download)),
+                                        NavigationRailDestination(
+                                            icon: const Icon(Icons.settings),
+                                            label: Text(
+                                                AppLocalizations.of(context)!
+                                                    .setting)),
+                                      ],
+                                      selectedIndex: index,
+                                      onDestinationSelected: _handleIndexClick,
+                                      labelType:
+                                          NavigationRailLabelType.selected),
+                                  Expanded(
+                                      child: IndexedStack(
+                                          index: index,
+                                          children: widget.content))
+                                ])
+                            }))),
           bottomNavigationBar:
-              currentOrientation(context) == Orientation.portrait
+              currentOrientation(context) == Orientation.portrait && !kIsWeb
                   ? BottomNavigationBar(
                       items: [
                           BottomNavigationBarItem(

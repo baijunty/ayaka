@@ -26,8 +26,8 @@ class _GallerySimilaerView extends State<GallerySimilaerView> {
   List<Gallery> data = [];
   final EasyRefreshController controller = EasyRefreshController();
   late void Function(Gallery) click;
-  final CancelToken _cancelToken = CancelToken();
-  late Future<List<Gallery>> _findSimilar;
+  CancelToken? _cancelToken;
+  var netLoading = true;
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
@@ -35,16 +35,27 @@ class _GallerySimilaerView extends State<GallerySimilaerView> {
     click = (g) => Navigator.of(context).pushNamed(GalleryDetailsView.routeName,
         arguments: {'gallery': g, 'local': false});
     var gallery = ModalRoute.of(context)?.settings.arguments as Gallery;
-    _findSimilar = api
-        .findSimilarGalleryBySearch(gallery, token: _cancelToken)
-        .then((value) => value.data);
+    if (_cancelToken == null) {
+      _cancelToken = CancelToken();
+      api
+          .findSimilarGalleryBySearch(gallery, token: _cancelToken)
+          .then((value) => setState(() {
+                netLoading = false;
+                data = value.data;
+              }))
+          .catchError((e) {
+        if (mounted) {
+          showSnackBar(context, '$e');
+        }
+      });
+    }
   }
 
   @override
   void dispose() {
     super.dispose();
     controller.dispose();
-    _cancelToken.cancel('dispose');
+    _cancelToken?.cancel('dispose');
   }
 
   @override
@@ -53,59 +64,37 @@ class _GallerySimilaerView extends State<GallerySimilaerView> {
         appBar: AppBar(
           leading: const BackButton(),
         ),
-        body: FutureBuilder(
-            key: ValueKey(data),
-            future: _findSimilar,
-            builder: (context, snap) {
-              if (snap.hasData) {
-                return snap.data!.isEmpty
-                    ? Center(
-                        child: Text(AppLocalizations.of(context)!.emptyContent))
-                    : Center(
-                        child: MaxWidthBox(
-                            maxWidth: 1200,
-                            child: GalleryListView(
-                                controller: controller,
-                                data: snap.data!,
-                                onLoad: null,
-                                onRefresh: null,
-                                click: click,
-                                api: api,
-                                menusBuilder: (g) => PopupMenuButton<String>(
-                                        itemBuilder: (context) {
-                                      return [
-                                        PopupMenuItem(
-                                            child: Text(
-                                                AppLocalizations.of(context)!
-                                                    .download),
-                                            onTap: () => context
-                                                .read<TaskController>()
-                                                .addTask(g)
-                                                .then((value) => showSnackBar(
-                                                    context,
-                                                    AppLocalizations.of(
-                                                            context)!
-                                                        .success))),
-                                      ];
-                                    }))));
-              } else if (snap.hasError) {
-                return Center(
-                    child: Text(snap.error.toString(),
-                        style: Theme.of(context)
-                            .textTheme
-                            .labelLarge
-                            ?.copyWith(color: Colors.red)));
-              } else {
-                return Center(
-                    child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const CircularProgressIndicator(),
-                    const SizedBox(height: 16),
-                    Text(AppLocalizations.of(context)!.loading)
-                  ],
-                ));
-              }
-            }));
+        body: Center(
+            child: MaxWidthBox(
+                maxWidth: 1200,
+                child: netLoading
+                    ? Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                            const CircularProgressIndicator(),
+                            Text(AppLocalizations.of(context)!.loading)
+                          ])
+                    : GalleryListView(
+                        controller: controller,
+                        data: data,
+                        onLoad: null,
+                        onRefresh: null,
+                        click: click,
+                        api: api,
+                        menusBuilder: (g) =>
+                            PopupMenuButton<String>(itemBuilder: (context) {
+                              return [
+                                PopupMenuItem(
+                                    child: Text(
+                                        AppLocalizations.of(context)!.download),
+                                    onTap: () => context
+                                        .read<TaskController>()
+                                        .addTask(g.id)
+                                        .then((value) => showSnackBar(
+                                            context,
+                                            AppLocalizations.of(context)!
+                                                .success))),
+                              ];
+                            })))));
   }
 }

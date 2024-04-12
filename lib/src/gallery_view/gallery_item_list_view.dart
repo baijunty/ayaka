@@ -77,8 +77,10 @@ class _GalleryListView extends State<GalleryItemListView> {
               return [
                 PopupMenuItem(
                     child: Text(AppLocalizations.of(context)!.download),
-                    onTap: () => context.read<TaskController>().addTask(g).then(
-                        (value) => showSnackBar(
+                    onTap: () => context
+                        .read<TaskController>()
+                        .addTask(g.id)
+                        .then((value) => showSnackBar(
                             context, AppLocalizations.of(context)!.success))),
                 PopupMenuItem(
                     child: Text(AppLocalizations.of(context)!.findSimiler),

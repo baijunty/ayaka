@@ -54,7 +54,7 @@ class _GallerySearchResultView extends State<GallerySearchResultView> {
                       child: Text(AppLocalizations.of(context)!.download),
                       onTap: () => context
                           .read<TaskController>()
-                          .addTask(g)
+                          .addTask(g.id)
                           .then((value) => showSnackBar(
                               context, AppLocalizations.of(context)!.success))),
                 PopupMenuItem(

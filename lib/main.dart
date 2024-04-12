@@ -16,6 +16,6 @@ void main() async {
   runApp(MultiProvider(providers: [
     ChangeNotifierProvider(create: (_) => settingsController),
     ChangeNotifierProvider(
-        create: (_) => TaskController(manager: settingsController.manager))
+        create: (_) => TaskController(controller: settingsController))
   ], child: const MyApp()));
 }

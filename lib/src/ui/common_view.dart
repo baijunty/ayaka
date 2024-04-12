@@ -200,6 +200,7 @@ class GalleryInfo extends StatelessWidget {
     var entry = mapGalleryType(context, gallery.type);
     var format = DateFormat('yyyy-MM-dd');
     var image = gallery.files.first;
+    debugPrint('width ${MediaQuery.of(context).size.width}');
     return InkWell(
         key: ValueKey(gallery.id),
         onTap: () => click(gallery),
@@ -211,7 +212,7 @@ class GalleryInfo extends StatelessWidget {
                     children: [
                       MaxWidthBox(
                           maxWidth:
-                              min(MediaQuery.of(context).size.width / 3, 200),
+                              min(MediaQuery.of(context).size.width / 3, 120),
                           child: ThumbImageView(
                               ProxyNetworkImage(
                                   gallery.id, gallery.files.first, api),
@@ -530,7 +531,7 @@ class GalleryDetailHead extends StatelessWidget {
                                         onPressed: () async {
                                           await context
                                               .read<TaskController>()
-                                              .addTask(gallery)
+                                              .addTask(gallery.id)
                                               .then((value) => showSnackBar(
                                                   context,
                                                   AppLocalizations.of(context)!

@@ -12,12 +12,12 @@ class TaskController with ChangeNotifier {
   final SettingsController controller;
   TaskController({required this.controller});
 
-  Future<void> addTask(int id) async {
+  Future<void> addTask(String command) async {
     controller.useProxy
         ? await controller.manager.dio.post(
             '${controller.config.remoteHttp}/addTask',
-            data: json.encode(
-                {'auth': controller.config.auth, 'task': id.toString()}),
+            data:
+                json.encode({'auth': controller.config.auth, 'task': command}),
             options: Options(headers: {
               'x-real-ip': await NetworkInterface.list().then((value) => value
                   .firstOrNull?.addresses
@@ -25,7 +25,7 @@ class TaskController with ChangeNotifier {
                       (element) => element.type == InternetAddressType.IPv4)
                   ?.address)
             }))
-        : await controller.manager.parseCommandAndRun(id.toString());
+        : await controller.manager.parseCommandAndRun(command);
     notifyListeners();
   }
 

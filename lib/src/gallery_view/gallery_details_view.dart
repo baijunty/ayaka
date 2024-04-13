@@ -1,6 +1,7 @@
 import 'package:ayaka/src/gallery_view/gallery_viewer.dart';
 import 'package:ayaka/src/settings/settings_controller.dart';
 import 'package:ayaka/src/ui/common_view.dart';
+import 'package:ayaka/src/utils/common_define.dart';
 import 'package:flutter/material.dart';
 import 'package:hitomi/gallery/gallery.dart';
 import 'package:provider/provider.dart';
@@ -56,10 +57,13 @@ class _GalleryDetailView extends State<GalleryDetailsView> {
       _fetchTransLate();
     }
     controller.manager.helper
-        .readlData<int>('UserLog', 'mark', {'id': gallery.id}).then(
-            (value) => setState(() {
-                  readedIndex = value;
-                }));
+        .readlData<int>('UserLog', 'mark', {'id': gallery.id}).then((value) {
+      if (value?.isFlagSet(readMask) == true) {
+        setState(() {
+          readedIndex = value!.unSetMask(readMask);
+        });
+      }
+    });
   }
 
   @override

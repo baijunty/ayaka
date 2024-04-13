@@ -200,7 +200,6 @@ class GalleryInfo extends StatelessWidget {
     var entry = mapGalleryType(context, gallery.type);
     var format = DateFormat('yyyy-MM-dd');
     var image = gallery.files.first;
-    debugPrint('width ${MediaQuery.of(context).size.width}');
     return InkWell(
         key: ValueKey(gallery.id),
         onTap: () => click(gallery),
@@ -336,7 +335,8 @@ class TagDetail extends StatelessWidget {
   final Map<String, dynamic> tag;
   static final urlExp =
       RegExp(r'!?\[(?<name>.*?)\]\(#*\s*\"?(?<url>\S+?)\"?\)');
-  const TagDetail({super.key, required this.tag});
+  final String? commondPrefix;
+  const TagDetail({super.key, required this.tag, this.commondPrefix});
 
   List<MapEntry<String, String>> takeUrls(String input) {
     var urls = <MapEntry<String, String>>[];
@@ -354,6 +354,7 @@ class TagDetail extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    var taskControl = context.read<TaskController>();
     var imgs = takeUrls(tag['intro'] ?? '')
         .where((element) => imageExtension
             .any((extension) => element.value.endsWith(extension)))
@@ -375,6 +376,15 @@ class TagDetail extends StatelessWidget {
                 child: Row(children: [
                   const Expanded(child: Divider()),
                   Text('${tag['translate']}'),
+                  const SizedBox(width: 8),
+                  if (tag['count'] != null)
+                    Text(
+                        '${AppLocalizations.of(context)!.downloaded}:${tag['count']} ${AppLocalizations.of(context)!.lastUpdatedAt} ${tag['date']}'),
+                  if (commondPrefix != null)
+                    IconButton(
+                        onPressed: () async => taskControl
+                            .addTask('$commondPrefix ${tag['name']}'),
+                        icon: const Icon(Icons.download)),
                   const Expanded(child: Divider()),
                 ]))
           ]),
@@ -431,10 +441,14 @@ class GalleryDetailHead extends StatelessWidget {
   Widget build(BuildContext context) {
     var entry = mapGalleryType(context, gallery.type);
     var format = DateFormat('yyyy-MM-dd');
-    var artists =
-        extendedInfo.where((element) => element['type'] == 'artist').take(2);
-    var groupes =
-        extendedInfo.where((element) => element['type'] == 'group').take(2);
+    var artists = extendedInfo
+            .where((element) => element['type'] == 'artist')
+            .take(2)
+            .toList() +
+        extendedInfo
+            .where((element) => element['type'] == 'group')
+            .take(2)
+            .toList();
     return SliverAppBar(
         backgroundColor: netLoading ? Colors.transparent : entry.value,
         leading: AppBar(backgroundColor: entry.value),
@@ -467,7 +481,7 @@ class GalleryDetailHead extends StatelessWidget {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                         Text(mapLangugeType(context, gallery.language ?? '')),
-                        if (artists.isNotEmpty || groupes.isNotEmpty)
+                        if (artists.isNotEmpty)
                           SizedBox(
                               height: 28,
                               child: Row(children: [
@@ -485,28 +499,17 @@ class GalleryDetailHead extends StatelessWidget {
                                         padding: const EdgeInsets.all(4),
                                         minimumSize: const Size(40, 25),
                                       ),
+                                      onLongPress: () => showModalBottomSheet(
+                                          context: context,
+                                          builder: (context) => TagDetail(
+                                                tag: artist,
+                                                commondPrefix:
+                                                    '--${artist['type']}',
+                                              )),
                                       child: Text(
                                         '${artist['translate']}',
                                         style: const TextStyle(fontSize: 12),
                                       )),
-                                for (var group in groupes)
-                                  TextButton(
-                                      onPressed: () => Navigator.of(context)
-                                              .pushNamed(
-                                                  GalleryItemListView.routeName,
-                                                  arguments: {
-                                                'tag': group,
-                                                'local': local
-                                              }),
-                                      style: TextButton.styleFrom(
-                                        maximumSize: const Size.fromHeight(25),
-                                        padding: const EdgeInsets.all(4),
-                                        minimumSize: const Size(40, 25),
-                                      ),
-                                      child: Text(
-                                        '${group['translate']}',
-                                        style: const TextStyle(fontSize: 12),
-                                      ))
                               ])),
                         Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -521,7 +524,8 @@ class GalleryDetailHead extends StatelessWidget {
                                             onPressed: () async {
                                               await context
                                                   .read<TaskController>()
-                                                  .addTask(gallery.id)
+                                                  .addTask(
+                                                      gallery.id.toString())
                                                   .then((value) => showSnackBar(
                                                       context,
                                                       AppLocalizations.of(

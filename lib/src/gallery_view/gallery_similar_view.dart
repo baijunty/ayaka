@@ -74,27 +74,30 @@ class _GallerySimilaerView extends State<GallerySimilaerView> {
                         const CircularProgressIndicator(),
                         Text(AppLocalizations.of(context)!.loading)
                       ]))
-                : GalleryListView(
-                    controller: controller,
-                    data: data,
-                    onLoad: null,
-                    onRefresh: null,
-                    click: click,
-                    api: api,
-                    menusBuilder: (g) =>
-                        PopupMenuButton<String>(itemBuilder: (context) {
-                          return [
-                            PopupMenuItem(
-                                child: Text(
-                                    AppLocalizations.of(context)!.download),
-                                onTap: () => context
-                                    .read<TaskController>()
-                                    .addTask(g.id)
-                                    .then((value) => showSnackBar(
-                                        context,
-                                        AppLocalizations.of(context)!
-                                            .success))),
-                          ];
-                        }))));
+                : data.isEmpty
+                    ? Center(
+                        child: Text(AppLocalizations.of(context)!.emptyContent))
+                    : GalleryListView(
+                        controller: controller,
+                        data: data,
+                        onLoad: null,
+                        onRefresh: null,
+                        click: click,
+                        api: api,
+                        menusBuilder: (g) =>
+                            PopupMenuButton<String>(itemBuilder: (context) {
+                              return [
+                                PopupMenuItem(
+                                    child: Text(
+                                        AppLocalizations.of(context)!.download),
+                                    onTap: () => context
+                                        .read<TaskController>()
+                                        .addTask(g.id.toString())
+                                        .then((value) => showSnackBar(
+                                            context,
+                                            AppLocalizations.of(context)!
+                                                .success))),
+                              ];
+                            }))));
   }
 }

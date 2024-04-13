@@ -54,7 +54,7 @@ class _GallerySearchResultView extends State<GallerySearchResultView> {
                       child: Text(AppLocalizations.of(context)!.download),
                       onTap: () => context
                           .read<TaskController>()
-                          .addTask(g.id)
+                          .addTask(g.id.toString())
                           .then((value) => showSnackBar(
                               context, AppLocalizations.of(context)!.success))),
                 PopupMenuItem(
@@ -170,11 +170,14 @@ class _GallerySearchResultView extends State<GallerySearchResultView> {
                 ? Center(
                     child: netLoading
                         ? const CircularProgressIndicator()
-                        : Text(AppLocalizations.of(context)!.emptyContent,
-                            style: Theme.of(context)
-                                .textTheme
-                                .bodyLarge
-                                ?.copyWith(color: Colors.red)))
+                        : InkWell(
+                            onTap: _fetchData,
+                            child: Text(
+                                AppLocalizations.of(context)!.emptyContent,
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .bodyLarge
+                                    ?.copyWith(color: Colors.red))))
                 : GalleryListView(
                     controller: _controller,
                     data: data,

@@ -172,8 +172,9 @@ class _GalleryTaskView extends State<GalleryTaskView> {
                             }, test: (error) => true)),
                     PopupMenuItem(
                         child: Text(AppLocalizations.of(context)!.download),
-                        onTap: () =>
-                            controller.addTask(gallery.id).catchError((e) {
+                        onTap: () => controller
+                                .addTask(gallery.id.toString())
+                                .catchError((e) {
                               debugPrint(e);
                             }, test: (error) => true)),
                   ];

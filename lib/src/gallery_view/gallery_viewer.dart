@@ -1,4 +1,5 @@
 import 'package:ayaka/src/settings/settings_controller.dart';
+import 'package:ayaka/src/utils/common_define.dart';
 import 'package:easy_image_viewer/easy_image_viewer.dart';
 import 'package:flutter/material.dart';
 import 'package:hitomi/gallery/gallery.dart';
@@ -17,35 +18,13 @@ class GalleryViewer extends StatefulWidget {
   }
 }
 
-class _MultiImageProvider extends MultiImageProvider {
-  final void Function(int) pageChage;
-  _MultiImageProvider(this.pageChage, super.imageProviders,
-      {super.initialIndex});
-
-  @override
-  ImageProvider<Object> imageBuilder(BuildContext context, int index) {
-    pageChage(index);
-    return super.imageBuilder(context, index);
-  }
-
-  @override
-  Widget errorWidgetBuilder(
-      BuildContext context, int index, Object error, StackTrace? stackTrace) {
-    return Center(
-        child: Column(children: [
-      const Icon(Icons.broken_image, color: Colors.red, size: 120.0),
-      Text(Error.safeToString(error))
-    ]));
-  }
-}
-
 class _GalleryViewer extends State<GalleryViewer>
     with SingleTickerProviderStateMixin {
   late Gallery _gallery;
   var index = 0;
   var showAppBar = false;
   late PageController controller;
-  late _MultiImageProvider provider;
+  late MultiImageProvider provider;
   late SettingsController _settingsController;
   @override
   void didChangeDependencies() {
@@ -58,9 +37,7 @@ class _GalleryViewer extends State<GalleryViewer>
     controller = PageController(initialPage: index);
     var settings = context.read<SettingsController>();
     final api = settings.hitomi(localDb: args['local']);
-    provider = _MultiImageProvider((page) {
-      index = page;
-    },
+    provider = MultiImageProvider(
         _gallery.files.map((e) {
           return ProxyNetworkImage(_gallery.id, e, api,
               size: ThumbnaiSize.origin);
@@ -70,15 +47,19 @@ class _GalleryViewer extends State<GalleryViewer>
     if (args['index'] == null) {
       _settingsController.manager.helper
           .readlData<int>('UserLog', 'mark', {'id': _gallery.id})
-          .then((value) => (value ?? 0))
+          .then((value) => (value?.unSetMask(readMask) ?? 0))
           .then((value) => controller.jumpToPage(value));
     }
   }
 
   void handlePageChange() async {
-    await _settingsController.manager.helper.insertUserLog(
-        _gallery.id, controller.page!.toInt(),
-        content: _gallery.name);
+    if (controller.page! - controller.page!.toInt() == 0) {
+      index = controller.page!.toInt();
+      await _settingsController.manager.helper.insertUserLog(
+          _gallery.id, index.setMask(readMask),
+          content: _gallery.name);
+      setState(() {});
+    }
   }
 
   @override

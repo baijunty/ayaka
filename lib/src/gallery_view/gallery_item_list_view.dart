@@ -79,7 +79,7 @@ class _GalleryListView extends State<GalleryItemListView> {
                     child: Text(AppLocalizations.of(context)!.download),
                     onTap: () => context
                         .read<TaskController>()
-                        .addTask(g.id)
+                        .addTask(g.id.toString())
                         .then((value) => showSnackBar(
                             context, AppLocalizations.of(context)!.success))),
                 PopupMenuItem(

@@ -437,17 +437,14 @@ class GalleryDetailHead extends StatelessWidget {
         extendedInfo.where((element) => element['type'] == 'group').take(2);
     return SliverAppBar(
         backgroundColor: netLoading ? Colors.transparent : entry.value,
+        leading: AppBar(backgroundColor: entry.value),
+        title: Text(gallery.name),
         automaticallyImplyLeading: false,
         expandedHeight: 240,
         flexibleSpace: FlexibleSpaceBar(
             background: SafeArea(
                 child: Column(children: [
-          AppBar(
-              leading: BackButton(onPressed: () => Navigator.of(context).pop()),
-              actions: const [
-                IconButton(onPressed: null, icon: Icon(Icons.share))
-              ],
-              backgroundColor: entry.value),
+          SizedBox(height: Theme.of(context).appBarTheme.toolbarHeight ?? 56),
           netLoading
               ? const Row(children: [
                   CardLoading(height: 160, width: 100),
@@ -463,115 +460,112 @@ class GalleryDetailHead extends StatelessWidget {
                         aspectRatio: gallery.files.first.width /
                             gallery.files.first.height,
                       )),
+                  const SizedBox(width: 8),
                   Expanded(
-                      child: Column(mainAxisSize: MainAxisSize.min, children: [
-                    Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(mapLangugeType(context, gallery.language ?? '')),
-                          const SizedBox(width: 8),
-                          Expanded(
-                              child: Text(gallery.name,
-                                  maxLines: 2,
-                                  overflow: TextOverflow.ellipsis,
-                                  softWrap: true,
-                                  style:
-                                      Theme.of(context).textTheme.titleSmall))
-                        ]),
-                    if (artists.isNotEmpty || groupes.isNotEmpty)
-                      SizedBox(
-                          height: 28,
-                          child: Row(children: [
-                            for (var artist in artists)
-                              TextButton(
-                                  onPressed: () => Navigator.of(context)
-                                          .pushNamed(
-                                              GalleryItemListView.routeName,
-                                              arguments: {
-                                            'tag': artist,
-                                            'local': local
-                                          }),
-                                  style: TextButton.styleFrom(
-                                    fixedSize: const Size.fromHeight(25),
-                                    padding: const EdgeInsets.all(4),
-                                    minimumSize: const Size(40, 25),
-                                  ),
-                                  child: Text(
-                                    '${artist['translate']}',
-                                    style: const TextStyle(fontSize: 12),
-                                  )),
-                            for (var group in groupes)
-                              TextButton(
-                                  onPressed: () => Navigator.of(context)
-                                          .pushNamed(
-                                              GalleryItemListView.routeName,
-                                              arguments: {
-                                            'tag': group,
-                                            'local': local
-                                          }),
-                                  style: TextButton.styleFrom(
-                                    maximumSize: const Size.fromHeight(25),
-                                    padding: const EdgeInsets.all(4),
-                                    minimumSize: const Size(40, 25),
-                                  ),
-                                  child: Text(
-                                    '${group['translate']}',
-                                    style: const TextStyle(fontSize: 12),
-                                  ))
-                          ])),
-                    Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          const SizedBox(width: 8),
-                          if (!exist && !kIsWeb)
-                            Expanded(
-                                child: Padding(
-                                    padding: const EdgeInsets.only(right: 8),
-                                    child: OutlinedButton(
-                                        onPressed: () async {
-                                          await context
-                                              .read<TaskController>()
-                                              .addTask(gallery.id)
-                                              .then((value) => showSnackBar(
-                                                  context,
-                                                  AppLocalizations.of(context)!
-                                                      .addTaskSuccess))
-                                              .catchError(
-                                                  (e) => showSnackBar(
-                                                      context, e.toString()),
-                                                  test: (error) => true);
-                                        },
-                                        child: Text(
-                                            AppLocalizations.of(context)!
-                                                .download)))),
-                          Expanded(
-                            child: FilledButton(
-                                onPressed: () => Navigator.of(context)
-                                        .pushNamed(GalleryViewer.routeName,
-                                            arguments: {
-                                          'gallery': gallery,
-                                          'local': local,
-                                        }),
-                                child:
-                                    Text(AppLocalizations.of(context)!.read)),
-                          ),
-                          const SizedBox(width: 8),
-                        ]),
-                    Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceAround,
-                        children: [
-                          Text(entry.key),
-                          Text(format.format(format.parse(gallery.date)))
-                        ]),
-                    if (readIndex != null)
-                      Column(
-                          crossAxisAlignment: CrossAxisAlignment.end,
+                      child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            LinearProgressIndicator(
-                                value: (readIndex! + 1) / gallery.files.length),
-                            Text('${(readIndex! + 1)}/${gallery.files.length}')
-                          ])
-                  ])),
+                        Text(mapLangugeType(context, gallery.language ?? '')),
+                        if (artists.isNotEmpty || groupes.isNotEmpty)
+                          SizedBox(
+                              height: 28,
+                              child: Row(children: [
+                                for (var artist in artists)
+                                  TextButton(
+                                      onPressed: () => Navigator.of(context)
+                                              .pushNamed(
+                                                  GalleryItemListView.routeName,
+                                                  arguments: {
+                                                'tag': artist,
+                                                'local': local
+                                              }),
+                                      style: TextButton.styleFrom(
+                                        fixedSize: const Size.fromHeight(25),
+                                        padding: const EdgeInsets.all(4),
+                                        minimumSize: const Size(40, 25),
+                                      ),
+                                      child: Text(
+                                        '${artist['translate']}',
+                                        style: const TextStyle(fontSize: 12),
+                                      )),
+                                for (var group in groupes)
+                                  TextButton(
+                                      onPressed: () => Navigator.of(context)
+                                              .pushNamed(
+                                                  GalleryItemListView.routeName,
+                                                  arguments: {
+                                                'tag': group,
+                                                'local': local
+                                              }),
+                                      style: TextButton.styleFrom(
+                                        maximumSize: const Size.fromHeight(25),
+                                        padding: const EdgeInsets.all(4),
+                                        minimumSize: const Size(40, 25),
+                                      ),
+                                      child: Text(
+                                        '${group['translate']}',
+                                        style: const TextStyle(fontSize: 12),
+                                      ))
+                              ])),
+                        Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              const SizedBox(width: 8),
+                              if (!exist && !kIsWeb)
+                                Expanded(
+                                    child: Padding(
+                                        padding:
+                                            const EdgeInsets.only(right: 8),
+                                        child: OutlinedButton(
+                                            onPressed: () async {
+                                              await context
+                                                  .read<TaskController>()
+                                                  .addTask(gallery.id)
+                                                  .then((value) => showSnackBar(
+                                                      context,
+                                                      AppLocalizations.of(
+                                                              context)!
+                                                          .addTaskSuccess))
+                                                  .catchError(
+                                                      (e) => showSnackBar(
+                                                          context,
+                                                          e.toString()),
+                                                      test: (error) => true);
+                                            },
+                                            child: Text(
+                                                AppLocalizations.of(context)!
+                                                    .download)))),
+                              Expanded(
+                                child: FilledButton(
+                                    onPressed: () => Navigator.of(context)
+                                            .pushNamed(GalleryViewer.routeName,
+                                                arguments: {
+                                              'gallery': gallery,
+                                              'local': local,
+                                            }),
+                                    child: Text(
+                                        AppLocalizations.of(context)!.read)),
+                              ),
+                              const SizedBox(width: 8),
+                            ]),
+                        Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceAround,
+                            children: [
+                              Text(entry.key),
+                              Text(format.format(format.parse(gallery.date)))
+                            ]),
+                        if (readIndex != null)
+                          Column(
+                              crossAxisAlignment: CrossAxisAlignment.end,
+                              children: [
+                                LinearProgressIndicator(
+                                    value: (readIndex! + 1) /
+                                        gallery.files.length),
+                                Text(
+                                    '${(readIndex! + 1)}/${gallery.files.length}')
+                              ])
+                      ])),
                 ])
         ]))));
   }

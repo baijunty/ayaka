@@ -64,37 +64,37 @@ class _GallerySimilaerView extends State<GallerySimilaerView> {
         appBar: AppBar(
           leading: const BackButton(),
         ),
-        body: Center(
-            child: MaxWidthBox(
-                maxWidth: 1200,
-                child: netLoading
-                    ? Column(
+        body: MaxWidthBox(
+            maxWidth: 1200,
+            child: netLoading
+                ? Center(
+                    child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                            const CircularProgressIndicator(),
-                            Text(AppLocalizations.of(context)!.loading)
-                          ])
-                    : GalleryListView(
-                        controller: controller,
-                        data: data,
-                        onLoad: null,
-                        onRefresh: null,
-                        click: click,
-                        api: api,
-                        menusBuilder: (g) =>
-                            PopupMenuButton<String>(itemBuilder: (context) {
-                              return [
-                                PopupMenuItem(
-                                    child: Text(
-                                        AppLocalizations.of(context)!.download),
-                                    onTap: () => context
-                                        .read<TaskController>()
-                                        .addTask(g.id)
-                                        .then((value) => showSnackBar(
-                                            context,
-                                            AppLocalizations.of(context)!
-                                                .success))),
-                              ];
-                            })))));
+                        const CircularProgressIndicator(),
+                        Text(AppLocalizations.of(context)!.loading)
+                      ]))
+                : GalleryListView(
+                    controller: controller,
+                    data: data,
+                    onLoad: null,
+                    onRefresh: null,
+                    click: click,
+                    api: api,
+                    menusBuilder: (g) =>
+                        PopupMenuButton<String>(itemBuilder: (context) {
+                          return [
+                            PopupMenuItem(
+                                child: Text(
+                                    AppLocalizations.of(context)!.download),
+                                onTap: () => context
+                                    .read<TaskController>()
+                                    .addTask(g.id)
+                                    .then((value) => showSnackBar(
+                                        context,
+                                        AppLocalizations.of(context)!
+                                            .success))),
+                          ];
+                        }))));
   }
 }

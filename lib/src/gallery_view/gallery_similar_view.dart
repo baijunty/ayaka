@@ -91,7 +91,7 @@ class _GallerySimilaerView extends State<GallerySimilaerView> {
                                     child: Text(
                                         AppLocalizations.of(context)!.download),
                                     onTap: () => context
-                                        .read<TaskController>()
+                                        .read<GalleryManager>()
                                         .addTask(g.id.toString())
                                         .then((value) => showSnackBar(
                                             context,

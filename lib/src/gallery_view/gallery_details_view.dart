@@ -1,4 +1,5 @@
 import 'package:ayaka/src/gallery_view/gallery_viewer.dart';
+import 'package:ayaka/src/model/task_controller.dart';
 import 'package:ayaka/src/settings/settings_controller.dart';
 import 'package:ayaka/src/ui/common_view.dart';
 import 'package:ayaka/src/utils/common_define.dart';
@@ -23,7 +24,7 @@ class _GalleryDetailView extends State<GalleryDetailsView> {
   late SettingsController controller = context.read<SettingsController>();
   late Gallery gallery;
   bool local = false;
-  bool exists = false;
+  Gallery? exists;
   bool netLoading = true;
   int? readedIndex;
   List<Map<String, dynamic>> translates = [];
@@ -31,8 +32,14 @@ class _GalleryDetailView extends State<GalleryDetailsView> {
     var api = controller.hitomi(localDb: true);
     await (local
             ? Future.value(true)
-            : api.findSimilarGalleryBySearch(gallery).then((value) {
-                exists = value.data.isNotEmpty;
+            : context
+                .read<GalleryManager>()
+                .checkExist(gallery.id)
+                .then((value) => value['value'] as List<dynamic>)
+                .then((value) async {
+                if (value.firstOrNull != null) {
+                  exists = await api.fetchGallery(value.first);
+                }
                 return exists;
               }))
         .then((value) => api.translate(gallery.labels()))
@@ -75,20 +82,19 @@ class _GalleryDetailView extends State<GalleryDetailsView> {
           maxWidth: 1200,
           child: CustomScrollView(slivers: [
             GalleryDetailHead(
-              api: controller.hitomi(localDb: local),
-              gallery: gallery,
-              local: local,
-              extendedInfo: translates,
-              netLoading: netLoading,
-              exist: exists,
-              readIndex: readedIndex,
-            ),
+                api: controller.hitomi(localDb: local),
+                gallery: exists ?? gallery,
+                local: local,
+                extendedInfo: translates,
+                netLoading: netLoading,
+                exist: exists != null),
             GalleryTagDetailInfo(
               gallery: gallery,
               extendedInfo: translates,
               controller: controller,
               local: local,
               netLoading: netLoading,
+              readIndex: readedIndex,
             ),
             SliverGrid.builder(
                 gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
@@ -100,9 +106,9 @@ class _GalleryDetailView extends State<GalleryDetailsView> {
                       onTap: () async => await Navigator.pushNamed(
                               context, GalleryViewer.routeName,
                               arguments: {
-                                'gallery': gallery,
+                                'gallery': exists ?? gallery,
                                 'index': index,
-                                'local': local,
+                                'local': exists != null,
                               }),
                       child: Card.outlined(
                           child: Center(

@@ -8,9 +8,9 @@ import 'package:flutter/material.dart';
 
 import '../settings/settings_controller.dart';
 
-class TaskController with ChangeNotifier {
+class GalleryManager with ChangeNotifier {
   final SettingsController controller;
-  TaskController({required this.controller});
+  GalleryManager({required this.controller});
 
   Future<void> addTask(String command) async {
     controller.useProxy
@@ -76,5 +76,16 @@ class TaskController with ChangeNotifier {
             return result;
           })
         : await controller.manager.parseCommandAndRun('-l');
+  }
+
+  Future<Map<String, dynamic>> checkExist(int id) async {
+    return controller.manager.dio
+        .post<String>('${controller.config.remoteHttp}/checkId',
+            data: json.encode({'auth': controller.config.auth, 'id': id}),
+            options: Options(responseType: ResponseType.json))
+        .then((value) {
+      var result = json.decode(value.data!) as Map<String, dynamic>;
+      return result;
+    });
   }
 }

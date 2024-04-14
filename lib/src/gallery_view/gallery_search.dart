@@ -170,9 +170,11 @@ class _GallerySearch extends State<GallerySearch> {
     setState(() {
       _history.add(label);
       _selected.add(useLabel);
-      var input =
-          controller.text.substring(0, controller.text.indexOf(',') + 1);
-      controller.closeView('$input${_showTranslate(useLabel)},');
+      var input = _selected.fold(
+          '',
+          (previousValue, element) =>
+              previousValue + ('${_showTranslate(element)},'));
+      controller.closeView(input);
       // Navigator.of(context)
       //     .restorablePushNamed(GallerySearchResultView.routeName, arguments: {
       //   'tags': [useLabel],

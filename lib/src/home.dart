@@ -39,7 +39,7 @@ class _AyakaHome extends State<AyakaHome> {
         onPopInvoked: (didPop) {
           if (!exitApp) {
             setState(() async {
-              showSnackBar(context, '再次点击后退退出');
+              showSnackBar(context, AppLocalizations.of(context)!.exitConfirm);
               exitApp = true;
               await Future.delayed(
                   const Duration(seconds: 2),

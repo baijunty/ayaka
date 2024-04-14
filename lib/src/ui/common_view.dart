@@ -164,7 +164,7 @@ class GalleryListView extends StatelessWidget {
               controller: scrollController,
               mainAxisSpacing: 4,
               crossAxisSpacing: 4,
-              crossAxisCount: max(cons.maxWidth ~/ 450, 1),
+              crossAxisCount: max(cons.maxWidth ~/ 550, 1),
               itemCount: data.length,
               itemBuilder: (BuildContext context, int index) {
                 final item = data[index];
@@ -200,46 +200,47 @@ class GalleryInfo extends StatelessWidget {
     var entry = mapGalleryType(context, gallery.type);
     var format = DateFormat('yyyy-MM-dd');
     var image = gallery.files.first;
-    return InkWell(
-        key: ValueKey(gallery.id),
-        onTap: () => click(gallery),
-        child: Card(
-            child: Container(
-                color: entry.value,
-                child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      MaxWidthBox(
-                          maxWidth:
-                              min(MediaQuery.of(context).size.width / 3, 120),
-                          child: ThumbImageView(
-                              ProxyNetworkImage(
-                                  gallery.id, gallery.files.first, api),
-                              label: gallery.files.length.toString(),
-                              aspectRatio: image.width / image.height)),
-                      const SizedBox(width: 8),
-                      Expanded(
-                          child: Column(
-                              mainAxisAlignment: MainAxisAlignment.start,
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                            Text(gallery.name,
-                                maxLines: 2,
-                                overflow: TextOverflow.ellipsis,
-                                softWrap: true),
-                            Text(mapLangugeType(
-                                context, gallery.language ?? '')),
-                            Row(
-                                mainAxisAlignment:
-                                    MainAxisAlignment.spaceBetween,
+    return LayoutBuilder(builder: (context, cons) {
+      return InkWell(
+          key: ValueKey(gallery.id),
+          onTap: () => click(gallery),
+          child: Card(
+              child: Container(
+                  color: entry.value,
+                  child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        MaxWidthBox(
+                            maxWidth: min(cons.maxWidth / 3, 200),
+                            child: ThumbImageView(
+                                ProxyNetworkImage(
+                                    gallery.id, gallery.files.first, api),
+                                label: gallery.files.length.toString(),
+                                aspectRatio: image.width / image.height)),
+                        const SizedBox(width: 8),
+                        Expanded(
+                            child: Column(
+                                mainAxisAlignment: MainAxisAlignment.start,
+                                crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  Text(entry.key),
-                                  Text(format
-                                      .format(format.parse(gallery.date))),
-                                ]),
-                          ])),
-                      if (menus != null) menus!
-                    ]))));
+                              Text(gallery.name,
+                                  maxLines: 2,
+                                  overflow: TextOverflow.ellipsis,
+                                  softWrap: true),
+                              Text(mapLangugeType(
+                                  context, gallery.language ?? '')),
+                              Row(
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Text(entry.key),
+                                    Text(format
+                                        .format(format.parse(gallery.date))),
+                                  ]),
+                            ])),
+                        if (menus != null) menus!
+                      ]))));
+    });
   }
 }
 
@@ -284,6 +285,7 @@ class GalleryTagDetailInfo extends StatelessWidget {
   final bool netLoading;
   final SettingsController controller;
   final bool local;
+  final int? readIndex;
   static final types = [
     // 'artist',
     // 'group',
@@ -299,7 +301,8 @@ class GalleryTagDetailInfo extends StatelessWidget {
       required this.extendedInfo,
       required this.controller,
       required this.local,
-      required this.netLoading});
+      required this.netLoading,
+      this.readIndex});
 
   String findMatchLabel(Label label) {
     var translate = extendedInfo.firstWhereOrNull((element) =>
@@ -314,6 +317,12 @@ class GalleryTagDetailInfo extends StatelessWidget {
         .where((element) => types.contains(element['type']))
         .toList();
     return SliverList.list(children: [
+      if (readIndex != null)
+        Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
+          LinearProgressIndicator(
+              value: (readIndex! + 1) / gallery.files.length),
+          Text('${(readIndex! + 1)}/${gallery.files.length}')
+        ]),
       netLoading
           ? const CardLoading(height: 40)
           : Wrap(children: [
@@ -326,7 +335,7 @@ class GalleryTagDetailInfo extends StatelessWidget {
                     onPressed: () => Navigator.of(context).pushNamed(
                         GalleryItemListView.routeName,
                         arguments: {'tag': label, 'local': local}))
-            ])
+            ]),
     ]);
   }
 }
@@ -354,7 +363,7 @@ class TagDetail extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    var taskControl = context.read<TaskController>();
+    var taskControl = context.read<GalleryManager>();
     var imgs = takeUrls(tag['intro'] ?? '')
         .where((element) => imageExtension
             .any((extension) => element.value.endsWith(extension)))
@@ -425,7 +434,6 @@ class GalleryDetailHead extends StatelessWidget {
   final List<Map<String, dynamic>> extendedInfo;
   final bool netLoading;
   final bool exist;
-  final int? readIndex;
   final Hitomi api;
   const GalleryDetailHead(
       {super.key,
@@ -434,8 +442,7 @@ class GalleryDetailHead extends StatelessWidget {
       required this.local,
       required this.extendedInfo,
       required this.netLoading,
-      required this.exist,
-      required this.readIndex});
+      required this.exist});
 
   @override
   Widget build(BuildContext context) {
@@ -449,25 +456,31 @@ class GalleryDetailHead extends StatelessWidget {
             .where((element) => element['type'] == 'group')
             .take(2)
             .toList();
+    var width = min(MediaQuery.of(context).size.width / 4, 200.0);
+    var height =
+        (width * gallery.files.first.height / gallery.files.first.width);
+    debugPrint('w $width h $height');
     return SliverAppBar(
         backgroundColor: netLoading ? Colors.transparent : entry.value,
         leading: AppBar(backgroundColor: entry.value),
         title: Text(gallery.name),
         automaticallyImplyLeading: false,
-        expandedHeight: 240,
+        expandedHeight:
+            height + (Theme.of(context).appBarTheme.toolbarHeight ?? 56),
         flexibleSpace: FlexibleSpaceBar(
             background: SafeArea(
                 child: Column(children: [
           SizedBox(height: Theme.of(context).appBarTheme.toolbarHeight ?? 56),
           netLoading
-              ? const Row(children: [
-                  CardLoading(height: 160, width: 100),
-                  SizedBox(width: 8),
-                  Expanded(child: CardLoading(height: 160)),
+              ? Row(children: [
+                  CardLoading(height: height, width: width),
+                  const SizedBox(width: 8),
+                  Expanded(child: CardLoading(height: height)),
                 ])
               : Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
                   SizedBox(
-                      width: 100,
+                      width: width,
+                      height: height,
                       child: ThumbImageView(
                         ProxyNetworkImage(gallery.id, gallery.files.first, api),
                         label: gallery.files.length.toString(),
@@ -523,7 +536,7 @@ class GalleryDetailHead extends StatelessWidget {
                                         child: OutlinedButton(
                                             onPressed: () async {
                                               await context
-                                                  .read<TaskController>()
+                                                  .read<GalleryManager>()
                                                   .addTask(
                                                       gallery.id.toString())
                                                   .then((value) => showSnackBar(
@@ -559,16 +572,6 @@ class GalleryDetailHead extends StatelessWidget {
                               Text(entry.key),
                               Text(format.format(format.parse(gallery.date)))
                             ]),
-                        if (readIndex != null)
-                          Column(
-                              crossAxisAlignment: CrossAxisAlignment.end,
-                              children: [
-                                LinearProgressIndicator(
-                                    value: (readIndex! + 1) /
-                                        gallery.files.length),
-                                Text(
-                                    '${(readIndex! + 1)}/${gallery.files.length}')
-                              ])
                       ])),
                 ])
         ]))));

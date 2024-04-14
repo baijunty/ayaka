@@ -53,7 +53,7 @@ class _GallerySearchResultView extends State<GallerySearchResultView> {
                   PopupMenuItem(
                       child: Text(AppLocalizations.of(context)!.download),
                       onTap: () => context
-                          .read<TaskController>()
+                          .read<GalleryManager>()
                           .addTask(g.id.toString())
                           .then((value) => showSnackBar(
                               context, AppLocalizations.of(context)!.success))),
@@ -66,7 +66,7 @@ class _GallerySearchResultView extends State<GallerySearchResultView> {
                   PopupMenuItem(
                       child: Text(AppLocalizations.of(context)!.delete),
                       onTap: () => context
-                          .read<TaskController>()
+                          .read<GalleryManager>()
                           .cancelTask(g.id)
                           .then((value) => setState(() {
                                 data.removeWhere(
@@ -164,36 +164,37 @@ class _GallerySearchResultView extends State<GallerySearchResultView> {
           leading: BackButton(onPressed: () => Navigator.of(context).pop()),
           title: Text(title),
         ),
-        body: MaxWidthBox(
-            maxWidth: 1200,
-            child: data.isEmpty
-                ? Center(
-                    child: netLoading
-                        ? const CircularProgressIndicator()
-                        : InkWell(
-                            onTap: _fetchData,
-                            child: Text(
-                                AppLocalizations.of(context)!.emptyContent,
-                                style: Theme.of(context)
-                                    .textTheme
-                                    .bodyLarge
-                                    ?.copyWith(color: Colors.red))))
-                : GalleryListView(
-                    controller: _controller,
-                    data: data,
-                    onLoad: () async {
-                      if (_page <= totalPage) {
-                        await _fetchData();
-                      } else {
-                        showSnackBar(
-                            context, AppLocalizations.of(context)!.endOfPage);
-                        _controller.finishLoad();
-                        _controller.finishRefresh();
-                      }
-                    },
-                    onRefresh: null,
-                    click: click,
-                    api: api,
-                    menusBuilder: menuBuilder)));
+        body: Center(
+            child: MaxWidthBox(
+                maxWidth: 1200,
+                child: data.isEmpty
+                    ? Center(
+                        child: netLoading
+                            ? const CircularProgressIndicator()
+                            : InkWell(
+                                onTap: _fetchData,
+                                child: Text(
+                                    AppLocalizations.of(context)!.emptyContent,
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .bodyLarge
+                                        ?.copyWith(color: Colors.red))))
+                    : GalleryListView(
+                        controller: _controller,
+                        data: data,
+                        onLoad: () async {
+                          if (_page <= totalPage) {
+                            await _fetchData();
+                          } else {
+                            showSnackBar(context,
+                                AppLocalizations.of(context)!.endOfPage);
+                            _controller.finishLoad();
+                            _controller.finishRefresh();
+                          }
+                        },
+                        onRefresh: null,
+                        click: click,
+                        api: api,
+                        menusBuilder: menuBuilder))));
   }
 }

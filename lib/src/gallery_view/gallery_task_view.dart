@@ -25,7 +25,7 @@ class _GalleryTaskView extends State<GalleryTaskView> {
   List<Map<String, dynamic>> runningTask = [];
   final Debounce _debounce = Debounce();
   final deration = const Duration(seconds: 2);
-  late TaskController controller;
+  late GalleryManager controller;
   @override
   void dispose() {
     super.dispose();
@@ -35,7 +35,7 @@ class _GalleryTaskView extends State<GalleryTaskView> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    controller = context.watch<TaskController>();
+    controller = context.watch<GalleryManager>();
     _handleVisible();
   }
 
@@ -60,7 +60,6 @@ class _GalleryTaskView extends State<GalleryTaskView> {
               }).toList();
             }))
         .catchError((e) {
-      debugPrint(e);
       showSnackBar(context, 'err $e');
     }, test: (error) => true).whenComplete(() => _handleVisible());
   }
@@ -168,20 +167,20 @@ class _GalleryTaskView extends State<GalleryTaskView> {
                                       pendingTask.remove(gallery);
                                     }))
                                 .catchError((e) {
-                              debugPrint(e);
+                              showSnackBar(context, '$e');
                             }, test: (error) => true)),
                     PopupMenuItem(
                         child: Text(AppLocalizations.of(context)!.download),
                         onTap: () => controller
                                 .addTask(gallery.id.toString())
                                 .catchError((e) {
-                              debugPrint(e);
+                              showSnackBar(context, '$e');
                             }, test: (error) => true)),
                   ];
                 }));
           },
           gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-              maxCrossAxisExtent: 400,
+              maxCrossAxisExtent: 550,
               mainAxisExtent: 180,
               mainAxisSpacing: 16,
               crossAxisSpacing: 8),

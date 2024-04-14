@@ -55,7 +55,6 @@ class _GalleryListView extends State<GalleryItemListView> {
               _controller.finishRefresh();
             }))
         .catchError((e) {
-      debugPrint(e);
       _controller.finishLoad();
       _controller.finishRefresh();
       if (mounted) {
@@ -78,7 +77,7 @@ class _GalleryListView extends State<GalleryItemListView> {
                 PopupMenuItem(
                     child: Text(AppLocalizations.of(context)!.download),
                     onTap: () => context
-                        .read<TaskController>()
+                        .read<GalleryManager>()
                         .addTask(g.id.toString())
                         .then((value) => showSnackBar(
                             context, AppLocalizations.of(context)!.success))),
@@ -91,7 +90,7 @@ class _GalleryListView extends State<GalleryItemListView> {
                   PopupMenuItem(
                       child: Text(AppLocalizations.of(context)!.delete),
                       onTap: () => context
-                          .read<TaskController>()
+                          .read<GalleryManager>()
                           .deleteTask(g.id)
                           .then((value) => setState(() {
                                 data.removeWhere(

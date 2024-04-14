@@ -58,7 +58,6 @@ class _GalleryViewer extends State<GalleryViewer>
       await _settingsController.manager.helper.insertUserLog(
           _gallery.id, index.setMask(readMask),
           content: _gallery.name);
-      setState(() {});
     }
   }
 

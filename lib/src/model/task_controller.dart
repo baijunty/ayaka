@@ -83,9 +83,7 @@ class GalleryManager with ChangeNotifier {
         .post<String>('${controller.config.remoteHttp}/checkId',
             data: json.encode({'auth': controller.config.auth, 'id': id}),
             options: Options(responseType: ResponseType.json))
-        .then((value) {
-      var result = json.decode(value.data!) as Map<String, dynamic>;
-      return result;
-    });
+        .then((value) => json.decode(value.data!) as Map<String, dynamic>)
+        .catchError((e) => <String, dynamic>{}, test: (error) => true);
   }
 }

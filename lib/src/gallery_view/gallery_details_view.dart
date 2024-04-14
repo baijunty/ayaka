@@ -31,7 +31,7 @@ class _GalleryDetailView extends State<GalleryDetailsView> {
   Future<void> _fetchTransLate() async {
     var api = controller.hitomi(localDb: true);
     await (local
-            ? Future.value(true)
+            ? Future.value(gallery).then((value) => exists = value)
             : context
                 .read<GalleryManager>()
                 .checkExist(gallery.id)

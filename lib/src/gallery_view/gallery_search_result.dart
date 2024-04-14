@@ -182,16 +182,15 @@ class _GallerySearchResultView extends State<GallerySearchResultView> {
                     : GalleryListView(
                         controller: _controller,
                         data: data,
-                        onLoad: () async {
-                          if (_page <= totalPage) {
-                            await _fetchData();
-                          } else {
-                            showSnackBar(context,
-                                AppLocalizations.of(context)!.endOfPage);
-                            _controller.finishLoad();
-                            _controller.finishRefresh();
-                          }
-                        },
+                        onLoad: _page > totalPage
+                            ? null
+                            : () async {
+                                if (_page <= totalPage) {
+                                  showSnackBar(context,
+                                      '$_page of $totalPage ${AppLocalizations.of(context)!.loading}');
+                                  await _fetchData();
+                                }
+                              },
                         onRefresh: null,
                         click: click,
                         api: api,

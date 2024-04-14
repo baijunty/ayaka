@@ -183,16 +183,8 @@ class _GalleryListView extends State<GalleryItemListView> {
           child: GalleryListView(
               controller: _controller,
               data: data,
-              onLoad: () async {
-                if (_page <= totalPage) {
-                  await _fetchData();
-                } else {
-                  showSnackBar(
-                      context, AppLocalizations.of(context)!.endOfPage);
-                  _controller.finishLoad();
-                  _controller.finishRefresh();
-                }
-              },
+              onLoad:
+                  _page <= totalPage ? () async => await _fetchData() : null,
               onRefresh: () async {
                 var before = _page;
                 _page = 1;

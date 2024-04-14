@@ -147,7 +147,7 @@ class GalleryListView extends StatelessWidget {
             processedText: AppLocalizations.of(context)!.success,
             noMoreText: AppLocalizations.of(context)!.noMore,
             failedText: AppLocalizations.of(context)!.failed,
-            messageText: AppLocalizations.of(context)!.lastUpdatedAt),
+            messageText: '${AppLocalizations.of(context)!.lastUpdatedAt} %T'),
         footer: ClassicFooter(
             dragText: AppLocalizations.of(context)!.pullToRefresh,
             armedText: AppLocalizations.of(context)!.releaseReady,
@@ -156,7 +156,7 @@ class GalleryListView extends StatelessWidget {
             processedText: AppLocalizations.of(context)!.success,
             noMoreText: AppLocalizations.of(context)!.noMore,
             failedText: AppLocalizations.of(context)!.failed,
-            messageText: AppLocalizations.of(context)!.lastUpdatedAt),
+            messageText: '${AppLocalizations.of(context)!.lastUpdatedAt} %T'),
         onLoad: onLoad,
         onRefresh: onRefresh,
         child: LayoutBuilder(builder: (c, cons) {
@@ -457,12 +457,12 @@ class GalleryDetailHead extends StatelessWidget {
             .take(2)
             .toList();
     var width = min(MediaQuery.of(context).size.width / 4, 200.0);
-    var height =
-        (width * gallery.files.first.height / gallery.files.first.width);
+    var height = max(
+        120.0, width * gallery.files.first.height / gallery.files.first.width);
     debugPrint('w $width h $height');
     return SliverAppBar(
         backgroundColor: netLoading ? Colors.transparent : entry.value,
-        leading: AppBar(backgroundColor: entry.value),
+        leading: AppBar(backgroundColor: Colors.transparent),
         title: Text(gallery.name),
         automaticallyImplyLeading: false,
         expandedHeight:

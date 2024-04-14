@@ -78,7 +78,7 @@
   "refreshing": "刷新中...",
   "noMore": "没有更多",
   "failed": "失败了",
-  "lastUpdatedAt":"最后更新于 %T",
+  "lastUpdatedAt":"最后更新于",
   "pullToLoad": "上拉加载",
   "loading": "加载中...",
   "exitConfirm": "再次点击后退退出",

@@ -35,21 +35,24 @@ class _GalleryDetailView extends State<GalleryDetailsView> {
             : context
                 .read<GalleryManager>()
                 .checkExist(gallery.id)
-                .then((value) => value['value'] as List<dynamic>)
+                .then((value) => value['value'] as List<dynamic>?)
                 .then((value) async {
-                if (value.firstOrNull != null) {
-                  exists = await api.fetchGallery(value.first);
+                if (value?.firstOrNull != null) {
+                  exists = await api.fetchGallery(value!.first);
                 }
                 return exists;
-              }))
-        .then((value) => api.translate(gallery.labels()))
+              }).catchError((e) => null, test: (error) => true))
+        .then((value) => api.translate((exists ?? gallery).labels()))
         .then((value) => setState(() {
               translates.addAll(value);
               netLoading = false;
             }))
-        .catchError((e) {
-      netLoading = false;
-    }, test: (error) => true);
+        .catchError(
+            (e) => setState(() {
+                  netLoading = false;
+                  showSnackBar(context, '$e');
+                }),
+            test: (error) => true);
   }
 
   @override

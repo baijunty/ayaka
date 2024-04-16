@@ -12,8 +12,6 @@ class AyakaHome extends StatefulWidget {
   final content = const [
     GalleryItemListView(),
     GalleryItemListView(localDb: true),
-    GalleryTaskView(),
-    SettingsView()
   ];
   const AyakaHome({super.key});
 
@@ -34,6 +32,21 @@ class _AyakaHome extends State<AyakaHome> {
 
   @override
   Widget build(BuildContext context) {
+    Widget child;
+    switch (index) {
+      case 2:
+        child = IndexedStack(
+            index: index,
+            children: [...widget.content, const GalleryTaskView()]);
+      case 3:
+        child = IndexedStack(index: index, children: [
+          ...widget.content,
+          const SettingsView(),
+          const SettingsView()
+        ]);
+      default:
+        child = IndexedStack(index: index, children: widget.content);
+    }
     return PopScope(
         canPop: exitApp,
         onPopInvoked: (didPop) {
@@ -59,8 +72,7 @@ class _AyakaHome extends State<AyakaHome> {
                       child: kIsWeb
                           ? const GalleryItemListView(localDb: true)
                           : switch (currentOrientation(context)) {
-                              Orientation.portrait => IndexedStack(
-                                  index: index, children: widget.content),
+                              Orientation.portrait => child,
                               _ => Row(children: [
                                   NavigationRail(
                                       destinations: [
@@ -90,10 +102,7 @@ class _AyakaHome extends State<AyakaHome> {
                                       onDestinationSelected: _handleIndexClick,
                                       labelType:
                                           NavigationRailLabelType.selected),
-                                  Expanded(
-                                      child: IndexedStack(
-                                          index: index,
-                                          children: widget.content))
+                                  Expanded(child: child)
                                 ])
                             }))),
           bottomNavigationBar:

@@ -214,7 +214,10 @@ class _StateSetting extends State<SettingsView> {
                         },
                         icon: const Icon(Icons.edit))),
               ]),
-              if (netLoading) const Center(child: CircularProgressIndicator()),
+              if (netLoading)
+                Container(
+                    alignment: Alignment.center,
+                    child: const CircularProgressIndicator()),
             ])));
   }
 }

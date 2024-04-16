@@ -12,6 +12,7 @@ import 'package:provider/provider.dart';
 import '../utils/proxy_netwrok_image.dart';
 
 class GalleryTaskView extends StatefulWidget {
+  static const routeName = '/gallery_task';
   const GalleryTaskView({super.key});
 
   @override
@@ -60,7 +61,6 @@ class _GalleryTaskView extends State<GalleryTaskView> {
               }).toList();
             }))
         .catchError((e) {
-      debugPrint('$e');
       showSnackBar(context, 'err $e');
     }, test: (error) => true).whenComplete(() => _handleVisible());
   }

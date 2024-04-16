@@ -9,6 +9,7 @@ import 'package:provider/provider.dart';
 
 import 'gallery_view/gallery_details_view.dart';
 import 'gallery_view/gallery_search_result.dart';
+import 'gallery_view/gallery_task_view.dart';
 import 'settings/settings_controller.dart';
 import 'settings/settings_view.dart';
 
@@ -79,6 +80,8 @@ class MyApp extends StatelessWidget {
         return const GallerySimilaerView();
       case GalleryItemListView.routeName:
         return const GalleryItemListView();
+      case GalleryTaskView.routeName:
+        return const GalleryTaskView();
       default:
         return const AyakaHome();
     }

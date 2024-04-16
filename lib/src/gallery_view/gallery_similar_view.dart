@@ -28,12 +28,18 @@ class _GallerySimilaerView extends State<GallerySimilaerView> {
   late void Function(Gallery) click;
   CancelToken? _cancelToken;
   var netLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    click = (g) => Navigator.of(context).pushNamed(GalleryDetailsView.routeName,
+        arguments: {'gallery': g, 'local': false});
+  }
+
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
     api = context.read<SettingsController>().hitomi();
-    click = (g) => Navigator.of(context).pushNamed(GalleryDetailsView.routeName,
-        arguments: {'gallery': g, 'local': false});
     var gallery = ModalRoute.of(context)?.settings.arguments as Gallery;
     if (_cancelToken == null) {
       _cancelToken = CancelToken();

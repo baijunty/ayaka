@@ -33,13 +33,18 @@ class _GalleryListView extends State<GalleryItemListView> {
   var showAppBar = false;
   int totalPage = 1;
   late void Function(Gallery) click;
-  late Hitomi api;
   bool local = false;
   late EasyRefreshController _controller;
   late PopupMenuButton<String> Function(Gallery gallery)? menuBuilder;
   SortEnum? sortEnum;
   CancelToken? token;
   late SettingsController settingsController;
+  Hitomi? _api;
+  Hitomi get api {
+    _api ??= settingsController.hitomi(localDb: local);
+    return _api!;
+  }
+
   Future<void> _fetchData({bool refresh = false}) async {
     token = CancelToken();
     return api
@@ -112,14 +117,13 @@ class _GalleryListView extends State<GalleryItemListView> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    if (data.isEmpty) {
+    if (_api == null) {
       final args =
           ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>?;
       _label = (args?['tag'] ?? QueryText('').toMap());
-      local = (args?['local'] ?? widget.localDb);
       showAppBar = args != null;
+      local = (args?['local'] ?? widget.localDb);
       settingsController = context.watch<SettingsController>();
-      api = settingsController.hitomi(localDb: local);
       _fetchData();
     }
   }
@@ -192,12 +196,10 @@ class _GalleryListView extends State<GalleryItemListView> {
               },
               onSelected: (value) async {
                 local = value;
-                api = settingsController.hitomi(localDb: value);
+                _api = settingsController.hitomi(localDb: value);
                 _page = 1;
                 data.clear();
-                debugPrint('$local is $api ${data.length}');
                 await _fetchData();
-                setState(() {});
               },
               icon: Icon(local ? Icons.local_library : Icons.network_wifi))
       ]),

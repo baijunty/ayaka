@@ -60,6 +60,7 @@ class _GalleryTaskView extends State<GalleryTaskView> {
               }).toList();
             }))
         .catchError((e) {
+      debugPrint('$e');
       showSnackBar(context, 'err $e');
     }, test: (error) => true).whenComplete(() => _handleVisible());
   }

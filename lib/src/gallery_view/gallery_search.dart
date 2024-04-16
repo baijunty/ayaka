@@ -64,12 +64,12 @@ class _GallerySearch extends State<GallerySearch> {
   void initState() {
     super.initState();
     controller = SearchController();
+    _debounce = Debounce();
   }
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    _debounce = Debounce();
     api = context.read<SettingsController>().hitomi(localDb: true);
   }
 

@@ -26,6 +26,13 @@ class _GalleryViewer extends State<GalleryViewer>
   late PageController controller;
   late MultiImageProvider provider;
   late SettingsController _settingsController;
+
+  @override
+  void initState() {
+    super.initState();
+    controller = PageController();
+  }
+
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
@@ -34,7 +41,6 @@ class _GalleryViewer extends State<GalleryViewer>
         ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>;
     _gallery = args['gallery'];
     index = args['index'] ?? 0;
-    controller = PageController(initialPage: index);
     var settings = context.read<SettingsController>();
     final api = settings.hitomi(localDb: args['local']);
     provider = MultiImageProvider(

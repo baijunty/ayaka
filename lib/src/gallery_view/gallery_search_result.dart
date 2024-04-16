@@ -45,6 +45,8 @@ class _GallerySearchResultView extends State<GallerySearchResultView> {
     super.initState();
     _controller = EasyRefreshController(
         controlFinishRefresh: true, controlFinishLoad: true);
+    click = (g) => Navigator.pushNamed(context, GalleryDetailsView.routeName,
+        arguments: {'gallery': g, 'local': local});
     menuBuilder = kIsWeb
         ? null
         : (g) => PopupMenuButton<String>(itemBuilder: (context) {
@@ -92,8 +94,6 @@ class _GallerySearchResultView extends State<GallerySearchResultView> {
         ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>;
     _selected = args['tags'];
     local = args['local'];
-    click = (g) => Navigator.pushNamed(context, GalleryDetailsView.routeName,
-        arguments: {'gallery': g, 'local': local});
     api = context.watch<SettingsController>().hitomi(localDb: local);
     title = _selected
         .fold(

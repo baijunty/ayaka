@@ -55,10 +55,11 @@ class SettingsController with ChangeNotifier {
     _useProxy =
         await _settingsService.readConfig<bool>('useProxy') ?? _useProxy;
     _manager = TaskManager(_config);
-    if (!kIsWeb && _server == null) {
-      _server = await run_server(_manager);
-    }
-    return _config;
+    return !kIsWeb && _server == null
+        ? run_server(_manager)
+            .then((value) => _config)
+            .catchError((e) => _config, test: (error) => true)
+        : Future.value(_config);
   }
 
   Future<void> switchConn(bool useProxy) async {
@@ -72,7 +73,7 @@ class SettingsController with ChangeNotifier {
     _config = config;
     await _settingsService.saveConfig('config', json.encode(config.toJson()));
     _manager = TaskManager(_config);
-    if (!kIsWeb) {
+    if (_server != null) {
       _server?.close(force: true);
       _server = await run_server(_manager);
     }

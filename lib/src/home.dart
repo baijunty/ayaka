@@ -55,7 +55,7 @@ class _AyakaHome extends State<AyakaHome> {
           body: SafeArea(
               child: Center(
                   child: MaxWidthBox(
-                      maxWidth: 1200,
+                      maxWidth: 1280,
                       child: kIsWeb
                           ? const GalleryItemListView(localDb: true)
                           : switch (currentOrientation(context)) {
@@ -115,8 +115,6 @@ class _AyakaHome extends State<AyakaHome> {
                         ],
                       onTap: _handleIndexClick,
                       currentIndex: index,
-                      backgroundColor:
-                          Theme.of(context).colorScheme.tertiaryContainer,
                       type: BottomNavigationBarType.fixed)
                   : null,
         ));

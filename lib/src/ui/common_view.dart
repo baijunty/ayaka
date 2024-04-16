@@ -87,14 +87,16 @@ class ThumbImageView extends StatelessWidget {
 }
 
 void showSnackBar(BuildContext context, String msg) {
-  ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-      content: Text(msg, style: Theme.of(context).textTheme.labelMedium),
-      duration: const Duration(milliseconds: 2000),
-      behavior: SnackBarBehavior.floating,
-      backgroundColor: Theme.of(context).colorScheme.background,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(8.0),
-      )));
+  if (context.mounted) {
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text(msg, style: Theme.of(context).textTheme.labelMedium),
+        duration: const Duration(milliseconds: 2000),
+        behavior: SnackBarBehavior.floating,
+        backgroundColor: Theme.of(context).colorScheme.background,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(8.0),
+        )));
+  }
 }
 
 String takeTranslateText(String input) {
@@ -137,7 +139,6 @@ class GalleryListView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return EasyRefresh(
-        key: ValueKey(controller),
         controller: controller,
         header: ClassicHeader(
             dragText: AppLocalizations.of(context)!.pullToRefresh,

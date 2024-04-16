@@ -112,14 +112,14 @@ class _GalleryListView extends State<GalleryItemListView> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    final args =
-        ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>?;
-    _label = (args?['tag'] ?? QueryText('').toMap());
-    local = (args?['local'] ?? widget.localDb);
-    showAppBar = args != null;
-    settingsController = context.watch<SettingsController>();
-    api = settingsController.hitomi(localDb: local);
     if (data.isEmpty) {
+      final args =
+          ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>?;
+      _label = (args?['tag'] ?? QueryText('').toMap());
+      local = (args?['local'] ?? widget.localDb);
+      showAppBar = args != null;
+      settingsController = context.watch<SettingsController>();
+      api = settingsController.hitomi(localDb: local);
       _fetchData();
     }
   }
@@ -177,7 +177,29 @@ class _GalleryListView extends State<GalleryItemListView> {
                   sortEnum = value;
                   _fetchData();
                 }),
-            icon: const Icon(Icons.sort))
+            icon: const Icon(Icons.sort)),
+        if (!kIsWeb && showAppBar)
+          PopupMenuButton<bool>(
+              itemBuilder: (context) {
+                return <PopupMenuEntry<bool>>[
+                  PopupMenuItem(
+                      value: false,
+                      child: Text(AppLocalizations.of(context)!.network)),
+                  PopupMenuItem(
+                      value: true,
+                      child: Text(AppLocalizations.of(context)!.local))
+                ];
+              },
+              onSelected: (value) async {
+                local = value;
+                api = settingsController.hitomi(localDb: value);
+                _page = 1;
+                data.clear();
+                debugPrint('$local is $api ${data.length}');
+                await _fetchData();
+                setState(() {});
+              },
+              icon: Icon(local ? Icons.local_library : Icons.network_wifi))
       ]),
       Expanded(
           child: GalleryListView(

@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:math';
 import 'package:ayaka/src/gallery_view/gallery_search_result.dart';
 import 'package:ayaka/src/utils/label_utils.dart';
+import 'package:collection/collection.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:ayaka/src/settings/settings_controller.dart';
 import 'package:flutter/material.dart';
@@ -64,7 +65,21 @@ class _GallerySearch extends State<GallerySearch> {
   void initState() {
     super.initState();
     controller = SearchController();
+    controller.addListener(textChange);
     _debounce = Debounce();
+  }
+
+  void textChange() {
+    var word = controller.text.characters.lastOrNull == ','
+        ? controller.text.split(',').lastWhereOrNull((element) =>
+            element.isNotEmpty &&
+            !element.contains(':') &&
+            _selected.every((elem) => elem['name'] != element))
+        : null;
+    if (word != null) {
+      _selected
+          .add({'type': '', 'name': word, 'translate': word, 'include': true});
+    }
   }
 
   @override
@@ -77,6 +92,7 @@ class _GallerySearch extends State<GallerySearch> {
   void dispose() {
     super.dispose();
     _debounce.dispose();
+    controller.removeListener(textChange);
     controller.dispose();
   }
 
@@ -84,7 +100,7 @@ class _GallerySearch extends State<GallerySearch> {
     String type = map['type'];
     String translate = map['translate'];
     String showType = mapTagType(context, type);
-    return '$showType:$translate';
+    return '${showType.isNotEmpty ? '$showType:' : ''}$translate';
   }
 
   Widget _buildListTile(Map<String, dynamic> label,
@@ -139,22 +155,9 @@ class _GallerySearch extends State<GallerySearch> {
                 icon: const Icon(Icons.close))
           ],
           onSubmitted: (value) {
-            var queryKey = value.split(',').where(
-                (element) => element.isNotEmpty && !element.contains(':'));
             Navigator.of(context).restorablePushNamed(
                 GallerySearchResultView.routeName,
-                arguments: {
-                  'tags': [
-                    ..._selected,
-                    ...queryKey.map((e) => {
-                          'type': '',
-                          'name': e,
-                          'translate': e,
-                          'include': true
-                        })
-                  ],
-                  'local': widget.localDb
-                });
+                arguments: {'tags': _selected, 'local': widget.localDb});
           }),
     );
   }

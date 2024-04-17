@@ -224,7 +224,7 @@ class GalleryInfo extends StatelessWidget {
                                 mainAxisAlignment: MainAxisAlignment.start,
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                              Text(gallery.name,
+                              Text(gallery.dirName,
                                   maxLines: 2,
                                   overflow: TextOverflow.ellipsis,
                                   softWrap: true),
@@ -287,15 +287,6 @@ class GalleryTagDetailInfo extends StatelessWidget {
   final SettingsController controller;
   final bool local;
   final int? readIndex;
-  static final types = [
-    // 'artist',
-    // 'group',
-    'series',
-    'character',
-    'female',
-    'male',
-    'tag'
-  ];
   const GalleryTagDetailInfo(
       {super.key,
       required this.gallery,
@@ -312,31 +303,71 @@ class GalleryTagDetailInfo extends StatelessWidget {
     return translate ?? label.name;
   }
 
+  Widget _buildIndexView(int readIndex) {
+    return Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
+      LinearProgressIndicator(value: (readIndex + 1) / gallery.files.length),
+      Text('${(readIndex + 1)}/${gallery.files.length}')
+    ]);
+  }
+
+  Widget _serialInfo(BuildContext context, List<Map<String, dynamic>> series,
+      List<Map<String, dynamic>> characters) {
+    return ExpansionTile(
+        title: Text(
+            '${AppLocalizations.of(context)!.series} & ${AppLocalizations.of(context)!.character}'),
+        children: [
+          Wrap(children: [
+            for (var serial in series) _tagButton(context, serial),
+            for (var character in characters) _tagButton(context, character)
+          ])
+        ]);
+  }
+
+  Widget _tagButton(BuildContext context, Map<String, dynamic> label) {
+    return TextButton(
+        child: Text('${label['translate']}'),
+        onLongPress: () => showModalBottomSheet(
+            context: context, builder: (context) => TagDetail(tag: label)),
+        onPressed: () => Navigator.of(context).pushNamed(
+            GalleryItemListView.routeName,
+            arguments: {'tag': label, 'local': local}));
+  }
+
+  Widget _otherTagInfo(
+      BuildContext context,
+      List<Map<String, dynamic>>? females,
+      List<Map<String, dynamic>>? males,
+      List<Map<String, dynamic>>? tags) {
+    return ExpansionTile(
+        title: Text(AppLocalizations.of(context)!.tag),
+        children: [
+          Wrap(children: [
+            if (females != null)
+              for (var female in females) _tagButton(context, female),
+            if (males != null)
+              for (var male in males) _tagButton(context, male),
+            if (tags != null)
+              for (var tag in tags) _tagButton(context, tag)
+          ])
+        ]);
+  }
+
   @override
   Widget build(BuildContext context) {
-    var entries = extendedInfo
-        .where((element) => types.contains(element['type']))
-        .toList();
+    var typeList =
+        extendedInfo.groupListsBy((element) => element['type'] as String);
     return SliverList.list(children: [
-      if (readIndex != null)
-        Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
-          LinearProgressIndicator(
-              value: (readIndex! + 1) / gallery.files.length),
-          Text('${(readIndex! + 1)}/${gallery.files.length}')
-        ]),
-      netLoading
-          ? const CardLoading(height: 40)
-          : Wrap(children: [
-              for (var label in entries)
-                TextButton(
-                    child: Text('${label['translate']}'),
-                    onLongPress: () => showModalBottomSheet(
-                        context: context,
-                        builder: (context) => TagDetail(tag: label)),
-                    onPressed: () => Navigator.of(context).pushNamed(
-                        GalleryItemListView.routeName,
-                        arguments: {'tag': label, 'local': local}))
-            ]),
+      if (readIndex != null) _buildIndexView(readIndex!),
+      if (netLoading) const CardLoading(height: 40),
+      if (!netLoading &&
+          [typeList['series'], typeList['character']]
+              .every((element) => element != null))
+        _serialInfo(context, typeList['series']!, typeList['character']!),
+      if (!netLoading &&
+          [typeList['female'], typeList['male'], typeList['tag']]
+              .any((element) => element != null))
+        _otherTagInfo(
+            context, typeList['female'], typeList['male'], typeList['tag'])
     ]);
   }
 }
@@ -374,8 +405,10 @@ class TagDetail extends StatelessWidget {
             .any((extension) => element.value.endsWith(extension)))
         .toList();
     var links = takeUrls(tag['links'] ?? '')
-        .where((element) => !imageExtension
-            .any((extension) => element.value.endsWith(extension)))
+        .where((element) =>
+            element.value.isNotEmpty &&
+            !imageExtension
+                .any((extension) => element.value.endsWith(extension)))
         .toList();
     return SizedBox(
         height: MediaQuery.of(context).size.height / 2,
@@ -465,7 +498,9 @@ class GalleryDetailHead extends StatelessWidget {
         backgroundColor: netLoading ? Colors.transparent : entry.value,
         leading: AppBar(backgroundColor: Colors.transparent),
         title: Text(gallery.name),
-        automaticallyImplyLeading: false,
+        pinned: true,
+        floating: true,
+        snap: true,
         expandedHeight:
             height + (Theme.of(context).appBarTheme.toolbarHeight ?? 56),
         flexibleSpace: FlexibleSpaceBar(

@@ -6,6 +6,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:hitomi/gallery/gallery.dart';
 import 'package:hitomi/gallery/label.dart';
+import 'package:hitomi/gallery/language.dart';
 import 'package:hitomi/lib.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
@@ -38,6 +39,7 @@ class _GallerySearchResultView extends State<GallerySearchResultView> {
   late PopupMenuButton<String> Function(Gallery gallery)? menuBuilder;
   late bool local;
   var title = '';
+  var totalCount = 0;
   CancelToken? token;
   var netLoading = false;
   @override
@@ -92,9 +94,10 @@ class _GallerySearchResultView extends State<GallerySearchResultView> {
     super.didChangeDependencies();
     var args =
         ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>;
-    _selected = args['tags'];
     local = args['local'];
-    api = context.watch<SettingsController>().hitomi(localDb: local);
+    var controller = context.watch<SettingsController>();
+    api = controller.hitomi(localDb: local);
+    _selected = args['tags'];
     title = _selected
         .fold(
             StringBuffer(),
@@ -103,6 +106,9 @@ class _GallerySearchResultView extends State<GallerySearchResultView> {
               ..write(','))
         .toString();
     if (data.isEmpty) {
+      _selected.addAll(controller.config.languages
+          .map((e) => {...Language(name: e).toMap(), 'include': true})
+          .toList());
       _fetchData();
     }
   }
@@ -126,6 +132,7 @@ class _GallerySearchResultView extends State<GallerySearchResultView> {
                 page: _page,
                 token: token)
             .then((value) {
+          totalCount = value.totalCount;
           totalPage = (value.totalCount / 25).ceil();
           _ids.addAll(value.data);
           return _ids;
@@ -182,7 +189,7 @@ class _GallerySearchResultView extends State<GallerySearchResultView> {
                     : GalleryListView(
                         controller: _controller,
                         data: data,
-                        onLoad: _page > totalPage
+                        onLoad: data.length >= totalCount
                             ? null
                             : () async {
                                 if (_page <= totalPage) {

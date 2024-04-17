@@ -61,12 +61,16 @@ class _GalleryTaskView extends State<GalleryTaskView> {
               }).toList();
             }))
         .catchError((e) {
-      showSnackBar(context, 'err $e');
+      if (mounted) {
+        showSnackBar(context, 'err $e');
+      }
     }, test: (error) => true).whenComplete(() => _handleVisible());
   }
 
   void _handleVisible() {
-    _debounce.runDebounce(_fetchTasks, duration: deration);
+    if (mounted) {
+      _debounce.runDebounce(_fetchTasks, duration: deration);
+    }
   }
 
   Widget _buildRunnintTaskItem(Map<String, dynamic> item) {

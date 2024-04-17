@@ -39,6 +39,7 @@ class _GalleryListView extends State<GalleryItemListView> {
   SortEnum? sortEnum;
   CancelToken? token;
   late SettingsController settingsController;
+  var totalCount = 0;
   Hitomi? _api;
   Hitomi get api {
     _api ??= settingsController.hitomi(localDb: local);
@@ -55,6 +56,7 @@ class _GalleryListView extends State<GalleryItemListView> {
                   .where((element) => data.every((g) => g.id != element.id));
               refresh ? data.insertAll(0, insertList) : data.addAll(insertList);
               _page++;
+              totalCount = value.totalCount;
               totalPage = (value.totalCount / 25).ceil();
               _controller.finishLoad();
               _controller.finishRefresh();
@@ -207,8 +209,13 @@ class _GalleryListView extends State<GalleryItemListView> {
           child: GalleryListView(
               controller: _controller,
               data: data,
-              onLoad:
-                  _page <= totalPage ? () async => await _fetchData() : null,
+              onLoad: data.length < totalCount
+                  ? () async {
+                      showSnackBar(context,
+                          '$_page/$totalPage ${AppLocalizations.of(context)!.loading}');
+                      await _fetchData();
+                    }
+                  : null,
               onRefresh: () async {
                 var before = _page;
                 _page = 1;

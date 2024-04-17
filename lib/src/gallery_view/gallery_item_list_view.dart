@@ -231,7 +231,11 @@ class _GalleryListView extends State<GalleryItemListView> {
   @override
   Widget build(BuildContext context) {
     return showAppBar
-        ? Scaffold(body: SafeArea(child: _bodyContentList()))
+        ? Scaffold(
+            body: SafeArea(
+                child: Center(
+                    child: MaxWidthBox(
+                        maxWidth: 1280, child: _bodyContentList()))))
         : _bodyContentList();
   }
 }

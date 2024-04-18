@@ -213,30 +213,40 @@ class GalleryInfo extends StatelessWidget {
                       children: [
                         MaxWidthBox(
                             maxWidth: min(cons.maxWidth / 3, 200),
-                            child: ThumbImageView(
-                                ProxyNetworkImage(
-                                    gallery.id, gallery.files.first, api),
-                                label: gallery.files.length.toString(),
-                                aspectRatio: image.width / image.height)),
+                            child: Hero(
+                                tag: 'gallery-thumb ${gallery.id}',
+                                child: ThumbImageView(
+                                    ProxyNetworkImage(
+                                        gallery.id, gallery.files.first, api),
+                                    label: gallery.files.length.toString(),
+                                    aspectRatio: image.width / image.height))),
                         const SizedBox(width: 8),
                         Expanded(
                             child: Column(
                                 mainAxisAlignment: MainAxisAlignment.start,
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                              Text(gallery.dirName,
-                                  maxLines: 2,
-                                  overflow: TextOverflow.ellipsis,
-                                  softWrap: true),
-                              Text(mapLangugeType(
-                                  context, gallery.language ?? '')),
+                              Hero(
+                                  tag: 'gallery_${gallery.id}_name',
+                                  child: Text(gallery.name,
+                                      maxLines: 2,
+                                      overflow: TextOverflow.ellipsis,
+                                      softWrap: true)),
+                              Hero(
+                                  tag: 'gallery_${gallery.id}_language',
+                                  child: Text(mapLangugeType(
+                                      context, gallery.language ?? ''))),
                               Row(
                                   mainAxisAlignment:
                                       MainAxisAlignment.spaceBetween,
                                   children: [
-                                    Text(entry.key),
-                                    Text(format
-                                        .format(format.parse(gallery.date))),
+                                    Hero(
+                                        tag: 'gallery_${gallery.id}_type',
+                                        child: Text(entry.key)),
+                                    Hero(
+                                        tag: 'gallery_${gallery.id}_date',
+                                        child: Text(format.format(
+                                            format.parse(gallery.date)))),
                                   ]),
                             ])),
                         if (menus != null) menus!
@@ -467,7 +477,7 @@ class GalleryDetailHead extends StatelessWidget {
   final bool local;
   final List<Map<String, dynamic>> extendedInfo;
   final bool netLoading;
-  final bool exist;
+  final Gallery? exist;
   final Hitomi api;
   const GalleryDetailHead(
       {super.key,
@@ -494,83 +504,84 @@ class GalleryDetailHead extends StatelessWidget {
     var height = max(
         120.0, width * gallery.files.first.height / gallery.files.first.width);
     debugPrint('w $width h $height');
+    var totalHeight =
+        height + (Theme.of(context).appBarTheme.toolbarHeight ?? 56);
     return SliverAppBar(
-        backgroundColor: netLoading ? Colors.transparent : entry.value,
+        backgroundColor: entry.value,
         leading: AppBar(backgroundColor: Colors.transparent),
-        title: Text(gallery.name),
+        title:
+            Hero(tag: 'gallery_${gallery.id}_name', child: Text(gallery.name)),
         pinned: true,
         floating: true,
         snap: true,
-        expandedHeight:
-            height + (Theme.of(context).appBarTheme.toolbarHeight ?? 56),
+        expandedHeight: totalHeight,
         flexibleSpace: FlexibleSpaceBar(
             background: SafeArea(
                 child: Column(children: [
           SizedBox(height: Theme.of(context).appBarTheme.toolbarHeight ?? 56),
-          netLoading
-              ? Row(children: [
-                  CardLoading(height: height, width: width),
-                  const SizedBox(width: 8),
-                  Expanded(child: CardLoading(height: height)),
-                ])
-              : Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  SizedBox(
-                      width: width,
-                      height: height,
-                      child: ThumbImageView(
-                        ProxyNetworkImage(gallery.id, gallery.files.first, api),
-                        label: gallery.files.length.toString(),
-                        aspectRatio: gallery.files.first.width /
-                            gallery.files.first.height,
-                      )),
-                  const SizedBox(width: 8),
-                  Expanded(
-                      child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                        Text(mapLangugeType(context, gallery.language ?? '')),
-                        if (artists.isNotEmpty)
-                          SizedBox(
-                              height: 28,
-                              child: Row(children: [
-                                for (var artist in artists)
-                                  TextButton(
-                                      onPressed: () => Navigator.of(context)
-                                              .pushNamed(
-                                                  GalleryItemListView.routeName,
-                                                  arguments: {
-                                                'tag': artist,
-                                                'local': local
-                                              }),
-                                      style: TextButton.styleFrom(
-                                        fixedSize: const Size.fromHeight(25),
-                                        padding: const EdgeInsets.all(4),
-                                        minimumSize: const Size(40, 25),
-                                      ),
-                                      onLongPress: () => showModalBottomSheet(
-                                          context: context,
-                                          builder: (context) => TagDetail(
-                                                tag: artist,
-                                                commondPrefix:
-                                                    '--${artist['type']}',
-                                              )),
-                                      child: Text(
-                                        '${artist['translate']}',
-                                        style: const TextStyle(fontSize: 12),
-                                      )),
-                              ])),
-                        Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              const SizedBox(width: 8),
-                              if (!exist && !kIsWeb)
-                                Expanded(
-                                    child: Padding(
-                                        padding:
-                                            const EdgeInsets.only(right: 8),
-                                        child: OutlinedButton(
-                                            onPressed: () async {
+          Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            SizedBox(
+                width: width,
+                height: height,
+                child: Hero(
+                    tag: 'gallery-thumb ${gallery.id}',
+                    child: ThumbImageView(
+                      ProxyNetworkImage(gallery.id, gallery.files.first, api),
+                      label: gallery.files.length.toString(),
+                      aspectRatio: gallery.files.first.width /
+                          gallery.files.first.height,
+                    ))),
+            const SizedBox(width: 8),
+            Expanded(
+                child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                  Hero(
+                      tag: 'gallery_${gallery.id}_language',
+                      child: Text(
+                          mapLangugeType(context, gallery.language ?? ''))),
+                  if (artists.isNotEmpty)
+                    SizedBox(
+                        height: 28,
+                        child: Row(children: [
+                          for (var artist in artists)
+                            TextButton(
+                                onPressed: () => Navigator.of(context)
+                                        .pushNamed(
+                                            GalleryItemListView.routeName,
+                                            arguments: {
+                                          'tag': artist,
+                                          'local': local
+                                        }),
+                                style: TextButton.styleFrom(
+                                  fixedSize: const Size.fromHeight(25),
+                                  padding: const EdgeInsets.all(4),
+                                  minimumSize: const Size(40, 25),
+                                ),
+                                onLongPress: () => showModalBottomSheet(
+                                    context: context,
+                                    builder: (context) => TagDetail(
+                                          tag: artist,
+                                          commondPrefix: '--${artist['type']}',
+                                        )),
+                                child: Text(
+                                  '${artist['translate']}',
+                                  style: const TextStyle(fontSize: 12),
+                                )),
+                        ])),
+                  Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const SizedBox(width: 8),
+                        if (!kIsWeb)
+                          Expanded(
+                              child: Padding(
+                                  padding: const EdgeInsets.only(right: 8),
+                                  child: OutlinedButton(
+                                      onPressed: netLoading || exist != null
+                                          ? null
+                                          : () async {
                                               await context
                                                   .read<GalleryManager>()
                                                   .addTask(
@@ -586,30 +597,36 @@ class GalleryDetailHead extends StatelessWidget {
                                                           e.toString()),
                                                       test: (error) => true);
                                             },
-                                            child: Text(
-                                                AppLocalizations.of(context)!
-                                                    .download)))),
-                              Expanded(
-                                child: FilledButton(
-                                    onPressed: () => Navigator.of(context)
-                                            .pushNamed(GalleryViewer.routeName,
-                                                arguments: {
-                                              'gallery': gallery,
-                                              'local': local,
-                                            }),
-                                    child: Text(
-                                        AppLocalizations.of(context)!.read)),
-                              ),
-                              const SizedBox(width: 8),
-                            ]),
-                        Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceAround,
-                            children: [
-                              Text(entry.key),
-                              Text(format.format(format.parse(gallery.date)))
-                            ]),
-                      ])),
-                ])
+                                      child: Text(exist != null
+                                          ? AppLocalizations.of(context)!
+                                              .downloaded
+                                          : AppLocalizations.of(context)!
+                                              .download)))),
+                        Expanded(
+                          child: FilledButton(
+                              onPressed: () => Navigator.of(context).pushNamed(
+                                      GalleryViewer.routeName,
+                                      arguments: {
+                                        'gallery': exist ?? gallery,
+                                        'local': exist != null,
+                                      }),
+                              child: Text(AppLocalizations.of(context)!.read)),
+                        ),
+                        const SizedBox(width: 8),
+                      ]),
+                  Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceAround,
+                      children: [
+                        Hero(
+                            tag: 'gallery_${gallery.id}_type',
+                            child: Text(entry.key)),
+                        Hero(
+                            tag: 'gallery_${gallery.id}_date',
+                            child:
+                                Text(format.format(format.parse(gallery.date))))
+                      ]),
+                ])),
+          ])
         ]))));
   }
 }

@@ -3,6 +3,7 @@ import 'package:ayaka/src/model/task_controller.dart';
 import 'package:ayaka/src/settings/settings_controller.dart';
 import 'package:ayaka/src/ui/common_view.dart';
 import 'package:ayaka/src/utils/common_define.dart';
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:hitomi/gallery/gallery.dart';
 import 'package:provider/provider.dart';
@@ -27,6 +28,7 @@ class _GalleryDetailView extends State<GalleryDetailsView> {
   Gallery? exists;
   bool netLoading = true;
   int? readedIndex;
+  CancelToken? token;
   List<Map<String, dynamic>> translates = [];
   Future<void> _fetchTransLate() async {
     var api = controller.hitomi(localDb: true);
@@ -38,21 +40,29 @@ class _GalleryDetailView extends State<GalleryDetailsView> {
                 .then((value) => value['value'] as List<dynamic>?)
                 .then((value) async {
                 if (value?.firstOrNull != null) {
-                  exists = await api.fetchGallery(value!.first);
+                  exists = await api.fetchGallery(value!.first, token: token);
                 }
                 return exists;
               }).catchError((e) => null, test: (error) => true))
-        .then((value) => api.translate((exists ?? gallery).labels()))
+        .then((value) => api.translate(gallery.labels()))
         .then((value) => setState(() {
               translates.addAll(value);
               netLoading = false;
             }))
-        .catchError(
-            (e) => setState(() {
-                  netLoading = false;
-                  showSnackBar(context, '$e');
-                }),
-            test: (error) => true);
+        .catchError((e) {
+      if (mounted) {
+        setState(() {
+          netLoading = false;
+          showSnackBar(context, '$e');
+        });
+      }
+    }, test: (error) => true);
+  }
+
+  @override
+  void dispose() {
+    super.dispose();
+    token?.cancel('dispose');
   }
 
   @override
@@ -64,6 +74,7 @@ class _GalleryDetailView extends State<GalleryDetailsView> {
     gallery = args['gallery'];
     local = args['local'] ?? local;
     if (translates.isEmpty) {
+      token = CancelToken();
       _fetchTransLate();
     }
     controller.manager.helper
@@ -86,11 +97,11 @@ class _GalleryDetailView extends State<GalleryDetailsView> {
           child: CustomScrollView(slivers: [
             GalleryDetailHead(
                 api: controller.hitomi(localDb: local),
-                gallery: exists ?? gallery,
+                gallery: gallery,
                 local: local,
                 extendedInfo: translates,
                 netLoading: netLoading,
-                exist: exists != null),
+                exist: exists),
             GalleryTagDetailInfo(
               gallery: gallery,
               extendedInfo: translates,

@@ -215,9 +215,9 @@ class _StateSetting extends State<SettingsView> {
                         icon: const Icon(Icons.edit))),
               ]),
               if (netLoading)
-                Container(
-                    alignment: Alignment.center,
-                    child: const CircularProgressIndicator()),
+                SizedBox(
+                    height: MediaQuery.of(context).size.height,
+                    child: const Center(child: CircularProgressIndicator())),
             ])));
   }
 }

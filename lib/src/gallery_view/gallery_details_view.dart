@@ -93,7 +93,7 @@ class _GalleryDetailView extends State<GalleryDetailsView> {
         body: SafeArea(
             child: Center(
       child: MaxWidthBox(
-          maxWidth: 1200,
+          maxWidth: 1280,
           child: CustomScrollView(slivers: [
             GalleryDetailHead(
                 api: controller.hitomi(localDb: local),

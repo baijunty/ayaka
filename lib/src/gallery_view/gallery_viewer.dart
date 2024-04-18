@@ -47,8 +47,9 @@ class _GalleryViewer extends State<GalleryViewer>
     controller.addListener(handlePageChange);
     if (args['index'] == null) {
       _settingsController.manager.helper
-          .readlData<int>('UserLog', 'mark', {'id': _gallery.id})
-          .then((value) => (value?.unSetMask(readMask) ?? 0))
+          .readlData<int>(
+              'UserLog', 'mark', {'id': _gallery.id, 'type': readMask})
+          .then((value) => (value ?? 0))
           .then((value) => controller.jumpToPage(value));
     }
   }
@@ -57,8 +58,8 @@ class _GalleryViewer extends State<GalleryViewer>
     if (controller.page! - controller.page!.toInt() == 0) {
       index = controller.page!.toInt();
       await _settingsController.manager.helper.insertUserLog(
-          _gallery.id, index.setMask(readMask),
-          content: _gallery.name);
+          _gallery.id, readMask,
+          mark: index, content: _gallery.name);
     }
   }
 

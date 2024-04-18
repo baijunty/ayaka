@@ -21,12 +21,12 @@ import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../gallery_view/gallery_item_list_view.dart';
-import '../model/task_controller.dart';
+import '../model/gallery_manager.dart';
 import '../utils/label_utils.dart';
 
 class ThumbImageView extends StatelessWidget {
   final ImageProvider provider;
-  final String? label;
+  final Widget? label;
   final double aspectRatio;
   const ThumbImageView(this.provider,
       {super.key, this.label, this.aspectRatio = 9 / 16});
@@ -75,12 +75,7 @@ class ThumbImageView extends StatelessWidget {
                 child: DecoratedBox(
                   decoration: const BoxDecoration(
                       shape: BoxShape.circle, color: Colors.black45),
-                  child: Center(
-                      child: Text(label!,
-                          style: Theme.of(context)
-                              .textTheme
-                              .labelLarge
-                              ?.copyWith(color: Colors.deepOrange))),
+                  child: Center(child: label!),
                 )))
     ]);
   }
@@ -218,7 +213,12 @@ class GalleryInfo extends StatelessWidget {
                                 child: ThumbImageView(
                                     ProxyNetworkImage(
                                         gallery.id, gallery.files.first, api),
-                                    label: gallery.files.length.toString(),
+                                    label: Text(gallery.files.length.toString(),
+                                        style: Theme.of(context)
+                                            .textTheme
+                                            .labelLarge
+                                            ?.copyWith(
+                                                color: Colors.deepOrange)),
                                     aspectRatio: image.width / image.height))),
                         const SizedBox(width: 8),
                         Expanded(
@@ -479,6 +479,7 @@ class GalleryDetailHead extends StatelessWidget {
   final bool netLoading;
   final Gallery? exist;
   final Hitomi api;
+  final List<img.Image> selected;
   const GalleryDetailHead(
       {super.key,
       required this.api,
@@ -486,7 +487,8 @@ class GalleryDetailHead extends StatelessWidget {
       required this.local,
       required this.extendedInfo,
       required this.netLoading,
-      required this.exist});
+      required this.exist,
+      required this.selected});
 
   @override
   Widget build(BuildContext context) {
@@ -515,6 +517,32 @@ class GalleryDetailHead extends StatelessWidget {
         floating: true,
         snap: true,
         expandedHeight: totalHeight,
+        actions: selected.isEmpty
+            ? null
+            : [
+                IconButton(
+                    onPressed: () async {
+                      await context
+                          .read<GalleryManager>()
+                          .makeAnimatedImage(selected, api, id: gallery.id)
+                          .then((value) => showAdaptiveDialog(
+                              context: context,
+                              builder: (context) {
+                                return AlertDialog.adaptive(
+                                    content: Image.memory(value),
+                                    actions: [
+                                      TextButton(
+                                          onPressed: () =>
+                                              Navigator.of(context).pop(),
+                                          child: Text(
+                                              AppLocalizations.of(context)!
+                                                  .confirm))
+                                    ]);
+                              }));
+                    },
+                    icon: const Icon(Icons.gif)),
+                IconButton(onPressed: () {}, icon: const Icon(Icons.ads_click))
+              ],
         flexibleSpace: FlexibleSpaceBar(
             background: SafeArea(
                 child: Column(children: [
@@ -527,7 +555,11 @@ class GalleryDetailHead extends StatelessWidget {
                     tag: 'gallery-thumb ${gallery.id}',
                     child: ThumbImageView(
                       ProxyNetworkImage(gallery.id, gallery.files.first, api),
-                      label: gallery.files.length.toString(),
+                      label: Text(gallery.files.length.toString(),
+                          style: Theme.of(context)
+                              .textTheme
+                              .labelLarge
+                              ?.copyWith(color: Colors.deepOrange)),
                       aspectRatio: gallery.files.first.width /
                           gallery.files.first.height,
                     ))),

@@ -1,4 +1,4 @@
-import 'package:ayaka/src/model/task_controller.dart';
+import 'package:ayaka/src/model/gallery_manager.dart';
 import 'package:ayaka/src/utils/responsive_util.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';

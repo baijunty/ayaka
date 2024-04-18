@@ -1,5 +1,5 @@
 import 'package:ayaka/src/gallery_view/gallery_details_view.dart';
-import 'package:ayaka/src/model/task_controller.dart';
+import 'package:ayaka/src/model/gallery_manager.dart';
 import 'package:dio/dio.dart';
 import 'package:easy_refresh/easy_refresh.dart';
 import 'package:flutter/foundation.dart';

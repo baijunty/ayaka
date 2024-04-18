@@ -1,5 +1,5 @@
 import 'package:ayaka/src/gallery_view/gallery_viewer.dart';
-import 'package:ayaka/src/model/task_controller.dart';
+import 'package:ayaka/src/model/gallery_manager.dart';
 import 'package:ayaka/src/settings/settings_controller.dart';
 import 'package:ayaka/src/ui/common_view.dart';
 import 'package:ayaka/src/utils/common_define.dart';
@@ -7,7 +7,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:hitomi/gallery/gallery.dart';
 import 'package:provider/provider.dart';
-
+import 'package:hitomi/gallery/image.dart' as img show Image;
 import '../utils/proxy_netwrok_image.dart';
 
 class GalleryDetailsView extends StatefulWidget {
@@ -29,6 +29,7 @@ class _GalleryDetailView extends State<GalleryDetailsView> {
   bool netLoading = true;
   int? readedIndex;
   CancelToken? token;
+  final List<img.Image> _selected = [];
   List<Map<String, dynamic>> translates = [];
   Future<void> _fetchTransLate() async {
     var api = controller.hitomi(localDb: true);
@@ -77,14 +78,33 @@ class _GalleryDetailView extends State<GalleryDetailsView> {
       token = CancelToken();
       _fetchTransLate();
     }
-    controller.manager.helper
-        .readlData<int>('UserLog', 'mark', {'id': gallery.id}).then((value) {
-      if (value?.isFlagSet(readMask) == true) {
+    controller.manager.helper.readlData<int>(
+        'UserLog', 'mark', {'id': gallery.id, 'type': readMask}).then((value) {
+      if (value != null) {
         setState(() {
-          readedIndex = value!.unSetMask(readMask);
+          readedIndex = value;
         });
       }
     });
+  }
+
+  void _handleClick(int index) async {
+    if (_selected.isEmpty) {
+      await Navigator.pushNamed(context, GalleryViewer.routeName, arguments: {
+        'gallery': exists ?? gallery,
+        'index': index,
+        'local': exists != null,
+      });
+    } else {
+      setState(() {
+        var img = gallery.files[index];
+        if (_selected.contains(img)) {
+          _selected.remove(img);
+        } else {
+          _selected.add(img);
+        }
+      });
+    }
   }
 
   @override
@@ -101,7 +121,8 @@ class _GalleryDetailView extends State<GalleryDetailsView> {
                 local: local,
                 extendedInfo: translates,
                 netLoading: netLoading,
-                exist: exists),
+                exist: exists,
+                selected: _selected),
             GalleryTagDetailInfo(
               gallery: gallery,
               extendedInfo: translates,
@@ -117,19 +138,26 @@ class _GalleryDetailView extends State<GalleryDetailsView> {
                 itemBuilder: (context, index) {
                   var image = gallery.files[index];
                   return GestureDetector(
-                      onTap: () async => await Navigator.pushNamed(
-                              context, GalleryViewer.routeName,
-                              arguments: {
-                                'gallery': exists ?? gallery,
-                                'index': index,
-                                'local': exists != null,
-                              }),
+                      onTap: () => _handleClick(index),
+                      onLongPress: _selected.isEmpty
+                          ? () => setState(() {
+                                _selected.add(image);
+                              })
+                          : null,
                       child: Card.outlined(
                           child: Center(
                               child: ThumbImageView(
                         ProxyNetworkImage(gallery.id, image,
                             controller.hitomi(localDb: local)),
-                        label: '${index + 1}',
+                        label: _selected.isEmpty
+                            ? Text('${index + 1}',
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .labelLarge
+                                    ?.copyWith(color: Colors.deepOrange))
+                            : Checkbox.adaptive(
+                                value: _selected.contains(image),
+                                onChanged: (b) => _handleClick(index)),
                         aspectRatio: image.width / image.height,
                       ))));
                 })

@@ -9,7 +9,7 @@ import 'package:hitomi/gallery/gallery.dart';
 import 'package:hitomi/lib.dart';
 import 'package:provider/provider.dart';
 
-import '../model/task_controller.dart';
+import '../model/gallery_manager.dart';
 
 class GallerySimilaerView extends StatefulWidget {
   const GallerySimilaerView({super.key});

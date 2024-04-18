@@ -11,7 +11,7 @@ import 'package:hitomi/lib.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
-import '../model/task_controller.dart';
+import '../model/gallery_manager.dart';
 import '../settings/settings_controller.dart';
 import '../ui/common_view.dart';
 import 'gallery_details_view.dart';

@@ -5,8 +5,12 @@ import 'dart:io';
 import 'package:collection/collection.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:hitomi/lib.dart';
+import 'package:image/image.dart' as image show Command, Image, GifEncoder;
 
 import '../settings/settings_controller.dart';
+import 'package:hitomi/gallery/image.dart' as img show Image, ThumbnaiSize;
 
 class GalleryManager with ChangeNotifier {
   final SettingsController controller;
@@ -85,5 +89,30 @@ class GalleryManager with ChangeNotifier {
             options: Options(responseType: ResponseType.json))
         .then((value) => json.decode(value.data!) as Map<String, dynamic>)
         .catchError((e) => <String, dynamic>{}, test: (error) => true);
+  }
+
+  Future<Uint8List> makeAnimatedImage(List<img.Image> iamges, Hitomi api,
+      {int id = 0, img.ThumbnaiSize size = img.ThumbnaiSize.medium}) async {
+    return iamges
+        .asStream()
+        .asyncMap((event) => api.fetchImageData(event,
+            size: size,
+            id: id,
+            refererUrl: 'https://hitomi.la/imageset/test-$id.html'))
+        .asyncMap((event) {
+          var c = image.Command();
+          c.decodeImage(Uint8List.fromList(event));
+          return c.getImageThread();
+        })
+        .filterNonNull()
+        .fold(<image.Image>[], (previous, element) => previous..add(element))
+        .then((value) {
+          return value
+              .fold(
+                  image.GifEncoder(delay: 80),
+                  (previousValue, element) =>
+                      previousValue..addFrame(element, duration: 80))
+              .finish()!;
+        });
   }
 }

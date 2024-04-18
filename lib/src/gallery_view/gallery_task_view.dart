@@ -1,7 +1,7 @@
 import 'dart:async';
 
 import 'package:ayaka/src/gallery_view/gallery_details_view.dart';
-import 'package:ayaka/src/model/task_controller.dart';
+import 'package:ayaka/src/model/gallery_manager.dart';
 import 'package:ayaka/src/utils/debounce.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:ayaka/src/ui/common_view.dart';

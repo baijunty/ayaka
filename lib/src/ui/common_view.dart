@@ -7,13 +7,14 @@ import 'package:ayaka/src/utils/proxy_netwrok_image.dart';
 import 'package:card_loading/card_loading.dart';
 import 'package:collection/collection.dart';
 import 'package:easy_refresh/easy_refresh.dart';
+import 'package:file_saver/file_saver.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 import 'package:hitomi/gallery/gallery.dart';
-import 'package:hitomi/gallery/image.dart' as img show Image;
+import 'package:hitomi/gallery/image.dart' as img show Image, ThumbnaiSize;
 import 'package:hitomi/gallery/label.dart';
 import 'package:hitomi/lib.dart';
 import 'package:intl/intl.dart';
@@ -35,7 +36,7 @@ class ThumbImageView extends StatelessWidget {
   Widget build(BuildContext context) {
     return Stack(children: [
       AspectRatio(
-        aspectRatio: aspectRatio,
+        aspectRatio: max(aspectRatio, 0.5),
         child: Image(
           image: provider,
           errorBuilder: (context, error, stackTrace) {
@@ -212,7 +213,22 @@ class GalleryInfo extends StatelessWidget {
                                 tag: 'gallery-thumb ${gallery.id}',
                                 child: ThumbImageView(
                                     ProxyNetworkImage(
-                                        gallery.id, gallery.files.first, api),
+                                        dataStream: (chunkEvents) =>
+                                            api.fetchImageData(
+                                              gallery.files.first,
+                                              id: gallery.id,
+                                              size: img.ThumbnaiSize.medium,
+                                              refererUrl:
+                                                  'https://hitomi.la${gallery.urlEncode()}',
+                                              onProcess: (now, total) =>
+                                                  chunkEvents
+                                                      .add(ImageChunkEvent(
+                                                          cumulativeBytesLoaded:
+                                                              now,
+                                                          expectedTotalBytes:
+                                                              total)),
+                                            ),
+                                        key: gallery.files.first.hash),
                                     label: Text(gallery.files.length.toString(),
                                         style: Theme.of(context)
                                             .textTheme
@@ -472,6 +488,53 @@ class TagDetail extends StatelessWidget {
   }
 }
 
+// ignore: must_be_immutable
+class AnimatedSaverDialog extends StatelessWidget {
+  final List<img.Image> selected;
+  final Hitomi api;
+  final Gallery gallery;
+  Uint8List? data;
+  AnimatedSaverDialog(
+      {super.key,
+      required this.selected,
+      required this.api,
+      required this.gallery});
+
+  Future<Uint8List> buildAnimatedImage(BuildContext context,
+      StreamController<ImageChunkEvent> chunkEvents) async {
+    var data = await context.read<GalleryManager>().makeAnimatedImage(
+        selected, api,
+        id: gallery.id,
+        onProgress: (index, total) => chunkEvents.add(ImageChunkEvent(
+            cumulativeBytesLoaded: index, expectedTotalBytes: total)));
+    this.data = data;
+    return data;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog.adaptive(
+        content: ThumbImageView(
+            ProxyNetworkImage(
+                dataStream: (chunkEvents) {
+                  return buildAnimatedImage(context, chunkEvents);
+                },
+                key: selected),
+            aspectRatio: selected.first.width / selected.first.height),
+        actions: [
+          TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: Text(AppLocalizations.of(context)!.confirm)),
+          TextButton(
+              onPressed: () async => await FileSaver.instance.saveFile(
+                  name:
+                      '${gallery.createDir('', createDir: false).path}_${selected.length}.png',
+                  bytes: data),
+              child: Text(AppLocalizations.of(context)!.save))
+        ]);
+  }
+}
+
 class GalleryDetailHead extends StatelessWidget {
   final Gallery gallery;
   final bool local;
@@ -514,31 +577,18 @@ class GalleryDetailHead extends StatelessWidget {
         title:
             Hero(tag: 'gallery_${gallery.id}_name', child: Text(gallery.name)),
         pinned: true,
-        floating: true,
-        snap: true,
         expandedHeight: totalHeight,
         actions: selected.isEmpty
             ? null
             : [
                 IconButton(
                     onPressed: () async {
-                      await context
-                          .read<GalleryManager>()
-                          .makeAnimatedImage(selected, api, id: gallery.id)
-                          .then((value) => showAdaptiveDialog(
-                              context: context,
-                              builder: (context) {
-                                return AlertDialog.adaptive(
-                                    content: Image.memory(value),
-                                    actions: [
-                                      TextButton(
-                                          onPressed: () =>
-                                              Navigator.of(context).pop(),
-                                          child: Text(
-                                              AppLocalizations.of(context)!
-                                                  .confirm))
-                                    ]);
-                              }));
+                      await showAdaptiveDialog(
+                          context: context,
+                          builder: (context) {
+                            return AnimatedSaverDialog(
+                                api: api, selected: selected, gallery: gallery);
+                          });
                     },
                     icon: const Icon(Icons.gif)),
                 IconButton(onPressed: () {}, icon: const Icon(Icons.ads_click))
@@ -554,7 +604,19 @@ class GalleryDetailHead extends StatelessWidget {
                 child: Hero(
                     tag: 'gallery-thumb ${gallery.id}',
                     child: ThumbImageView(
-                      ProxyNetworkImage(gallery.id, gallery.files.first, api),
+                      ProxyNetworkImage(
+                          dataStream: (chunkEvents) => api.fetchImageData(
+                                gallery.files.first,
+                                id: gallery.id,
+                                size: img.ThumbnaiSize.medium,
+                                refererUrl:
+                                    'https://hitomi.la${gallery.urlEncode()}',
+                                onProcess: (now, total) => chunkEvents.add(
+                                    ImageChunkEvent(
+                                        cumulativeBytesLoaded: now,
+                                        expectedTotalBytes: total)),
+                              ),
+                          key: gallery.files.first.hash),
                       label: Text(gallery.files.length.toString(),
                           style: Theme.of(context)
                               .textTheme

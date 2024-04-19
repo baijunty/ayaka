@@ -7,7 +7,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:hitomi/gallery/gallery.dart';
 import 'package:provider/provider.dart';
-import 'package:hitomi/gallery/image.dart' as img show Image;
+import 'package:hitomi/gallery/image.dart' as img show Image, ThumbnaiSize;
 import '../utils/proxy_netwrok_image.dart';
 
 class GalleryDetailsView extends StatefulWidget {
@@ -109,6 +109,8 @@ class _GalleryDetailView extends State<GalleryDetailsView> {
 
   @override
   Widget build(BuildContext context) {
+    var api = controller.hitomi(localDb: local);
+    var refererUrl = 'https://hitomi.la${gallery.urlEncode()}';
     return Scaffold(
         body: SafeArea(
             child: Center(
@@ -147,8 +149,17 @@ class _GalleryDetailView extends State<GalleryDetailsView> {
                       child: Card.outlined(
                           child: Center(
                               child: ThumbImageView(
-                        ProxyNetworkImage(gallery.id, image,
-                            controller.hitomi(localDb: local)),
+                        ProxyNetworkImage(
+                            dataStream: (chunkEvents) => api.fetchImageData(
+                                image,
+                                id: gallery.id,
+                                size: img.ThumbnaiSize.medium,
+                                refererUrl: refererUrl,
+                                onProcess: (now, total) => chunkEvents.add(
+                                    ImageChunkEvent(
+                                        cumulativeBytesLoaded: now,
+                                        expectedTotalBytes: total))),
+                            key: image.hash),
                         label: _selected.isEmpty
                             ? Text('${index + 1}',
                                 style: Theme.of(context)

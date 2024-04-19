@@ -6,25 +6,22 @@ import 'dart:ui' as ui;
 import 'package:flutter/foundation.dart';
 
 import 'package:flutter/widgets.dart';
-import 'package:hitomi/gallery/image.dart' as img;
-import 'package:hitomi/lib.dart';
 
 typedef _SimpleDecoderCallback = Future<ui.Codec> Function(
     ui.ImmutableBuffer buffer);
 
 class ProxyNetworkImage extends ImageProvider<ProxyNetworkImage> {
-  /// Creates an object that fetches the image at the given URL.
-  const ProxyNetworkImage(this.id, this.image, this.api,
-      {this.scale = 1.0, this.size = img.ThumbnaiSize.medium});
   final double scale;
 
-  final img.Image image;
+  final Future<List<int>> Function(
+      StreamController<ImageChunkEvent> chunkEvents) dataStream;
+  final Object key;
+  ProxyNetworkImage({
+    required this.dataStream,
+    required this.key,
+    this.scale = 1.0,
+  });
 
-  final Hitomi api;
-
-  final int id;
-
-  final img.ThumbnaiSize size;
   @override
   bool operator ==(Object other) {
     if (other.runtimeType != runtimeType) {
@@ -32,17 +29,15 @@ class ProxyNetworkImage extends ImageProvider<ProxyNetworkImage> {
     }
     return other is ProxyNetworkImage &&
         other.scale == scale &&
-        other.size == size &&
-        other.id == id &&
-        other.image == image;
+        other.key == key;
   }
 
   @override
-  int get hashCode => Object.hash(image, id, size, scale);
+  int get hashCode => Object.hash(key, scale);
 
   @override
   String toString() =>
-      '${objectRuntimeType(this, 'NetworkImage')}("$image", scale: ${scale.toStringAsFixed(1)})';
+      '${objectRuntimeType(this, 'NetworkImage')}("$key", scale: ${scale.toStringAsFixed(1)})';
 
   @override
   Future<ProxyNetworkImage> obtainKey(ImageConfiguration configuration) {
@@ -57,22 +52,12 @@ class ProxyNetworkImage extends ImageProvider<ProxyNetworkImage> {
     try {
       assert(key == this);
 
-      return await api
-          .fetchImageData(image,
-              id: id,
-              size: size,
-              refererUrl: 'https://hitomi.la/doujinshi/test-$id.html',
-              onProcess: (count, total) => chunkEvents.add(ImageChunkEvent(
-                    cumulativeBytesLoaded: count,
-                    expectedTotalBytes: total,
-                  )))
+      return await dataStream(chunkEvents)
           .then((value) =>
               ui.ImmutableBuffer.fromUint8List(Uint8List.fromList(value)))
           .then((value) => decode(value));
     } catch (e) {
-      // Depending on where the exception was thrown, the image cache may not
-      // have had a chance to track the key in the cache at all.
-      // Schedule a microtask to give the cache a chance to add the key.
+      debugPrint('$e');
       scheduleMicrotask(() {
         PaintingBinding.instance.imageCache.evict(key);
       });

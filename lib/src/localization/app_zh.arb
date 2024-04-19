@@ -65,6 +65,7 @@
   "authToken":"校验码",
   "searchHint":"输入关键词搜索,以逗号分割",
   "inputHint":"请输入内容",
+  "save":"保存",
   "savePath":"保存目录",
   "dateDefault":"默认",
   "dateAsc":"添加顺序",

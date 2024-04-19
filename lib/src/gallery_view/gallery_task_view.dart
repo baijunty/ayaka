@@ -83,8 +83,20 @@ class _GalleryTaskView extends State<GalleryTaskView> {
             SizedBox(
                 width: 120,
                 child: ThumbImageView(
-                    ProxyNetworkImage(gallery.id, gallery.files.first,
-                        controller.controller.hitomi(localDb: false)),
+                    ProxyNetworkImage(
+                        dataStream: (chunkEvents) => controller.controller
+                            .hitomi(localDb: true)
+                            .fetchImageData(
+                              gallery.files.first,
+                              id: gallery.id,
+                              refererUrl:
+                                  'https://hitomi.la${gallery.urlEncode()}',
+                              onProcess: (now, total) => chunkEvents.add(
+                                  ImageChunkEvent(
+                                      cumulativeBytesLoaded: now,
+                                      expectedTotalBytes: total)),
+                            ),
+                        key: gallery.files.first.hash),
                     aspectRatio: 1)),
             Expanded(
                 child: Column(children: [

@@ -7,7 +7,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:hitomi/lib.dart';
-import 'package:image/image.dart' as image show Command, Image, GifEncoder;
+import 'package:image/image.dart' as image show Command, Image, PngEncoder;
 
 import '../settings/settings_controller.dart';
 import 'package:hitomi/gallery/image.dart' as img show Image, ThumbnaiSize;
@@ -91,28 +91,36 @@ class GalleryManager with ChangeNotifier {
         .catchError((e) => <String, dynamic>{}, test: (error) => true);
   }
 
-  Future<Uint8List> makeAnimatedImage(List<img.Image> iamges, Hitomi api,
-      {int id = 0, img.ThumbnaiSize size = img.ThumbnaiSize.medium}) async {
-    return iamges
+  Future<Uint8List> makeAnimatedImage(List<img.Image> images, Hitomi api,
+      {int id = 0,
+      img.ThumbnaiSize size = img.ThumbnaiSize.medium,
+      void Function(int index, int total)? onProgress}) async {
+    return images
         .asStream()
-        .asyncMap((event) => api.fetchImageData(event,
-            size: size,
-            id: id,
-            refererUrl: 'https://hitomi.la/imageset/test-$id.html'))
+        .asyncMap((event) {
+          onProgress?.call(images.indexOf(event), images.length);
+          return api
+              .fetchImageData(event,
+                  size: size,
+                  id: id,
+                  refererUrl: 'https://hitomi.la/imageset/test-$id.html')
+              .catchError((e) {
+            debugPrint('${event.name} hash ${event.hash} occus $e');
+            return <int>[];
+          }, test: (error) => true);
+        })
         .asyncMap((event) {
           var c = image.Command();
           c.decodeImage(Uint8List.fromList(event));
-          return c.getImageThread();
+          return c
+              .getImageThread()
+              .then((value) => value?..frameDuration = 200);
         })
         .filterNonNull()
         .fold(<image.Image>[], (previous, element) => previous..add(element))
-        .then((value) {
-          return value
-              .fold(
-                  image.GifEncoder(delay: 80),
-                  (previousValue, element) =>
-                      previousValue..addFrame(element, duration: 80))
-              .finish()!;
-        });
+        .then((value) => value
+            .fold(image.PngEncoder(level: 6)..start(value.length),
+                (previousValue, element) => previousValue..addFrame(element))
+            .finish()!);
   }
 }

@@ -40,8 +40,16 @@ class _GalleryViewer extends State<GalleryViewer>
     final api = settings.hitomi(localDb: args['local']);
     provider = MultiImageProvider(
         _gallery.files.map((e) {
-          return ProxyNetworkImage(_gallery.id, e, api,
-              size: ThumbnaiSize.origin);
+          return ProxyNetworkImage(
+              dataStream: (chunkEvents) => api.fetchImageData(
+                    e,
+                    id: _gallery.id,
+                    size: ThumbnaiSize.origin,
+                    refererUrl: 'https://hitomi.la${_gallery.urlEncode()}',
+                    onProcess: (now, total) => chunkEvents.add(ImageChunkEvent(
+                        cumulativeBytesLoaded: now, expectedTotalBytes: total)),
+                  ),
+                        key: '${e.hash}_origin');
         }).toList(),
         initialIndex: index);
     controller.addListener(handlePageChange);

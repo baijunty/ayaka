@@ -106,9 +106,6 @@ class _GallerySearchResultView extends State<GallerySearchResultView> {
               ..write(','))
         .toString();
     if (data.isEmpty) {
-      _selected.addAll(controller.config.languages
-          .map((e) => {...Language(name: e).toMap(), 'include': true})
-          .toList());
       _fetchData();
     }
   }
@@ -122,9 +119,15 @@ class _GallerySearchResultView extends State<GallerySearchResultView> {
         idsFuture = api
             .search(
                 _selected
-                    .where((element) => element['include'] == true)
-                    .map((e) => fromString(e['type'], e['name']))
-                    .toList(),
+                        .where((element) => element['include'] == true)
+                        .map((e) => fromString(e['type'], e['name']))
+                        .toList() +
+                    context
+                        .read<SettingsController>()
+                        .config
+                        .languages
+                        .map((e) => Language(name: e))
+                        .toList(),
                 exclude: _selected
                     .where((element) => element['include'] == false)
                     .map((e) => fromString(e['type'], e['name']))

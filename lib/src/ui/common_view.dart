@@ -452,7 +452,9 @@ class TagDetail extends StatelessWidget {
                   if (commondPrefix != null)
                     IconButton(
                         onPressed: () async => taskControl
-                            .addTask('$commondPrefix ${tag['name']}'),
+                            .addTask('$commondPrefix ${tag['name']}')
+                            .then((value) => showSnackBar(context,
+                                AppLocalizations.of(context)!.addTaskSuccess)),
                         icon: const Icon(Icons.download)),
                   const Expanded(child: Divider()),
                 ]))
@@ -519,7 +521,10 @@ class AnimatedSaverDialog extends StatelessWidget {
                 dataStream: (chunkEvents) {
                   return buildAnimatedImage(context, chunkEvents);
                 },
-                key: selected),
+                key: selected.fold(
+                    StringBuffer(),
+                    (previousValue, element) =>
+                        previousValue..write(element.name))),
             aspectRatio: selected.first.width / selected.first.height),
         actions: [
           TextButton(

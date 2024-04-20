@@ -15,7 +15,7 @@ class ProxyNetworkImage extends ImageProvider<ProxyNetworkImage> {
 
   final Future<List<int>> Function(
       StreamController<ImageChunkEvent> chunkEvents) dataStream;
-  final Object key;
+  final dynamic key;
   ProxyNetworkImage({
     required this.dataStream,
     required this.key,

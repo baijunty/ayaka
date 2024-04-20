@@ -1,3 +1,4 @@
 {
-    "cmake.sourceDirectory": "D:/dev/dart/ayaka/windows"
+    "cmake.sourceDirectory": "D:/dev/dart/ayaka/windows",
+    "java.configuration.updateBuildConfiguration": "interactive"
 }

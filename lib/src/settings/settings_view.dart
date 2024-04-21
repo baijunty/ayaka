@@ -119,40 +119,6 @@ class _StateSetting extends State<SettingsView> {
                         },
                         icon: const Icon(Icons.edit))),
                 ListTile(
-                    leading:
-                        const ImageIcon(AssetImage('assets/images/url.png')),
-                    title: Text(AppLocalizations.of(context)!.remoteAddr),
-                    subtitle: Text(_settingsController.config.remoteHttp),
-                    trailing: IconButton(
-                        onPressed: () async {
-                          var s = await _showDialogInput(
-                              type: TextInputType.url,
-                              defaultValue:
-                                  _settingsController.config.remoteHttp);
-                          if (s?.isNotEmpty == true) {
-                            await _settingsController.updateConfig(
-                                _settingsController.config
-                                    .copyWith(remoteHttp: s!));
-                          }
-                        },
-                        icon: const Icon(Icons.edit))),
-                ListTile(
-                    leading: const ImageIcon(
-                        AssetImage('assets/images/user-authentication.png')),
-                    title: Text(AppLocalizations.of(context)!.authToken),
-                    subtitle: Text(_settingsController.config.auth),
-                    trailing: IconButton(
-                        onPressed: () async {
-                          var s = await _showDialogInput(
-                              type: TextInputType.url,
-                              defaultValue: _settingsController.config.auth);
-                          if (s?.isNotEmpty == true) {
-                            await _settingsController.updateConfig(
-                                _settingsController.config.copyWith(auth: s!));
-                          }
-                        },
-                        icon: const Icon(Icons.edit))),
-                ListTile(
                     leading: const ImageIcon(
                         AssetImage('assets/images/direction.png')),
                     title: Text(AppLocalizations.of(context)!.connectType),
@@ -164,6 +130,56 @@ class _StateSetting extends State<SettingsView> {
                         onChanged: (b) => setState(() {
                               _settingsController.switchConn(b);
                             }))),
+                if (_settingsController.useProxy)
+                  ListTile(
+                      leading:
+                          const ImageIcon(AssetImage('assets/images/url.png')),
+                      title: Text(AppLocalizations.of(context)!.remoteAddr),
+                      subtitle: Text(_settingsController.config.remoteHttp),
+                      trailing: IconButton(
+                          onPressed: () async {
+                            var s = await _showDialogInput(
+                                type: TextInputType.url,
+                                defaultValue:
+                                    _settingsController.config.remoteHttp);
+                            if (s?.isNotEmpty == true) {
+                              await _settingsController.updateConfig(
+                                  _settingsController.config
+                                      .copyWith(remoteHttp: s!));
+                            }
+                          },
+                          icon: const Icon(Icons.edit))),
+                if (_settingsController.useProxy)
+                  ListTile(
+                      leading: const ImageIcon(
+                          AssetImage('assets/images/user-authentication.png')),
+                      title: Text(AppLocalizations.of(context)!.authToken),
+                      subtitle: Text(_settingsController.config.auth),
+                      trailing: IconButton(
+                          onPressed: () async {
+                            var s = await _showDialogInput(
+                                type: TextInputType.url,
+                                defaultValue: _settingsController.config.auth);
+                            if (s?.isNotEmpty == true) {
+                              await _settingsController.updateConfig(
+                                  _settingsController.config
+                                      .copyWith(auth: s!));
+                            }
+                          },
+                          icon: const Icon(Icons.edit))),
+                ListTile(
+                    leading: Icon(_settingsController.runServer
+                        ? Icons.online_prediction
+                        : Icons.airplanemode_active),
+                    title: Text(AppLocalizations.of(context)!.runServer),
+                    subtitle: _settingsController.runServer
+                        ? const Text('http://127.0.0.1:7890')
+                        : Text(AppLocalizations.of(context)!.closed),
+                    trailing: Switch.adaptive(
+                        value: _settingsController.runServer,
+                        onChanged: (b) => _settingsController
+                            .openServer(b)
+                            .then((value) => setState(() {})))),
                 ListTile(
                     leading: const ImageIcon(
                         AssetImage('assets/images/database.png')),

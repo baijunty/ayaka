@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:math';
+import 'package:ayaka/src/gallery_view/gallery_details_view.dart';
 import 'package:ayaka/src/gallery_view/gallery_search_result.dart';
 import 'package:ayaka/src/utils/label_utils.dart';
 import 'package:collection/collection.dart';
@@ -32,6 +33,7 @@ class _GallerySearch extends State<GallerySearch> {
   Iterable<Widget> lastResult = const Iterable.empty();
   String lastQuery = '';
   late SearchController controller;
+  late FocusNode focusNode;
   Future<Iterable<Widget>> fetchLabels(SearchController controller) async {
     var text = controller.value.text;
     text = text.substring(min(text.lastIndexOf(',') + 1, text.length));
@@ -65,6 +67,7 @@ class _GallerySearch extends State<GallerySearch> {
   void initState() {
     super.initState();
     controller = SearchController();
+    focusNode = FocusNode();
     controller.addListener(textChange);
     _debounce = Debounce();
   }
@@ -86,12 +89,14 @@ class _GallerySearch extends State<GallerySearch> {
   void didChangeDependencies() {
     super.didChangeDependencies();
     api = context.read<SettingsController>().hitomi(localDb: true);
+    focusNode.unfocus();
   }
 
   @override
   void dispose() {
     super.dispose();
     _debounce.dispose();
+    focusNode.dispose();
     controller.removeListener(textChange);
     controller.dispose();
   }
@@ -129,8 +134,8 @@ class _GallerySearch extends State<GallerySearch> {
   Widget _inputRow() {
     return Padding(
       padding: const EdgeInsets.only(left: 8, right: 8),
-      child: SearchAnchor.bar(
-          barHintText: AppLocalizations.of(context)!.searchHint,
+      child: SearchAnchor(
+          viewHintText: AppLocalizations.of(context)!.searchHint,
           suggestionsBuilder: (context, controller) {
             if (controller.text.isEmpty) {
               if (_history.isNotEmpty) {
@@ -154,10 +159,42 @@ class _GallerySearch extends State<GallerySearch> {
                 },
                 icon: const Icon(Icons.close))
           ],
-          onSubmitted: (value) {
-            Navigator.of(context).restorablePushNamed(
-                GallerySearchResultView.routeName,
-                arguments: {'tags': _selected, 'local': widget.localDb});
+          builder: (context, controller) {
+            return SearchBar(
+                controller: controller,
+                onTap: () {
+                  controller.openView();
+                },
+                onChanged: (String value) {
+                  controller.openView();
+                },
+                focusNode: focusNode,
+                padding: const MaterialStatePropertyAll<EdgeInsets>(
+                    EdgeInsets.symmetric(horizontal: 16.0)),
+                leading: const Icon(Icons.search),
+                onSubmitted: (value) async {
+                  if (controller.text.isNotEmpty) {
+                    if (_selected.isNotEmpty) {
+                      Navigator.of(context).restorablePushNamed(
+                          GallerySearchResultView.routeName,
+                          arguments: {
+                            'tags': _selected,
+                            'local': widget.localDb
+                          });
+                    } else if (numberExp.hasMatch(controller.text)) {
+                      await api.fetchGallery(controller.text).then(
+                          (value) async {
+                        await Navigator.of(context).pushNamed(
+                            GalleryDetailsView.routeName,
+                            arguments: {'gallery': value, 'local': false});
+                        return debugPrint('fetch ${value.name}');
+                      }).catchError(
+                          (e) => showSnackBar(context,
+                              '${AppLocalizations.of(context)!.networkError} or ${AppLocalizations.of(context)!.wrongId}'),
+                          test: (error) => true);
+                    }
+                  }
+                });
           }),
     );
   }

@@ -83,12 +83,16 @@ class GalleryManager with ChangeNotifier {
   }
 
   Future<Map<String, dynamic>> checkExist(int id) async {
-    return controller.manager.dio
-        .post<String>('${controller.config.remoteHttp}/checkId',
-            data: json.encode({'auth': controller.config.auth, 'id': id}),
-            options: Options(responseType: ResponseType.json))
-        .then((value) => json.decode(value.data!) as Map<String, dynamic>)
-        .catchError((e) => <String, dynamic>{}, test: (error) => true);
+    return controller.useProxy
+        ? controller.manager.dio
+            .post<String>('${controller.config.remoteHttp}/checkId',
+                data: json.encode({'auth': controller.config.auth, 'id': id}),
+                options: Options(responseType: ResponseType.json))
+            .then((value) => json.decode(value.data!) as Map<String, dynamic>)
+            .catchError((e) => <String, dynamic>{}, test: (error) => true)
+        : controller.manager
+            .checkExistsId(id)
+            .then((value) => {'id': id, 'value': value});
   }
 
   Future<Uint8List> makeAnimatedImage(List<img.Image> images, Hitomi api,

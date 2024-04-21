@@ -1,6 +1,8 @@
 import 'package:ayaka/src/gallery_view/gallery_viewer.dart';
 import 'package:ayaka/src/model/gallery_manager.dart';
 import 'package:ayaka/src/settings/settings_controller.dart';
+import 'package:ayaka/src/ui/animation_view.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:ayaka/src/ui/common_view.dart';
 import 'package:ayaka/src/utils/common_define.dart';
 import 'package:dio/dio.dart';
@@ -116,62 +118,96 @@ class _GalleryDetailView extends State<GalleryDetailsView> {
             child: Center(
       child: MaxWidthBox(
           maxWidth: 1280,
-          child: CustomScrollView(slivers: [
-            GalleryDetailHead(
-                api: controller.hitomi(localDb: local),
+          child: Stack(children: [
+            CustomScrollView(slivers: [
+              GalleryDetailHead(
+                  api: controller.hitomi(localDb: local),
+                  gallery: gallery,
+                  local: local,
+                  extendedInfo: translates,
+                  netLoading: netLoading,
+                  exist: exists),
+              GalleryTagDetailInfo(
                 gallery: gallery,
-                local: local,
                 extendedInfo: translates,
+                controller: controller,
+                local: local,
                 netLoading: netLoading,
-                exist: exists,
-                selected: _selected),
-            GalleryTagDetailInfo(
-              gallery: gallery,
-              extendedInfo: translates,
-              controller: controller,
-              local: local,
-              netLoading: netLoading,
-              readIndex: readedIndex,
-            ),
-            SliverGrid.builder(
-                gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-                    maxCrossAxisExtent: 300),
-                itemCount: gallery.files.length,
-                itemBuilder: (context, index) {
-                  var image = gallery.files[index];
-                  return GestureDetector(
-                      onTap: () => _handleClick(index),
-                      onLongPress: _selected.isEmpty
-                          ? () => setState(() {
-                                _selected.add(image);
-                              })
-                          : null,
-                      child: Card.outlined(
-                          child: Center(
-                              child: ThumbImageView(
-                        ProxyNetworkImage(
-                            dataStream: (chunkEvents) => api.fetchImageData(
-                                image,
-                                id: gallery.id,
-                                size: img.ThumbnaiSize.medium,
-                                refererUrl: refererUrl,
-                                onProcess: (now, total) => chunkEvents.add(
-                                    ImageChunkEvent(
-                                        cumulativeBytesLoaded: now,
-                                        expectedTotalBytes: total))),
-                            key: image.hash),
-                        label: _selected.isEmpty
-                            ? Text('${index + 1}',
-                                style: Theme.of(context)
-                                    .textTheme
-                                    .labelLarge
-                                    ?.copyWith(color: Colors.deepOrange))
-                            : Checkbox.adaptive(
-                                value: _selected.contains(image),
-                                onChanged: (b) => _handleClick(index)),
-                        aspectRatio: image.width / image.height,
-                      ))));
-                })
+                readIndex: readedIndex,
+              ),
+              SliverGrid.builder(
+                  gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
+                      maxCrossAxisExtent: 300),
+                  itemCount: gallery.files.length,
+                  itemBuilder: (context, index) {
+                    var image = gallery.files[index];
+                    return GestureDetector(
+                        onTap: () => _handleClick(index),
+                        onLongPress: _selected.isEmpty
+                            ? () => setState(() {
+                                  _selected.add(image);
+                                })
+                            : null,
+                        child: Card.outlined(
+                            child: Center(
+                                child: ThumbImageView(
+                          ProxyNetworkImage(
+                              dataStream: (chunkEvents) => api.fetchImageData(
+                                  image,
+                                  id: gallery.id,
+                                  size: img.ThumbnaiSize.medium,
+                                  refererUrl: refererUrl,
+                                  onProcess: (now, total) => chunkEvents.add(
+                                      ImageChunkEvent(
+                                          cumulativeBytesLoaded: now,
+                                          expectedTotalBytes: total))),
+                              key: image.hash),
+                          label: _selected.isEmpty
+                              ? Text('${index + 1}',
+                                  style: Theme.of(context)
+                                      .textTheme
+                                      .labelLarge
+                                      ?.copyWith(color: Colors.deepOrange))
+                              : Checkbox.adaptive(
+                                  value: _selected.contains(image),
+                                  onChanged: (b) => _handleClick(index)),
+                          aspectRatio: image.width / image.height,
+                        ))));
+                  })
+            ]),
+            if (_selected.isNotEmpty)
+              Align(
+                  alignment: Alignment.bottomCenter,
+                  child: Container(
+                      color: Theme.of(context).colorScheme.background,
+                      child: Row(
+                          mainAxisAlignment: MainAxisAlignment.end,
+                          children: [
+                            TextButton(
+                                onPressed: () => setState(() {
+                                      _selected.clear();
+                                    }),
+                                child:
+                                    Text(AppLocalizations.of(context)!.cancel)),
+                            TextButton(
+                                onPressed: () => setState(() {
+                                      _selected.clear();
+                                      _selected.addAll(gallery.files);
+                                    }),
+                                child: Text(
+                                    AppLocalizations.of(context)!.selectAll)),
+                            TextButton(
+                                onPressed: () {
+                                  Navigator.of(context).push(MaterialPageRoute(
+                                      builder: ((context) =>
+                                          AnimatedSaverDialog(
+                                              selected: _selected,
+                                              api: api,
+                                              gallery: gallery))));
+                                },
+                                child: Text(
+                                    AppLocalizations.of(context)!.makeGif)),
+                          ])))
           ])),
     )));
   }

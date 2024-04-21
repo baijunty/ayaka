@@ -126,8 +126,12 @@ class _GalleryListView extends State<GalleryItemListView> {
       showAppBar = args != null;
       local = (args?['local'] ?? widget.localDb);
       settingsController = context.watch<SettingsController>();
-      _fetchData();
+      if (_page == 1) {
+        _fetchData();
+      }
     }
+    debugPrint(
+        'didChangeDependencies ${_api?.runtimeType} $_page ${data.length}');
   }
 
   Widget _bodyContentList() {
@@ -181,7 +185,6 @@ class _GalleryListView extends State<GalleryItemListView> {
                   data.clear();
                   _page = 1;
                   sortEnum = value;
-                  _fetchData();
                 }),
             icon: const Icon(Icons.sort)),
         if (!kIsWeb && showAppBar)
@@ -198,7 +201,7 @@ class _GalleryListView extends State<GalleryItemListView> {
               },
               onSelected: (value) async {
                 local = value;
-                _api = settingsController.hitomi(localDb: value);
+                _api = null;
                 _page = 1;
                 data.clear();
                 await _fetchData();

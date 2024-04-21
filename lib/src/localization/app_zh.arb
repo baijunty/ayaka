@@ -53,6 +53,7 @@
   "delete":"删除",
   "updateDatabase":"更新数据库",
   "select":"选择",
+  "selectAll":"全选",
   "connectType":"连接方式",
   "direct":"本地直连",
   "proxy":"代理",
@@ -83,5 +84,12 @@
   "pullToLoad": "上拉加载",
   "loading": "加载中...",
   "exitConfirm": "再次点击后退退出",
+  "thumb": "预览",
+  "origin": "原图",
+  "wrongId": "错误ID",
+  "networkError": "网络错误",
+  "makeGif": "生成动图",
+  "runServer":"运行服务器",
+  "closed":"已关闭",
   "tag":"标签"
 }

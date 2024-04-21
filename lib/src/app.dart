@@ -52,7 +52,8 @@ class MyApp extends StatelessWidget {
                     return MaterialPageRoute<void>(
                       settings: routeSettings,
                       builder: (BuildContext context) {
-                        return _buildRoute(routeSettings.name ?? '/');
+                        return _buildRoute(
+                            routeSettings.name ?? '/', routeSettings.arguments);
                       },
                     );
                   },
@@ -66,7 +67,7 @@ class MyApp extends StatelessWidget {
         });
   }
 
-  Widget _buildRoute(String route) {
+  Widget _buildRoute(String route, Object? args) {
     switch (route) {
       case GalleryViewer.routeName:
         return const GalleryViewer();
@@ -79,7 +80,8 @@ class MyApp extends StatelessWidget {
       case GallerySimilaerView.routeName:
         return const GallerySimilaerView();
       case GalleryItemListView.routeName:
-        return const GalleryItemListView();
+        return GalleryItemListView(
+            localDb: (args as Map<String, dynamic>?)?['local'] ?? false);
       case GalleryTaskView.routeName:
         return const GalleryTaskView();
       default:

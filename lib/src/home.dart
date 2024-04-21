@@ -9,10 +9,6 @@ import 'package:flutter/services.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 class AyakaHome extends StatefulWidget {
-  final content = const [
-    GalleryItemListView(),
-    GalleryItemListView(localDb: true),
-  ];
   const AyakaHome({super.key});
 
   @override
@@ -24,6 +20,10 @@ class AyakaHome extends StatefulWidget {
 class _AyakaHome extends State<AyakaHome> {
   var index = 0;
   var exitApp = false;
+  final content = [
+    GalleryItemListView(),
+    GalleryItemListView(localDb: true),
+  ];
   void _handleIndexClick(int index) {
     setState(() {
       this.index = index;
@@ -36,16 +36,13 @@ class _AyakaHome extends State<AyakaHome> {
     switch (index) {
       case 2:
         child = IndexedStack(
-            index: index,
-            children: [...widget.content, const GalleryTaskView()]);
+            index: index, children: [...content, const GalleryTaskView()]);
       case 3:
-        child = IndexedStack(index: index, children: [
-          ...widget.content,
-          const SettingsView(),
-          const SettingsView()
-        ]);
+        child = IndexedStack(
+            index: index,
+            children: [...content, const SettingsView(), const SettingsView()]);
       default:
-        child = IndexedStack(index: index, children: widget.content);
+        child = IndexedStack(index: index, children: content);
     }
     return PopScope(
         canPop: exitApp,

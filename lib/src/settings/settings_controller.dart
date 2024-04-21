@@ -25,9 +25,9 @@ class SettingsController with ChangeNotifier {
   UserConfig get config => _config;
   bool _useProxy = kIsWeb;
   bool get useProxy => _useProxy;
-
-  Hitomi hitomi({bool localDb = false}) => useProxy
-      ? _manager.getApiFromProxy(localDb, _config.auth, _config.remoteHttp)
+  bool runServer = false;
+  Hitomi hitomi({bool localDb = false}) => localDb && useProxy
+      ? _manager.getApiFromProxy(_config.auth, _config.remoteHttp)
       : _manager.getApiDirect(local: localDb);
 
   Future<void> updateThemeMode(ThemeMode? newThemeMode) async {
@@ -54,8 +54,10 @@ class SettingsController with ChangeNotifier {
         test: (error) => true);
     _useProxy =
         await _settingsService.readConfig<bool>('useProxy') ?? _useProxy;
+    runServer = !kIsWeb &&
+        (await _settingsService.readConfig<bool>('runServer') ?? runServer);
     _manager = TaskManager(_config);
-    return !kIsWeb && _server == null
+    return !kIsWeb && runServer
         ? run_server(_manager)
             .then((value) => _config)
             .catchError((e) => _config, test: (error) => true)
@@ -68,12 +70,26 @@ class SettingsController with ChangeNotifier {
     notifyListeners();
   }
 
+  Future<void> openServer(bool open) async {
+    await _settingsService.saveConfig('runServer', open);
+    if (open) {
+      _server?.close(force: true);
+      _server = await run_server(_manager);
+    } else {
+      _server?.close(force: true);
+      _server = null;
+    }
+    runServer = !kIsWeb && open && _server != null;
+    manager.logger.d('$open $_server is $runServer');
+    notifyListeners();
+  }
+
   Future<void> updateConfig(UserConfig config) async {
     if (config == _config) return;
     _config = config;
     await _settingsService.saveConfig('config', json.encode(config.toJson()));
     _manager = TaskManager(_config);
-    if (_server != null) {
+    if (runServer) {
       _server?.close(force: true);
       _server = await run_server(_manager);
     }

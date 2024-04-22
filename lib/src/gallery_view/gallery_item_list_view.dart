@@ -12,44 +12,37 @@ import 'package:hitomi/lib.dart';
 import 'package:provider/provider.dart';
 
 import '../settings/settings_controller.dart';
-import 'gallery_search.dart';
 import 'gallery_similar_view.dart';
 
 /// Displays a list of SampleItems.
 class GalleryItemListView extends StatefulWidget {
-  final bool localDb;
-  const GalleryItemListView({super.key, this.localDb = false});
-
-  static const routeName = '/gallery_list';
+  final Hitomi api;
+  final Map<String, dynamic> label;
+  final bool local;
+  const GalleryItemListView(
+      {super.key, required this.api, required this.label, required this.local});
 
   @override
   State<StatefulWidget> createState() => _GalleryListView();
 }
 
-class _GalleryListView extends State<GalleryItemListView> {
+class _GalleryListView extends State<GalleryItemListView>
+    with AutomaticKeepAliveClientMixin {
   List<Gallery> data = [];
-  late Map<String, dynamic> _label;
   var _page = 1;
-  var showAppBar = false;
   int totalPage = 1;
   late void Function(Gallery) click;
-  bool local = false;
   late EasyRefreshController _controller;
   late PopupMenuButton<String> Function(Gallery gallery)? menuBuilder;
   SortEnum? sortEnum;
   CancelToken? token;
   late SettingsController settingsController;
   var totalCount = 0;
-  Hitomi? _api;
-  Hitomi get api {
-    _api ??= settingsController.hitomi(localDb: local);
-    return _api!;
-  }
-
+  late ScrollController scrollController;
   Future<void> _fetchData({bool refresh = false}) async {
     token = CancelToken();
-    return api
-        .viewByTag(fromString(_label['type'], _label['name']),
+    return widget.api
+        .viewByTag(fromString(widget.label['type'], widget.label['name']),
             page: _page, sort: sortEnum, token: token)
         .then((value) => setState(() {
               var insertList = value.data
@@ -58,11 +51,9 @@ class _GalleryListView extends State<GalleryItemListView> {
               _page++;
               totalCount = value.totalCount;
               totalPage = (value.totalCount / 25).ceil();
-              _controller.finishLoad();
               _controller.finishRefresh();
             }))
         .catchError((e) {
-      _controller.finishLoad();
       _controller.finishRefresh();
       if (mounted) {
         showSnackBar(context, 'err $e');
@@ -74,9 +65,11 @@ class _GalleryListView extends State<GalleryItemListView> {
   void initState() {
     super.initState();
     click = (g) => Navigator.pushNamed(context, GalleryDetailsView.routeName,
-        arguments: {'gallery': g, 'local': local});
+        arguments: {'gallery': g, 'local': widget.local});
     _controller = EasyRefreshController(
-        controlFinishRefresh: true, controlFinishLoad: true);
+        controlFinishRefresh: true, controlFinishLoad: false);
+    scrollController = ScrollController();
+    scrollController.addListener(handleScroll);
     menuBuilder = kIsWeb
         ? null
         : (g) => PopupMenuButton<String>(itemBuilder: (context) {
@@ -93,7 +86,7 @@ class _GalleryListView extends State<GalleryItemListView> {
                     onTap: () => Navigator.of(context).pushNamed(
                         GallerySimilaerView.routeName,
                         arguments: g)),
-                if (local)
+                if (widget.local)
                   PopupMenuItem(
                       child: Text(AppLocalizations.of(context)!.delete),
                       onTap: () => context
@@ -112,133 +105,98 @@ class _GalleryListView extends State<GalleryItemListView> {
   @override
   void dispose() {
     super.dispose();
+    scrollController.removeListener(handleScroll);
+    scrollController.dispose();
     _controller.dispose();
     token?.cancel('dispose');
+  }
+
+  void handleScroll() async {
+    if (scrollController.position.pixels ==
+            scrollController.position.maxScrollExtent &&
+        data.length < totalCount) {
+      showSnackBar(context,
+          '$_page/$totalPage ${AppLocalizations.of(context)!.loading}');
+      await _fetchData();
+    }
   }
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    if (_api == null) {
-      final args =
-          ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>?;
-      _label = (args?['tag'] ?? QueryText('').toMap());
-      showAppBar = args != null;
-      local = (args?['local'] ?? widget.localDb);
-      settingsController = context.watch<SettingsController>();
-      if (_page == 1) {
-        _fetchData();
-      }
+    settingsController = context.watch<SettingsController>();
+    if (_page == 1) {
+      _fetchData();
     }
     debugPrint(
-        'didChangeDependencies ${_api?.runtimeType} $_page ${data.length}');
+        'didChangeDependencies ${widget.api.runtimeType} $_page ${data.length}');
+  }
+
+  Widget _sortWidget() {
+    return PopupMenuButton<SortEnum?>(
+        itemBuilder: (context) {
+          if (widget.local) {
+            return <PopupMenuEntry<SortEnum?>>[
+              PopupMenuItem(
+                  value: null,
+                  child: Text(AppLocalizations.of(context)!.dateDefault)),
+              PopupMenuItem(
+                  value: SortEnum.Date,
+                  child: Text(AppLocalizations.of(context)!.dateAsc)),
+              PopupMenuItem(
+                  value: SortEnum.DateDesc,
+                  child: Text(AppLocalizations.of(context)!.dateDesc)),
+            ];
+          }
+          return <PopupMenuEntry<SortEnum>>[
+            PopupMenuItem(
+                value: null,
+                child: Text(AppLocalizations.of(context)!.dateDefault)),
+            PopupMenuItem(
+                value: SortEnum.week,
+                child: Text(AppLocalizations.of(context)!.popWeek)),
+            PopupMenuItem(
+                value: SortEnum.month,
+                child: Text(AppLocalizations.of(context)!.popMonth)),
+            PopupMenuItem(
+                value: SortEnum.year,
+                child: Text(AppLocalizations.of(context)!.popYear)),
+          ];
+        },
+        onSelected: (value) => setState(() {
+              data.clear();
+              _page = 1;
+              sortEnum = value;
+            }),
+        icon: const Icon(Icons.sort));
   }
 
   Widget _bodyContentList() {
-    return Column(children: [
-      Row(children: [
-        if (showAppBar)
-          BackButton(onPressed: () => Navigator.of(context).pop()),
-        Expanded(child: GallerySearch(localDb: local)),
-        if (kIsWeb)
-          IconButton(
-              onPressed: () => setState(() {
-                    settingsController.updateThemeMode(
-                        settingsController.themeMode != ThemeMode.light
-                            ? ThemeMode.light
-                            : ThemeMode.dark);
-                  }),
-              icon: Icon(settingsController.themeMode == ThemeMode.light
-                  ? Icons.light_mode
-                  : Icons.mode_night)),
-        PopupMenuButton<SortEnum?>(
-            itemBuilder: (context) {
-              if (local) {
-                return <PopupMenuEntry<SortEnum?>>[
-                  PopupMenuItem(
-                      value: null,
-                      child: Text(AppLocalizations.of(context)!.dateDefault)),
-                  PopupMenuItem(
-                      value: SortEnum.Date,
-                      child: Text(AppLocalizations.of(context)!.dateAsc)),
-                  PopupMenuItem(
-                      value: SortEnum.DateDesc,
-                      child: Text(AppLocalizations.of(context)!.dateDesc)),
-                ];
-              }
-              return <PopupMenuEntry<SortEnum>>[
-                PopupMenuItem(
-                    value: null,
-                    child: Text(AppLocalizations.of(context)!.dateDefault)),
-                PopupMenuItem(
-                    value: SortEnum.week,
-                    child: Text(AppLocalizations.of(context)!.popWeek)),
-                PopupMenuItem(
-                    value: SortEnum.month,
-                    child: Text(AppLocalizations.of(context)!.popMonth)),
-                PopupMenuItem(
-                    value: SortEnum.year,
-                    child: Text(AppLocalizations.of(context)!.popYear)),
-              ];
-            },
-            onSelected: (value) => setState(() {
-                  data.clear();
+    return Center(
+        child: MaxWidthBox(
+            maxWidth: 1200,
+            child: GalleryListView(
+                controller: _controller,
+                data: data,
+                onLoad: null,
+                onRefresh: () async {
+                  var before = _page;
                   _page = 1;
-                  sortEnum = value;
-                }),
-            icon: const Icon(Icons.sort)),
-        if (!kIsWeb && showAppBar)
-          PopupMenuButton<bool>(
-              itemBuilder: (context) {
-                return <PopupMenuEntry<bool>>[
-                  PopupMenuItem(
-                      value: false,
-                      child: Text(AppLocalizations.of(context)!.network)),
-                  PopupMenuItem(
-                      value: true,
-                      child: Text(AppLocalizations.of(context)!.local))
-                ];
-              },
-              onSelected: (value) async {
-                local = value;
-                _api = null;
-                _page = 1;
-                data.clear();
-                await _fetchData();
-              },
-              icon: Icon(local ? Icons.local_library : Icons.network_wifi))
-      ]),
-      Expanded(
-          child: GalleryListView(
-              controller: _controller,
-              data: data,
-              onLoad: data.length < totalCount
-                  ? () async {
-                      showSnackBar(context,
-                          '$_page/$totalPage ${AppLocalizations.of(context)!.loading}');
-                      await _fetchData();
-                    }
-                  : null,
-              onRefresh: () async {
-                var before = _page;
-                _page = 1;
-                await _fetchData(refresh: true);
-                _page = before;
-              },
-              click: click,
-              api: api,
-              menusBuilder: menuBuilder))
-    ]);
+                  await _fetchData(refresh: true);
+                  _page = before;
+                },
+                click: click,
+                api: widget.api,
+                scrollController: scrollController,
+                menusBuilder: menuBuilder)));
   }
 
   @override
   Widget build(BuildContext context) {
-    return showAppBar
-        ? Scaffold(
-            body: SafeArea(
-                child: Center(
-                    child: MaxWidthBox(
-                        maxWidth: 1280, child: _bodyContentList()))))
-        : _bodyContentList();
+    super.build(context);
+    return _bodyContentList();
   }
+
+  @override
+  bool get wantKeepAlive => true;
 }

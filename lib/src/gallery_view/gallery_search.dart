@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'dart:math';
 import 'package:ayaka/src/gallery_view/gallery_details_view.dart';
-import 'package:ayaka/src/gallery_view/gallery_search_result.dart';
+import 'package:ayaka/src/gallery_view/gallery_tabview.dart';
 import 'package:ayaka/src/utils/label_utils.dart';
 import 'package:collection/collection.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
@@ -14,8 +14,7 @@ import '../ui/common_view.dart';
 import '../utils/debounce.dart';
 
 class GallerySearch extends StatefulWidget {
-  final bool localDb;
-  const GallerySearch({super.key, required this.localDb});
+  const GallerySearch({super.key});
   @override
   State<StatefulWidget> createState() {
     return _GallerySearch();
@@ -176,10 +175,9 @@ class _GallerySearch extends State<GallerySearch> {
                   if (controller.text.isNotEmpty) {
                     if (_selected.isNotEmpty) {
                       Navigator.of(context).restorablePushNamed(
-                          GallerySearchResultView.routeName,
+                          GalleryTabView.routeName,
                           arguments: {
                             'tags': _selected,
-                            'local': widget.localDb
                           });
                     } else if (numberExp.hasMatch(controller.text)) {
                       await api.fetchGallery(controller.text).then(

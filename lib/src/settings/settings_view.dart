@@ -80,160 +80,154 @@ class _StateSetting extends State<SettingsView> {
                 ]));
   }
 
+  Widget _settingsContent() {
+    return Column(children: [
+      ListTile(
+          leading: Icon(_settingsController.themeMode == ThemeMode.light
+              ? Icons.light_mode
+              : Icons.mode_night),
+          title: Text(AppLocalizations.of(context)!.themeMode),
+          subtitle: _settingsController.themeMode == ThemeMode.light
+              ? Text(AppLocalizations.of(context)!.dayTheme)
+              : Text(AppLocalizations.of(context)!.darkTheme),
+          trailing: Switch.adaptive(
+              value: _settingsController.themeMode == ThemeMode.light,
+              onChanged: (b) => setState(() {
+                    _settingsController
+                        .updateThemeMode(b ? ThemeMode.light : ThemeMode.dark);
+                  }))),
+      ListTile(
+          leading: const ImageIcon(AssetImage('assets/images/vpn.png')),
+          title: Text(AppLocalizations.of(context)!.proxy),
+          subtitle: Text(_settingsController.config.proxy),
+          trailing: IconButton(
+              onPressed: () async {
+                var s = await _showDialogInput(
+                    type: TextInputType.url,
+                    defaultValue: _settingsController.config.proxy);
+                if (s?.isNotEmpty == true) {
+                  await _settingsController.updateConfig(
+                      _settingsController.config.copyWith(proxy: s!));
+                }
+              },
+              icon: const Icon(Icons.edit))),
+      ListTile(
+          leading: const ImageIcon(AssetImage('assets/images/direction.png')),
+          title: Text(AppLocalizations.of(context)!.connectType),
+          subtitle: Text(_settingsController.useProxy
+              ? AppLocalizations.of(context)!.proxy
+              : AppLocalizations.of(context)!.direct),
+          trailing: Switch.adaptive(
+              value: _settingsController.useProxy,
+              onChanged: (b) => setState(() {
+                    _settingsController.switchConn(b);
+                  }))),
+      if (_settingsController.useProxy)
+        ListTile(
+            leading: const ImageIcon(AssetImage('assets/images/url.png')),
+            title: Text(AppLocalizations.of(context)!.remoteAddr),
+            subtitle: Text(_settingsController.config.remoteHttp),
+            trailing: IconButton(
+                onPressed: () async {
+                  var s = await _showDialogInput(
+                      type: TextInputType.url,
+                      defaultValue: _settingsController.config.remoteHttp);
+                  if (s?.isNotEmpty == true) {
+                    await _settingsController.updateConfig(
+                        _settingsController.config.copyWith(remoteHttp: s!));
+                  }
+                },
+                icon: const Icon(Icons.edit))),
+      if (_settingsController.useProxy)
+        ListTile(
+            leading: const ImageIcon(
+                AssetImage('assets/images/user-authentication.png')),
+            title: Text(AppLocalizations.of(context)!.authToken),
+            subtitle: Text(_settingsController.config.auth),
+            trailing: IconButton(
+                onPressed: () async {
+                  var s = await _showDialogInput(
+                      type: TextInputType.url,
+                      defaultValue: _settingsController.config.auth);
+                  if (s?.isNotEmpty == true) {
+                    await _settingsController.updateConfig(
+                        _settingsController.config.copyWith(auth: s!));
+                  }
+                },
+                icon: const Icon(Icons.edit))),
+      ListTile(
+          leading: Icon(_settingsController.runServer
+              ? Icons.online_prediction
+              : Icons.airplanemode_active),
+          title: Text(AppLocalizations.of(context)!.runServer),
+          subtitle: _settingsController.runServer
+              ? const Text('http://127.0.0.1:7890')
+              : Text(AppLocalizations.of(context)!.closed),
+          trailing: Switch.adaptive(
+              value: _settingsController.runServer,
+              onChanged: (b) => _settingsController
+                  .openServer(b)
+                  .then((value) => setState(() {})))),
+      ListTile(
+          leading: const ImageIcon(AssetImage('assets/images/database.png')),
+          title: Text(AppLocalizations.of(context)!.updateDatabase),
+          trailing: IconButton(
+              onPressed: () async {
+                setState(() {
+                  netLoading = true;
+                });
+                await _settingsController.manager
+                    .parseCommandAndRun('-u')
+                    .then((value) => setState(() {
+                          netLoading = false;
+                          showSnackBar(
+                              context, AppLocalizations.of(context)!.success);
+                        }));
+              },
+              icon: const ImageIcon(AssetImage('assets/images/refresh.png')))),
+      ListTile(
+          leading: const ImageIcon(AssetImage('assets/images/open-folder.png')),
+          title: Text(AppLocalizations.of(context)!.savePath),
+          subtitle: Text(_settingsController.config.output),
+          trailing: IconButton(
+              onPressed: () async {
+                var initDir = await getExternalStorageDirectory()
+                    .catchError((e) => getApplicationSupportDirectory(),
+                        test: (error) => true)
+                    .then((value) async =>
+                        value ?? await getApplicationSupportDirectory());
+                var path = await FilePicker.platform
+                    .getDirectoryPath(initialDirectory: initDir.path);
+                if (path?.isNotEmpty == true) {
+                  await testWriteble(path!)
+                      .then((value) => _settingsController.updateConfig(
+                          _settingsController.config.copyWith(output: path)))
+                      .catchError(
+                          (e) => _settingsController.updateConfig(
+                              _settingsController.config
+                                  .copyWith(output: initDir.path)),
+                          test: (error) => true)
+                      .then((value) => setState(() {}));
+                }
+              },
+              icon: const Icon(Icons.edit))),
+    ]);
+  }
+
   @override
   Widget build(BuildContext context) {
-    return SingleChildScrollView(
-        child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Stack(children: [
-              Column(children: [
-                ListTile(
-                    leading: Icon(
-                        _settingsController.themeMode == ThemeMode.light
-                            ? Icons.light_mode
-                            : Icons.mode_night),
-                    title: Text(AppLocalizations.of(context)!.themeMode),
-                    subtitle: _settingsController.themeMode == ThemeMode.light
-                        ? Text(AppLocalizations.of(context)!.dayTheme)
-                        : Text(AppLocalizations.of(context)!.darkTheme),
-                    trailing: Switch.adaptive(
-                        value: _settingsController.themeMode == ThemeMode.light,
-                        onChanged: (b) => setState(() {
-                              _settingsController.updateThemeMode(
-                                  b ? ThemeMode.light : ThemeMode.dark);
-                            }))),
-                ListTile(
-                    leading:
-                        const ImageIcon(AssetImage('assets/images/vpn.png')),
-                    title: Text(AppLocalizations.of(context)!.proxy),
-                    subtitle: Text(_settingsController.config.proxy),
-                    trailing: IconButton(
-                        onPressed: () async {
-                          var s = await _showDialogInput(
-                              type: TextInputType.url,
-                              defaultValue: _settingsController.config.proxy);
-                          if (s?.isNotEmpty == true) {
-                            await _settingsController.updateConfig(
-                                _settingsController.config.copyWith(proxy: s!));
-                          }
-                        },
-                        icon: const Icon(Icons.edit))),
-                ListTile(
-                    leading: const ImageIcon(
-                        AssetImage('assets/images/direction.png')),
-                    title: Text(AppLocalizations.of(context)!.connectType),
-                    subtitle: Text(_settingsController.useProxy
-                        ? AppLocalizations.of(context)!.proxy
-                        : AppLocalizations.of(context)!.direct),
-                    trailing: Switch.adaptive(
-                        value: _settingsController.useProxy,
-                        onChanged: (b) => setState(() {
-                              _settingsController.switchConn(b);
-                            }))),
-                if (_settingsController.useProxy)
-                  ListTile(
-                      leading:
-                          const ImageIcon(AssetImage('assets/images/url.png')),
-                      title: Text(AppLocalizations.of(context)!.remoteAddr),
-                      subtitle: Text(_settingsController.config.remoteHttp),
-                      trailing: IconButton(
-                          onPressed: () async {
-                            var s = await _showDialogInput(
-                                type: TextInputType.url,
-                                defaultValue:
-                                    _settingsController.config.remoteHttp);
-                            if (s?.isNotEmpty == true) {
-                              await _settingsController.updateConfig(
-                                  _settingsController.config
-                                      .copyWith(remoteHttp: s!));
-                            }
-                          },
-                          icon: const Icon(Icons.edit))),
-                if (_settingsController.useProxy)
-                  ListTile(
-                      leading: const ImageIcon(
-                          AssetImage('assets/images/user-authentication.png')),
-                      title: Text(AppLocalizations.of(context)!.authToken),
-                      subtitle: Text(_settingsController.config.auth),
-                      trailing: IconButton(
-                          onPressed: () async {
-                            var s = await _showDialogInput(
-                                type: TextInputType.url,
-                                defaultValue: _settingsController.config.auth);
-                            if (s?.isNotEmpty == true) {
-                              await _settingsController.updateConfig(
-                                  _settingsController.config
-                                      .copyWith(auth: s!));
-                            }
-                          },
-                          icon: const Icon(Icons.edit))),
-                ListTile(
-                    leading: Icon(_settingsController.runServer
-                        ? Icons.online_prediction
-                        : Icons.airplanemode_active),
-                    title: Text(AppLocalizations.of(context)!.runServer),
-                    subtitle: _settingsController.runServer
-                        ? const Text('http://127.0.0.1:7890')
-                        : Text(AppLocalizations.of(context)!.closed),
-                    trailing: Switch.adaptive(
-                        value: _settingsController.runServer,
-                        onChanged: (b) => _settingsController
-                            .openServer(b)
-                            .then((value) => setState(() {})))),
-                ListTile(
-                    leading: const ImageIcon(
-                        AssetImage('assets/images/database.png')),
-                    title: Text(AppLocalizations.of(context)!.updateDatabase),
-                    trailing: IconButton(
-                        onPressed: () async {
-                          setState(() {
-                            netLoading = true;
-                          });
-                          await _settingsController.manager
-                              .parseCommandAndRun('-u')
-                              .then((value) => setState(() {
-                                    netLoading = false;
-                                    showSnackBar(context,
-                                        AppLocalizations.of(context)!.success);
-                                  }));
-                        },
-                        icon: const ImageIcon(
-                            AssetImage('assets/images/refresh.png')))),
-                ListTile(
-                    leading: const ImageIcon(
-                        AssetImage('assets/images/open-folder.png')),
-                    title: Text(AppLocalizations.of(context)!.savePath),
-                    subtitle: Text(_settingsController.config.output),
-                    trailing: IconButton(
-                        onPressed: () async {
-                          var initDir = await getExternalStorageDirectory()
-                              .catchError(
-                                  (e) => getApplicationSupportDirectory(),
-                                  test: (error) => true)
-                              .then((value) async =>
-                                  value ??
-                                  await getApplicationSupportDirectory());
-                          var path = await FilePicker.platform
-                              .getDirectoryPath(initialDirectory: initDir.path);
-                          if (path?.isNotEmpty == true) {
-                            await testWriteble(path!)
-                                .then((value) => _settingsController
-                                    .updateConfig(_settingsController.config
-                                        .copyWith(output: path)))
-                                .catchError(
-                                    (e) => _settingsController.updateConfig(
-                                        _settingsController.config
-                                            .copyWith(output: initDir.path)),
-                                    test: (error) => true)
-                                .then((value) => setState(() {}));
-                          }
-                        },
-                        icon: const Icon(Icons.edit))),
-              ]),
-              if (netLoading)
-                SizedBox(
-                    height: MediaQuery.of(context).size.height,
-                    child: const Center(child: CircularProgressIndicator())),
-            ])));
+    return Scaffold(
+        body: SafeArea(
+            child: SingleChildScrollView(
+                child: Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Stack(children: [
+                      _settingsContent(),
+                      if (netLoading)
+                        SizedBox(
+                            height: MediaQuery.of(context).size.height,
+                            child: const Center(
+                                child: CircularProgressIndicator())),
+                    ])))));
   }
 }

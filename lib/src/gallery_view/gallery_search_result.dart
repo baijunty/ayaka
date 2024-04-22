@@ -18,27 +18,30 @@ import 'gallery_details_view.dart';
 import 'gallery_similar_view.dart';
 
 class GallerySearchResultView extends StatefulWidget {
-  const GallerySearchResultView({super.key});
-
-  static const routeName = '/gallery_search_result_view';
+  final Hitomi api;
+  final List<Map<String, dynamic>> selected;
+  final bool local;
+  const GallerySearchResultView(
+      {super.key,
+      required this.api,
+      required this.selected,
+      required this.local});
   @override
   State<StatefulWidget> createState() {
     return _GallerySearchResultView();
   }
 }
 
-class _GallerySearchResultView extends State<GallerySearchResultView> {
+class _GallerySearchResultView extends State<GallerySearchResultView>
+    with AutomaticKeepAliveClientMixin {
   List<Gallery> data = [];
   var _page = 1;
   int totalPage = 1;
   late void Function(Gallery) click;
-  late Hitomi api;
   late EasyRefreshController _controller;
-  late List<Map<String, dynamic>> _selected;
   final _ids = <int>[];
   late PopupMenuButton<String> Function(Gallery gallery)? menuBuilder;
-  late bool local;
-  var title = '';
+  late ScrollController scrollController;
   var totalCount = 0;
   CancelToken? token;
   var netLoading = false;
@@ -46,14 +49,16 @@ class _GallerySearchResultView extends State<GallerySearchResultView> {
   void initState() {
     super.initState();
     _controller = EasyRefreshController(
-        controlFinishRefresh: true, controlFinishLoad: true);
+        controlFinishRefresh: true, controlFinishLoad: false);
     click = (g) => Navigator.pushNamed(context, GalleryDetailsView.routeName,
-        arguments: {'gallery': g, 'local': local});
+        arguments: {'gallery': g, 'local': widget.local});
+    scrollController = ScrollController();
+    scrollController.addListener(handleScroll);
     menuBuilder = kIsWeb
         ? null
         : (g) => PopupMenuButton<String>(itemBuilder: (context) {
               return [
-                if (!local)
+                if (!widget.local)
                   PopupMenuItem(
                       child: Text(AppLocalizations.of(context)!.download),
                       onTap: () => context
@@ -66,7 +71,7 @@ class _GallerySearchResultView extends State<GallerySearchResultView> {
                     onTap: () => Navigator.of(context).pushNamed(
                         GallerySimilaerView.routeName,
                         arguments: g)),
-                if (local)
+                if (widget.local)
                   PopupMenuItem(
                       child: Text(AppLocalizations.of(context)!.delete),
                       onTap: () => context
@@ -86,26 +91,25 @@ class _GallerySearchResultView extends State<GallerySearchResultView> {
   void dispose() {
     super.dispose();
     _controller.dispose();
+    scrollController.removeListener(handleScroll);
+    scrollController.dispose();
     token?.cancel('dispose');
+  }
+
+  void handleScroll() async {
+    if (scrollController.position.pixels ==
+            scrollController.position.maxScrollExtent &&
+        data.length < totalCount) {
+      showSnackBar(context,
+          '$_page/$totalPage ${AppLocalizations.of(context)!.loading}');
+      await _fetchData();
+    }
   }
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    var args =
-        ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>;
-    local = args['local'];
-    var controller = context.watch<SettingsController>();
-    api = controller.hitomi(localDb: local);
-    _selected = args['tags'];
-    title = _selected
-        .fold(
-            StringBuffer(),
-            (previousValue, element) => previousValue
-              ..write(element['translate'])
-              ..write(','))
-        .toString();
-    if (data.isEmpty) {
+    if (_page == 1) {
       _fetchData();
     }
   }
@@ -116,9 +120,9 @@ class _GallerySearchResultView extends State<GallerySearchResultView> {
       netLoading = true;
       Future<List<int>> idsFuture;
       if (25 * _page > _ids.length) {
-        idsFuture = api
+        idsFuture = widget.api
             .search(
-                _selected
+                widget.selected
                         .where((element) => element['include'] == true)
                         .map((e) => fromString(e['type'], e['name']))
                         .toList() +
@@ -128,7 +132,7 @@ class _GallerySearchResultView extends State<GallerySearchResultView> {
                         .languages
                         .map((e) => Language(name: e))
                         .toList(),
-                exclude: _selected
+                exclude: widget.selected
                     .where((element) => element['include'] == false)
                     .map((e) => fromString(e['type'], e['name']))
                     .toList(),
@@ -146,21 +150,19 @@ class _GallerySearchResultView extends State<GallerySearchResultView> {
       idsFuture
           .then((value) => value.sublist(min(_page * 25 - 25, value.length),
               min(value.length, _page * 25)))
-          .then((value) => Future.wait(value.map(
-              (e) => api.fetchGallery(e, usePrefence: false, token: token))))
+          .then((value) => Future.wait(value.map((e) =>
+              widget.api.fetchGallery(e, usePrefence: false, token: token))))
           .then((value) {
         setState(() {
           data.addAll(value);
           _page++;
           netLoading = false;
-          _controller.finishLoad();
           _controller.finishRefresh();
         });
       }).catchError((e) {
         setState(() {
           netLoading = false;
           showSnackBar(context, '$e');
-          _controller.finishLoad();
           _controller.finishRefresh();
         });
       }, test: (error) => true);
@@ -169,41 +171,33 @@ class _GallerySearchResultView extends State<GallerySearchResultView> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-        appBar: AppBar(
-          leading: BackButton(onPressed: () => Navigator.of(context).pop()),
-          title: Text(title),
-        ),
-        body: Center(
-            child: MaxWidthBox(
-                maxWidth: 1200,
-                child: data.isEmpty
-                    ? Center(
-                        child: netLoading
-                            ? const CircularProgressIndicator()
-                            : InkWell(
-                                onTap: _fetchData,
-                                child: Text(
-                                    AppLocalizations.of(context)!.emptyContent,
-                                    style: Theme.of(context)
-                                        .textTheme
-                                        .bodyLarge
-                                        ?.copyWith(color: Colors.red))))
-                    : GalleryListView(
-                        controller: _controller,
-                        data: data,
-                        onLoad: data.length >= totalCount
-                            ? null
-                            : () async {
-                                if (_page <= totalPage) {
-                                  showSnackBar(context,
-                                      '$_page of $totalPage ${AppLocalizations.of(context)!.loading}');
-                                  await _fetchData();
-                                }
-                              },
-                        onRefresh: null,
-                        click: click,
-                        api: api,
-                        menusBuilder: menuBuilder))));
+    super.build(context);
+    return Center(
+        child: MaxWidthBox(
+            maxWidth: 1200,
+            child: data.isEmpty
+                ? Center(
+                    child: netLoading
+                        ? const CircularProgressIndicator()
+                        : InkWell(
+                            onTap: _fetchData,
+                            child: Text(
+                                AppLocalizations.of(context)!.emptyContent,
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .bodyLarge
+                                    ?.copyWith(color: Colors.red))))
+                : GalleryListView(
+                    controller: _controller,
+                    data: data,
+                    onLoad: null,
+                    onRefresh: null,
+                    click: click,
+                    api: widget.api,
+                    scrollController: scrollController,
+                    menusBuilder: menuBuilder)));
   }
+
+  @override
+  bool get wantKeepAlive => true;
 }

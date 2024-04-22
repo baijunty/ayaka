@@ -1,5 +1,5 @@
-import 'package:ayaka/src/gallery_view/gallery_item_list_view.dart';
 import 'package:ayaka/src/gallery_view/gallery_similar_view.dart';
+import 'package:ayaka/src/gallery_view/gallery_tabview.dart';
 import 'package:ayaka/src/gallery_view/gallery_viewer.dart';
 import 'package:ayaka/src/home.dart';
 import 'package:flutter/material.dart';
@@ -8,7 +8,6 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:provider/provider.dart';
 
 import 'gallery_view/gallery_details_view.dart';
-import 'gallery_view/gallery_search_result.dart';
 import 'gallery_view/gallery_task_view.dart';
 import 'settings/settings_controller.dart';
 import 'settings/settings_view.dart';
@@ -71,17 +70,14 @@ class MyApp extends StatelessWidget {
     switch (route) {
       case GalleryViewer.routeName:
         return const GalleryViewer();
-      case GallerySearchResultView.routeName:
-        return const GallerySearchResultView();
       case SettingsView.routeName:
         return const SettingsView();
       case GalleryDetailsView.routeName:
         return const GalleryDetailsView();
       case GallerySimilaerView.routeName:
         return const GallerySimilaerView();
-      case GalleryItemListView.routeName:
-        return GalleryItemListView(
-            localDb: (args as Map<String, dynamic>?)?['local'] ?? false);
+      case GalleryTabView.routeName:
+        return const GalleryTabView();
       case GalleryTaskView.routeName:
         return const GalleryTaskView();
       default:

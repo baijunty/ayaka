@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:math';
 
+import 'package:ayaka/src/gallery_view/gallery_tabview.dart';
 import 'package:ayaka/src/gallery_view/gallery_viewer.dart';
 import 'package:ayaka/src/settings/settings_controller.dart';
 import 'package:ayaka/src/utils/proxy_netwrok_image.dart';
@@ -21,7 +22,6 @@ import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-import '../gallery_view/gallery_item_list_view.dart';
 import '../model/gallery_manager.dart';
 import '../utils/label_utils.dart';
 import '../utils/responsive_util.dart';
@@ -137,24 +137,8 @@ class GalleryListView extends StatelessWidget {
   Widget build(BuildContext context) {
     return EasyRefresh(
         controller: controller,
-        header: ClassicHeader(
-            dragText: AppLocalizations.of(context)!.pullToRefresh,
-            armedText: AppLocalizations.of(context)!.releaseReady,
-            readyText: AppLocalizations.of(context)!.releaseReady,
-            processingText: AppLocalizations.of(context)!.refreshing,
-            processedText: AppLocalizations.of(context)!.success,
-            noMoreText: AppLocalizations.of(context)!.noMore,
-            failedText: AppLocalizations.of(context)!.failed,
-            messageText: '${AppLocalizations.of(context)!.lastUpdatedAt} %T'),
-        footer: ClassicFooter(
-            dragText: AppLocalizations.of(context)!.pullToRefresh,
-            armedText: AppLocalizations.of(context)!.releaseReady,
-            readyText: AppLocalizations.of(context)!.releaseReady,
-            processingText: AppLocalizations.of(context)!.refreshing,
-            processedText: AppLocalizations.of(context)!.success,
-            noMoreText: AppLocalizations.of(context)!.noMore,
-            failedText: AppLocalizations.of(context)!.failed,
-            messageText: '${AppLocalizations.of(context)!.lastUpdatedAt} %T'),
+        header: const MaterialHeader(),
+        footer: null,
         onLoad: onLoad,
         onRefresh: onRefresh,
         child: LayoutBuilder(builder: (c, cons) {
@@ -332,9 +316,11 @@ class TagButton extends StatelessWidget {
             context: context,
             builder: (context) =>
                 TagDetail(tag: label, commondPrefix: commondPrefix)),
-        onPressed: () => Navigator.of(context).pushNamed(
-            GalleryItemListView.routeName,
-            arguments: {'tag': label, 'local': local}),
+        onPressed: () => Navigator.of(context)
+                .pushNamed(GalleryTabView.routeName, arguments: {
+              'tags': [label],
+              'local': local
+            }),
         child: Text('${label['translate'] ?? label['name']}'));
   }
 }

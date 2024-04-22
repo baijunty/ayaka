@@ -131,8 +131,7 @@ class _GalleryTaskView extends State<GalleryTaskView> {
             arguments: {'gallery': gallery, 'local': false}));
   }
 
-  @override
-  Widget build(BuildContext context) {
+  Widget _taskContent() {
     return CustomScrollView(slivers: [
       SliverList.list(children: [
         Padding(
@@ -203,5 +202,10 @@ class _GalleryTaskView extends State<GalleryTaskView> {
               crossAxisSpacing: 8),
           itemCount: pendingTask.length),
     ]);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(body: SafeArea(child: _taskContent()));
   }
 }

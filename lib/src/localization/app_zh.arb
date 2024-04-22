@@ -91,5 +91,6 @@
   "makeGif": "生成动图",
   "runServer":"运行服务器",
   "closed":"已关闭",
+  "gallery":"画廊",
   "tag":"标签"
 }

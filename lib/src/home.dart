@@ -1,4 +1,4 @@
-import 'package:ayaka/src/gallery_view/gallery_item_list_view.dart';
+import 'package:ayaka/src/gallery_view/gallery_tabview.dart';
 import 'package:ayaka/src/gallery_view/gallery_task_view.dart';
 import 'package:ayaka/src/settings/settings_view.dart';
 import 'package:ayaka/src/ui/common_view.dart';
@@ -20,10 +20,6 @@ class AyakaHome extends StatefulWidget {
 class _AyakaHome extends State<AyakaHome> {
   var index = 0;
   var exitApp = false;
-  final content = [
-    GalleryItemListView(),
-    GalleryItemListView(localDb: true),
-  ];
   void _handleIndexClick(int index) {
     setState(() {
       this.index = index;
@@ -34,15 +30,12 @@ class _AyakaHome extends State<AyakaHome> {
   Widget build(BuildContext context) {
     Widget child;
     switch (index) {
+      case 1:
+        child = const GalleryTaskView();
       case 2:
-        child = IndexedStack(
-            index: index, children: [...content, const GalleryTaskView()]);
-      case 3:
-        child = IndexedStack(
-            index: index,
-            children: [...content, const SettingsView(), const SettingsView()]);
+        child = const SettingsView();
       default:
-        child = IndexedStack(index: index, children: content);
+        child = const GalleryTabView();
     }
     return PopScope(
         canPop: exitApp,
@@ -66,52 +59,37 @@ class _AyakaHome extends State<AyakaHome> {
               child: Center(
                   child: MaxWidthBox(
                       maxWidth: 1280,
-                      child: kIsWeb
-                          ? const GalleryItemListView(localDb: true)
-                          : switch (currentOrientation(context)) {
-                              Orientation.portrait => child,
-                              _ => Row(children: [
-                                  NavigationRail(
-                                      destinations: [
-                                        NavigationRailDestination(
-                                            icon: const Icon(Icons.home),
-                                            label: Text(
-                                                AppLocalizations.of(context)!
-                                                    .network)),
-                                        NavigationRailDestination(
-                                            icon:
-                                                const Icon(Icons.local_library),
-                                            label: Text(
-                                                AppLocalizations.of(context)!
-                                                    .local)),
-                                        NavigationRailDestination(
-                                            icon: const Icon(Icons.download),
-                                            label: Text(
-                                                AppLocalizations.of(context)!
-                                                    .download)),
-                                        NavigationRailDestination(
-                                            icon: const Icon(Icons.settings),
-                                            label: Text(
-                                                AppLocalizations.of(context)!
-                                                    .setting)),
-                                      ],
-                                      selectedIndex: index,
-                                      onDestinationSelected: _handleIndexClick,
-                                      labelType:
-                                          NavigationRailLabelType.selected),
-                                  Expanded(child: child)
-                                ])
-                            }))),
+                      child: switch (currentOrientation(context)) {
+                        Orientation.portrait => child,
+                        _ => Row(children: [
+                            NavigationRail(
+                                destinations: [
+                                  NavigationRailDestination(
+                                      icon: const Icon(Icons.book),
+                                      label: Text(AppLocalizations.of(context)!
+                                          .gallery)),
+                                  NavigationRailDestination(
+                                      icon: const Icon(Icons.download),
+                                      label: Text(AppLocalizations.of(context)!
+                                          .download)),
+                                  NavigationRailDestination(
+                                      icon: const Icon(Icons.settings),
+                                      label: Text(AppLocalizations.of(context)!
+                                          .setting)),
+                                ],
+                                selectedIndex: index,
+                                onDestinationSelected: _handleIndexClick,
+                                labelType: NavigationRailLabelType.selected),
+                            Expanded(child: child)
+                          ])
+                      }))),
           bottomNavigationBar:
               currentOrientation(context) == Orientation.portrait && !kIsWeb
                   ? BottomNavigationBar(
                       items: [
                           BottomNavigationBarItem(
-                              icon: const Icon(Icons.home),
-                              label: AppLocalizations.of(context)!.network),
-                          BottomNavigationBarItem(
-                              icon: const Icon(Icons.local_library),
-                              label: AppLocalizations.of(context)!.local),
+                              icon: const Icon(Icons.book),
+                              label: AppLocalizations.of(context)!.gallery),
                           BottomNavigationBarItem(
                               icon: const Icon(Icons.download),
                               label: AppLocalizations.of(context)!.download),

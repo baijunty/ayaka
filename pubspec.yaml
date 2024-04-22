@@ -18,9 +18,8 @@ dependencies:
     path: ../hitomi
   shared_preferences: ^2.2.2
   path_provider: ^2.1.2
-  path: ^1.8.2
-  dio: ^5.3.2
-  sqlite3: ^2.4.0
+  path: ^1.9.0
+  sqlite3: ^2.4.2
   sqlite3_flutter_libs: ^0.5.20
   easy_image_viewer: ^1.4.1
   provider: ^6.1.2
@@ -30,9 +29,8 @@ dependencies:
   card_loading: ^0.3.2
   flutter_staggered_grid_view: ^0.7.0
   url_launcher: ^6.2.5
-  image: ^4.0.10
+  image: ^4.1.7
   file_saver: ^0.2.12
-
 
 dev_dependencies:
   flutter_test:
@@ -49,3 +47,5 @@ flutter:
   assets:
     # Add assets from the images directory to the application.
     - assets/images/
+dependency_overrides:
+  test_api: 0.6.0

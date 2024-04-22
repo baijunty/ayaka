@@ -34,9 +34,6 @@ class _GalleryTabView extends State<GalleryTabView>
     tabController = TabController(length: 2, vsync: this);
     pageController = PageController(initialPage: 0);
     scrollController = ScrollController();
-    scrollController.addListener(() {
-      debugPrint('cur ${scrollController.position.pixels}');
-    });
   }
 
   @override
@@ -114,7 +111,8 @@ class _GalleryTabView extends State<GalleryTabView>
                   if (notification is ScrollUpdateNotification) {
                     var dy = notification.dragDetails?.delta.dy ?? 0;
                     if (dy != 0) {
-                      scrollController.position.pointerScroll(dy);
+                      scrollController.position
+                          .jumpTo(scrollController.position.pixels - dy);
                     }
                   }
                   return true;

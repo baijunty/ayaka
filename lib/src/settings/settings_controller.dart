@@ -50,7 +50,7 @@ class SettingsController with ChangeNotifier {
             languages: const ["japanese", "chinese"],
             maxTasks: 5,
             dateLimit: "2013-01-01",
-            remoteHttp: 'https://ayaka.lol'),
+            remoteHttp: 'http://192.168.1.107:7890'),
         test: (error) => true);
     _useProxy =
         await _settingsService.readConfig<bool>('useProxy') ?? _useProxy;

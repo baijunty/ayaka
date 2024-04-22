@@ -1,7 +1,6 @@
 import 'dart:math';
 
 import 'package:dio/dio.dart';
-import 'package:easy_refresh/easy_refresh.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:hitomi/gallery/gallery.dart';
@@ -38,7 +37,6 @@ class _GallerySearchResultView extends State<GallerySearchResultView>
   var _page = 1;
   int totalPage = 1;
   late void Function(Gallery) click;
-  late EasyRefreshController _controller;
   final _ids = <int>[];
   late PopupMenuButton<String> Function(Gallery gallery)? menuBuilder;
   late ScrollController scrollController;
@@ -48,8 +46,6 @@ class _GallerySearchResultView extends State<GallerySearchResultView>
   @override
   void initState() {
     super.initState();
-    _controller = EasyRefreshController(
-        controlFinishRefresh: true, controlFinishLoad: false);
     click = (g) => Navigator.pushNamed(context, GalleryDetailsView.routeName,
         arguments: {'gallery': g, 'local': widget.local});
     scrollController = ScrollController();
@@ -90,14 +86,13 @@ class _GallerySearchResultView extends State<GallerySearchResultView>
   @override
   void dispose() {
     super.dispose();
-    _controller.dispose();
     scrollController.removeListener(handleScroll);
     scrollController.dispose();
     token?.cancel('dispose');
   }
 
   void handleScroll() async {
-    if (scrollController.position.pixels ==
+    if (scrollController.position.pixels >=
             scrollController.position.maxScrollExtent &&
         data.length < totalCount) {
       showSnackBar(context,
@@ -157,13 +152,11 @@ class _GallerySearchResultView extends State<GallerySearchResultView>
           data.addAll(value);
           _page++;
           netLoading = false;
-          _controller.finishRefresh();
         });
       }).catchError((e) {
         setState(() {
           netLoading = false;
           showSnackBar(context, '$e');
-          _controller.finishRefresh();
         });
       }, test: (error) => true);
     }
@@ -188,9 +181,7 @@ class _GallerySearchResultView extends State<GallerySearchResultView>
                                     .bodyLarge
                                     ?.copyWith(color: Colors.red))))
                 : GalleryListView(
-                    controller: _controller,
                     data: data,
-                    onLoad: null,
                     onRefresh: null,
                     click: click,
                     api: widget.api,

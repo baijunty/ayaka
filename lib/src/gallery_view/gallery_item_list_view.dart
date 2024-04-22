@@ -1,7 +1,6 @@
 import 'package:ayaka/src/gallery_view/gallery_details_view.dart';
 import 'package:ayaka/src/model/gallery_manager.dart';
 import 'package:dio/dio.dart';
-import 'package:easy_refresh/easy_refresh.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:ayaka/src/ui/common_view.dart';
@@ -19,8 +18,13 @@ class GalleryItemListView extends StatefulWidget {
   final Hitomi api;
   final Map<String, dynamic> label;
   final bool local;
+  final SortEnum? sortEnum;
   const GalleryItemListView(
-      {super.key, required this.api, required this.label, required this.local});
+      {super.key,
+      required this.api,
+      required this.label,
+      required this.local,
+      this.sortEnum});
 
   @override
   State<StatefulWidget> createState() => _GalleryListView();
@@ -32,9 +36,7 @@ class _GalleryListView extends State<GalleryItemListView>
   var _page = 1;
   int totalPage = 1;
   late void Function(Gallery) click;
-  late EasyRefreshController _controller;
   late PopupMenuButton<String> Function(Gallery gallery)? menuBuilder;
-  SortEnum? sortEnum;
   CancelToken? token;
   late SettingsController settingsController;
   var totalCount = 0;
@@ -43,7 +45,7 @@ class _GalleryListView extends State<GalleryItemListView>
     token = CancelToken();
     return widget.api
         .viewByTag(fromString(widget.label['type'], widget.label['name']),
-            page: _page, sort: sortEnum, token: token)
+            page: _page, sort: widget.sortEnum, token: token)
         .then((value) => setState(() {
               var insertList = value.data
                   .where((element) => data.every((g) => g.id != element.id));
@@ -51,10 +53,8 @@ class _GalleryListView extends State<GalleryItemListView>
               _page++;
               totalCount = value.totalCount;
               totalPage = (value.totalCount / 25).ceil();
-              _controller.finishRefresh();
             }))
         .catchError((e) {
-      _controller.finishRefresh();
       if (mounted) {
         showSnackBar(context, 'err $e');
       }
@@ -66,8 +66,6 @@ class _GalleryListView extends State<GalleryItemListView>
     super.initState();
     click = (g) => Navigator.pushNamed(context, GalleryDetailsView.routeName,
         arguments: {'gallery': g, 'local': widget.local});
-    _controller = EasyRefreshController(
-        controlFinishRefresh: true, controlFinishLoad: false);
     scrollController = ScrollController();
     scrollController.addListener(handleScroll);
     menuBuilder = kIsWeb
@@ -107,12 +105,11 @@ class _GalleryListView extends State<GalleryItemListView>
     super.dispose();
     scrollController.removeListener(handleScroll);
     scrollController.dispose();
-    _controller.dispose();
     token?.cancel('dispose');
   }
 
   void handleScroll() async {
-    if (scrollController.position.pixels ==
+    if (scrollController.position.pixels >=
             scrollController.position.maxScrollExtent &&
         data.length < totalCount) {
       showSnackBar(context,
@@ -132,53 +129,12 @@ class _GalleryListView extends State<GalleryItemListView>
         'didChangeDependencies ${widget.api.runtimeType} $_page ${data.length}');
   }
 
-  Widget _sortWidget() {
-    return PopupMenuButton<SortEnum?>(
-        itemBuilder: (context) {
-          if (widget.local) {
-            return <PopupMenuEntry<SortEnum?>>[
-              PopupMenuItem(
-                  value: null,
-                  child: Text(AppLocalizations.of(context)!.dateDefault)),
-              PopupMenuItem(
-                  value: SortEnum.Date,
-                  child: Text(AppLocalizations.of(context)!.dateAsc)),
-              PopupMenuItem(
-                  value: SortEnum.DateDesc,
-                  child: Text(AppLocalizations.of(context)!.dateDesc)),
-            ];
-          }
-          return <PopupMenuEntry<SortEnum>>[
-            PopupMenuItem(
-                value: null,
-                child: Text(AppLocalizations.of(context)!.dateDefault)),
-            PopupMenuItem(
-                value: SortEnum.week,
-                child: Text(AppLocalizations.of(context)!.popWeek)),
-            PopupMenuItem(
-                value: SortEnum.month,
-                child: Text(AppLocalizations.of(context)!.popMonth)),
-            PopupMenuItem(
-                value: SortEnum.year,
-                child: Text(AppLocalizations.of(context)!.popYear)),
-          ];
-        },
-        onSelected: (value) => setState(() {
-              data.clear();
-              _page = 1;
-              sortEnum = value;
-            }),
-        icon: const Icon(Icons.sort));
-  }
-
   Widget _bodyContentList() {
     return Center(
         child: MaxWidthBox(
             maxWidth: 1200,
             child: GalleryListView(
-                controller: _controller,
                 data: data,
-                onLoad: null,
                 onRefresh: () async {
                   var before = _page;
                   _page = 1;

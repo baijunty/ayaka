@@ -3,7 +3,6 @@ import 'package:ayaka/src/settings/settings_controller.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:ayaka/src/ui/common_view.dart';
-import 'package:easy_refresh/easy_refresh.dart';
 import 'package:flutter/material.dart';
 import 'package:hitomi/gallery/gallery.dart';
 import 'package:hitomi/lib.dart';
@@ -24,7 +23,6 @@ class GallerySimilaerView extends StatefulWidget {
 class _GallerySimilaerView extends State<GallerySimilaerView> {
   late Hitomi api;
   List<Gallery> data = [];
-  final EasyRefreshController controller = EasyRefreshController();
   late void Function(Gallery) click;
   CancelToken? _cancelToken;
   var netLoading = true;
@@ -60,7 +58,6 @@ class _GallerySimilaerView extends State<GallerySimilaerView> {
   @override
   void dispose() {
     super.dispose();
-    controller.dispose();
     _cancelToken?.cancel('dispose');
   }
 
@@ -84,9 +81,7 @@ class _GallerySimilaerView extends State<GallerySimilaerView> {
                     ? Center(
                         child: Text(AppLocalizations.of(context)!.emptyContent))
                     : GalleryListView(
-                        controller: controller,
                         data: data,
-                        onLoad: null,
                         onRefresh: null,
                         click: click,
                         api: api,

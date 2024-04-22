@@ -7,7 +7,6 @@ import 'package:ayaka/src/settings/settings_controller.dart';
 import 'package:ayaka/src/utils/proxy_netwrok_image.dart';
 import 'package:card_loading/card_loading.dart';
 import 'package:collection/collection.dart';
-import 'package:easy_refresh/easy_refresh.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
@@ -113,10 +112,8 @@ String takeTranslateText(String input) {
 }
 
 class GalleryListView extends StatelessWidget {
-  final EasyRefreshController controller;
   final List<Gallery> data;
-  final FutureOr<dynamic> Function()? onLoad;
-  final FutureOr<dynamic> Function()? onRefresh;
+  final Future<dynamic> Function()? onRefresh;
   final void Function(Gallery) click;
   final Hitomi api;
   final ScrollController? scrollController;
@@ -124,42 +121,40 @@ class GalleryListView extends StatelessWidget {
 
   const GalleryListView(
       {super.key,
-      required this.controller,
       required this.data,
-      required this.onLoad,
       this.onRefresh,
       required this.click,
       required this.api,
       this.scrollController,
       this.menusBuilder});
 
+  Widget dataList() {
+    return LayoutBuilder(builder: (context, cons) {
+      return MasonryGridView.count(
+          controller: scrollController,
+          mainAxisSpacing: 4,
+          crossAxisSpacing: 4,
+          crossAxisCount: max(cons.maxWidth ~/ 550, 1),
+          itemCount: data.length,
+          itemBuilder: (BuildContext context, int index) {
+            final item = data[index];
+            return GalleryInfo(
+              key: ValueKey(item.id),
+              gallery: item,
+              image: item.files.first,
+              click: click,
+              api: api,
+              menus: menusBuilder?.call(item),
+            );
+          });
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
-    return EasyRefresh(
-        controller: controller,
-        header: const MaterialHeader(),
-        footer: null,
-        onLoad: onLoad,
-        onRefresh: onRefresh,
-        child: LayoutBuilder(builder: (c, cons) {
-          return MasonryGridView.count(
-              controller: scrollController,
-              mainAxisSpacing: 4,
-              crossAxisSpacing: 4,
-              crossAxisCount: max(cons.maxWidth ~/ 550, 1),
-              itemCount: data.length,
-              itemBuilder: (BuildContext context, int index) {
-                final item = data[index];
-                return GalleryInfo(
-                  key: ValueKey(item.id),
-                  gallery: item,
-                  image: item.files.first,
-                  click: click,
-                  api: api,
-                  menus: menusBuilder?.call(item),
-                );
-              });
-        }));
+    return onRefresh != null
+        ? RefreshIndicator.adaptive(onRefresh: onRefresh!, child: dataList())
+        : dataList();
   }
 }
 

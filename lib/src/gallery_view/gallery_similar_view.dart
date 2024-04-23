@@ -47,7 +47,10 @@ class _GallerySimilaerView extends State<GallerySimilaerView> {
               }))
           .catchError((e) {
         if (mounted) {
-          context.showSnackBar('err $e');
+          setState(() {
+            netLoading = false;
+            context.showSnackBar('${AppLocalizations.of(context)!.failed}: $e');
+          });
         }
       });
     }

@@ -213,6 +213,7 @@ class _GallerySearch extends State<GallerySearch> {
           (previousValue, element) =>
               previousValue + ('${_showTranslate(element)},'));
       controller.closeView(input);
+      controller.openView();
       // Navigator.of(context)
       //     .restorablePushNamed(GallerySearchResultView.routeName, arguments: {
       //   'tags': [useLabel],

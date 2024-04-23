@@ -58,7 +58,7 @@ class _AnimatedSaverDialogView extends State<AnimatedSaverDialog> {
                     .catchError((e) {
                   return '$e';
                 }, test: (error) => true).then(
-                        (value) => showSnackBar(context, value));
+                        (value) => context.showSnackBar(value));
               },
               icon: const Icon(Icons.save))
         ]),

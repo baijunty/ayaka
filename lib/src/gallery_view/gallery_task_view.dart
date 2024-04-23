@@ -61,9 +61,7 @@ class _GalleryTaskView extends State<GalleryTaskView> {
               }).toList();
             }))
         .catchError((e) {
-      if (mounted) {
-        showSnackBar(context, 'err $e');
-      }
+      context.showSnackBar('err $e');
     }, test: (error) => true).whenComplete(() => _handleVisible());
   }
 
@@ -177,21 +175,10 @@ class _GalleryTaskView extends State<GalleryTaskView> {
                   return [
                     PopupMenuItem(
                         child: Text(AppLocalizations.of(context)!.delete),
-                        onTap: () => controller
-                                .deleteTask(gallery.id)
-                                .then((value) => setState(() {
-                                      pendingTask.remove(gallery);
-                                    }))
-                                .catchError((e) {
-                              showSnackBar(context, '$e');
-                            }, test: (error) => true)),
+                        onTap: () => context.deleteTask(gallery.id)),
                     PopupMenuItem(
                         child: Text(AppLocalizations.of(context)!.download),
-                        onTap: () => controller
-                                .addTask(gallery.id.toString())
-                                .catchError((e) {
-                              showSnackBar(context, '$e');
-                            }, test: (error) => true)),
+                        onTap: () => context.addTask(gallery.id)),
                   ];
                 }));
           },

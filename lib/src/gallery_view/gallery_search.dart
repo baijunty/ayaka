@@ -56,7 +56,7 @@ class _GallerySearch extends State<GallerySearch> {
           return lastResult;
         });
       } catch (e) {
-        showSnackBar(context, 'err $e');
+        context.showSnackBar('err $e');
         return [];
       }
     });
@@ -187,7 +187,7 @@ class _GallerySearch extends State<GallerySearch> {
                             arguments: {'gallery': value, 'local': false});
                         return debugPrint('fetch ${value.name}');
                       }).catchError(
-                          (e) => showSnackBar(context,
+                          (e) => context.showSnackBar(
                               '${AppLocalizations.of(context)!.networkError} or ${AppLocalizations.of(context)!.wrongId}'),
                           test: (error) => true);
                     }

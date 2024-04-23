@@ -1,4 +1,5 @@
 import 'package:ayaka/src/settings/settings_controller.dart';
+import 'package:ayaka/src/ui/common_view.dart';
 import 'package:ayaka/src/utils/common_define.dart';
 import 'package:easy_image_viewer/easy_image_viewer.dart';
 import 'package:flutter/material.dart';
@@ -25,12 +26,10 @@ class _GalleryViewer extends State<GalleryViewer>
   var showAppBar = false;
   late PageController controller;
   late MultiImageProvider provider;
-  late SettingsController _settingsController;
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    _settingsController = context.read<SettingsController>();
     var args =
         ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>;
     _gallery = args['gallery'];
@@ -49,14 +48,13 @@ class _GalleryViewer extends State<GalleryViewer>
                     onProcess: (now, total) => chunkEvents.add(ImageChunkEvent(
                         cumulativeBytesLoaded: now, expectedTotalBytes: total)),
                   ),
-                        key: '${e.hash}_origin');
+              key: '${e.hash}_origin');
         }).toList(),
         initialIndex: index);
     controller.addListener(handlePageChange);
     if (args['index'] == null) {
-      _settingsController.manager.helper
-          .readlData<int>(
-              'UserLog', 'mark', {'id': _gallery.id, 'type': readMask})
+      context
+          .readUserDb(_gallery.id, readMask)
           .then((value) => (value ?? 0))
           .then((value) => controller.jumpToPage(value));
     }
@@ -65,9 +63,8 @@ class _GalleryViewer extends State<GalleryViewer>
   void handlePageChange() async {
     if (controller.page! - controller.page!.toInt() == 0) {
       index = controller.page!.toInt();
-      await _settingsController.manager.helper.insertUserLog(
-          _gallery.id, readMask,
-          mark: index, content: _gallery.name);
+      await context.insertToUserDb(_gallery.id, readMask,
+          data: index, content: _gallery.name);
     }
   }
 

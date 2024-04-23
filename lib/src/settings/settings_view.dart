@@ -180,8 +180,8 @@ class _StateSetting extends State<SettingsView> {
                     .parseCommandAndRun('-u')
                     .then((value) => setState(() {
                           netLoading = false;
-                          showSnackBar(
-                              context, AppLocalizations.of(context)!.success);
+                          context.showSnackBar(
+                              AppLocalizations.of(context)!.success);
                         }));
               },
               icon: const ImageIcon(AssetImage('assets/images/refresh.png')))),

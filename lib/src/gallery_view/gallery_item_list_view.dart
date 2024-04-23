@@ -1,5 +1,4 @@
 import 'package:ayaka/src/gallery_view/gallery_details_view.dart';
-import 'package:ayaka/src/model/gallery_manager.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
@@ -56,7 +55,7 @@ class _GalleryListView extends State<GalleryItemListView>
             }))
         .catchError((e) {
       if (mounted) {
-        showSnackBar(context, 'err $e');
+        context.showSnackBar('err $e');
       }
     }, test: (error) => true);
   }
@@ -74,11 +73,7 @@ class _GalleryListView extends State<GalleryItemListView>
               return [
                 PopupMenuItem(
                     child: Text(AppLocalizations.of(context)!.download),
-                    onTap: () => context
-                        .read<GalleryManager>()
-                        .addTask(g.id.toString())
-                        .then((value) => showSnackBar(
-                            context, AppLocalizations.of(context)!.success))),
+                    onTap: () => context.addTask(g.id)),
                 PopupMenuItem(
                     child: Text(AppLocalizations.of(context)!.findSimiler),
                     onTap: () => Navigator.of(context).pushNamed(
@@ -87,13 +82,11 @@ class _GalleryListView extends State<GalleryItemListView>
                 if (widget.local)
                   PopupMenuItem(
                       child: Text(AppLocalizations.of(context)!.delete),
-                      onTap: () => context
-                          .read<GalleryManager>()
-                          .deleteTask(g.id)
-                          .then((value) => setState(() {
+                      onTap: () =>
+                          context.deleteTask(g.id).then((value) => setState(() {
                                 data.removeWhere(
                                     (element) => element.id == g.id);
-                                showSnackBar(context,
+                                context.showSnackBar(
                                     AppLocalizations.of(context)!.success);
                               })))
               ];
@@ -112,7 +105,7 @@ class _GalleryListView extends State<GalleryItemListView>
     if (scrollController.position.pixels >=
             scrollController.position.maxScrollExtent &&
         data.length < totalCount) {
-      showSnackBar(context,
+      context.showSnackBar(
           '$_page/$totalPage ${AppLocalizations.of(context)!.loading}');
       await _fetchData();
     }

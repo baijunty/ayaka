@@ -9,8 +9,6 @@ import 'package:hitomi/gallery/language.dart';
 import 'package:hitomi/lib.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
-
-import '../model/gallery_manager.dart';
 import '../settings/settings_controller.dart';
 import '../ui/common_view.dart';
 import 'gallery_details_view.dart';
@@ -57,11 +55,7 @@ class _GallerySearchResultView extends State<GallerySearchResultView>
                 if (!widget.local)
                   PopupMenuItem(
                       child: Text(AppLocalizations.of(context)!.download),
-                      onTap: () => context
-                          .read<GalleryManager>()
-                          .addTask(g.id.toString())
-                          .then((value) => showSnackBar(
-                              context, AppLocalizations.of(context)!.success))),
+                      onTap: () => context.addTask(g.id)),
                 PopupMenuItem(
                     child: Text(AppLocalizations.of(context)!.findSimiler),
                     onTap: () => Navigator.of(context).pushNamed(
@@ -70,13 +64,11 @@ class _GallerySearchResultView extends State<GallerySearchResultView>
                 if (widget.local)
                   PopupMenuItem(
                       child: Text(AppLocalizations.of(context)!.delete),
-                      onTap: () => context
-                          .read<GalleryManager>()
-                          .cancelTask(g.id)
-                          .then((value) => setState(() {
+                      onTap: () =>
+                          context.cancelTask(g.id).then((value) => setState(() {
                                 data.removeWhere(
                                     (element) => element.id == g.id);
-                                showSnackBar(context,
+                                context.showSnackBar(
                                     AppLocalizations.of(context)!.success);
                               })))
               ];
@@ -95,7 +87,7 @@ class _GallerySearchResultView extends State<GallerySearchResultView>
     if (scrollController.position.pixels >=
             scrollController.position.maxScrollExtent &&
         data.length < totalCount) {
-      showSnackBar(context,
+      context.showSnackBar(
           '$_page/$totalPage ${AppLocalizations.of(context)!.loading}');
       await _fetchData();
     }
@@ -156,7 +148,7 @@ class _GallerySearchResultView extends State<GallerySearchResultView>
       }).catchError((e) {
         setState(() {
           netLoading = false;
-          showSnackBar(context, '$e');
+          context.showSnackBar('$e');
         });
       }, test: (error) => true);
     }

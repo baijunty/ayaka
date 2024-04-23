@@ -8,8 +8,6 @@ import 'package:hitomi/gallery/gallery.dart';
 import 'package:hitomi/lib.dart';
 import 'package:provider/provider.dart';
 
-import '../model/gallery_manager.dart';
-
 class GallerySimilaerView extends StatefulWidget {
   const GallerySimilaerView({super.key});
   static const routeName = '/gallery_similar';
@@ -49,7 +47,7 @@ class _GallerySimilaerView extends State<GallerySimilaerView> {
               }))
           .catchError((e) {
         if (mounted) {
-          showSnackBar(context, '$e');
+          context.showSnackBar('err $e');
         }
       });
     }
@@ -91,13 +89,7 @@ class _GallerySimilaerView extends State<GallerySimilaerView> {
                                 PopupMenuItem(
                                     child: Text(
                                         AppLocalizations.of(context)!.download),
-                                    onTap: () => context
-                                        .read<GalleryManager>()
-                                        .addTask(g.id.toString())
-                                        .then((value) => showSnackBar(
-                                            context,
-                                            AppLocalizations.of(context)!
-                                                .success))),
+                                    onTap: () => context.addTask(g.id)),
                               ];
                             }))));
   }

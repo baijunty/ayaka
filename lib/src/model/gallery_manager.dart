@@ -1,14 +1,12 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
-
 import 'package:collection/collection.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:hitomi/lib.dart';
 import 'package:image/image.dart' as image show Command, Image, PngEncoder;
-
 import '../settings/settings_controller.dart';
 import 'package:hitomi/gallery/image.dart' as img show Image, ThumbnaiSize;
 

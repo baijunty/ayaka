@@ -51,7 +51,7 @@
   "cancel":"取消",
   "loading":"加载中",
   "delete":"删除",
-  "updateDatabase":"更新数据库",
+  "updateDatabase":"更新翻译数据库",
   "select":"选择",
   "selectAll":"全选",
   "connectType":"连接方式",

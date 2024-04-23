@@ -42,7 +42,7 @@ class _AyakaHome extends State<AyakaHome> {
         onPopInvoked: (didPop) {
           if (!exitApp) {
             setState(() async {
-              showSnackBar(context, AppLocalizations.of(context)!.exitConfirm);
+              context.showSnackBar(AppLocalizations.of(context)!.exitConfirm);
               exitApp = true;
               await Future.delayed(
                   const Duration(seconds: 2),

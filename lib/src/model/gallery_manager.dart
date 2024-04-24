@@ -93,6 +93,23 @@ class GalleryManager with ChangeNotifier {
             .then((value) => {'id': id, 'value': value});
   }
 
+  Future<bool> addAdImageHash(List<String> hashes) async {
+    return controller.useProxy
+        ? controller.manager.dio
+            .post<String>('${controller.config.remoteHttp}/addAdMark',
+                data: json
+                    .encode({'mask': hashes, 'auth': controller.config.auth}),
+                options: Options(responseType: ResponseType.json))
+            .then((value) => json.decode(value.data!) as Map<String, dynamic>)
+            .then((value) => value['success'] as bool)
+            .catchError((e) => false, test: (error) => true)
+        : hashes
+            .asStream()
+            .asyncMap((event) =>
+                controller.manager.parseCommandAndRun('--admark $event'))
+            .fold(true, (previous, element) => previous && element);
+  }
+
   Future<Uint8List> makeAnimatedImage(List<img.Image> images, Hitomi api,
       {int id = 0,
       img.ThumbnaiSize size = img.ThumbnaiSize.medium,

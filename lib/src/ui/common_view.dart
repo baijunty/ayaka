@@ -295,7 +295,7 @@ class TagButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return TextButton(
+    var button = TextButton(
         style: style ?? Theme.of(context).textButtonTheme.style,
         onLongPress: () => showModalBottomSheet(
             context: context,
@@ -306,12 +306,8 @@ class TagButton extends StatelessWidget {
               'tags': [label],
               'local': local
             }),
-        child: Row(
-          children: [
-            if (icon != null) icon!,
-            Text('${label['translate'] ?? label['name']}')
-          ],
-        ));
+        child: Text('${label['translate'] ?? label['name']}'));
+    return icon == null ? button : Row(children: [icon!, button]);
   }
 }
 
@@ -338,6 +334,7 @@ class TagDetail extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    var dio = context.read<SettingsController>().manager.dio;
     var taskControl = context.read<GalleryManager>();
     var imgs = takeUrls(tag['intro'] ?? '')
         .where((element) => imageExtension
@@ -384,7 +381,15 @@ class TagDetail extends StatelessWidget {
                 for (var url in imgs)
                   Padding(
                       padding: const EdgeInsets.only(left: 8, right: 4),
-                      child: Image.network(url.value))
+                      child: Image(
+                          image: ProxyNetworkImage(
+                              dataStream: (chunkEvents) =>
+                                  dio.httpInvoke<List<int>>(url.value,
+                                      onProcess: (now, total) =>
+                                          chunkEvents.add(ImageChunkEvent(
+                                              cumulativeBytesLoaded: now,
+                                              expectedTotalBytes: total))),
+                              key: url.value)))
               ]),
           SliverList.list(children: [
             const SizedBox(height: 8),
@@ -452,13 +457,19 @@ extension ContextAction on BuildContext {
 
   Future<void> insertToUserDb(int id, int type,
       {int data = 0, String? content, List<int>? extension}) async {
-    return read<SettingsController>()
-        .manager
-        .helper
+    return getSqliteHelper()
         .insertUserLog(id, type,
             mark: data, content: content, extension: extension ?? [])
         .then((value) => showSnackBar(AppLocalizations.of(this)!.success))
         .catchError((e) => debugPrint('$e'), test: (error) => true);
+  }
+
+  SqliteHelper getSqliteHelper() {
+    return read<SettingsController>().manager.helper;
+  }
+
+  TaskManager getManager() {
+    return read<SettingsController>().manager;
   }
 
   Future<int?> readUserDb(int id, int type, {int? defaultValue}) async {
@@ -471,5 +482,22 @@ extension ContextAction on BuildContext {
           debugPrint('$e');
           return defaultValue;
         }, test: (error) => true);
+  }
+
+  Future<bool?> showConfirmDialog(String msg) async {
+    return showDialog(
+        context: this,
+        builder: (context) {
+          return AlertDialog.adaptive(
+              content: Center(child: Text(msg)),
+              actions: [
+                TextButton(
+                    onPressed: () => Navigator.of(context).pop(true),
+                    child: Text(AppLocalizations.of(context)!.confirm)),
+                TextButton(
+                    onPressed: () => Navigator.of(context).pop(false),
+                    child: Text(AppLocalizations.of(context)!.cancel)),
+              ]);
+        });
   }
 }

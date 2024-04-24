@@ -47,17 +47,22 @@ class _UserProfileView extends State<UserProfileView>
               .asyncMap((event) => api.fetchGallery(event))
               .fold(
                   <Gallery>[], (previous, element) => previous..add(element)))))
-          .then((value) => setState(() {
+          .then((value) {
+            if (mounted) {
+              setState(() {
                 history.addAll(value[0]);
                 likes.addAll(value[1]);
                 collection.addAll(value[2]);
-              }));
+              });
+            }
+          });
     }
   }
 
   Widget _itemTitle(String title, int type) {
     return ListTile(
-      title: Text(title, style: Theme.of(context).primaryTextTheme.titleLarge),
+      title: Text(title, style: Theme.of(context).textTheme.titleLarge),
+      tileColor: Theme.of(context).colorScheme.primaryContainer,
       trailing: const Icon(Icons.arrow_forward),
       onTap: () => Navigator.of(context).push(MaterialPageRoute(
           builder: (context) => UserProfleLogView(type: type, title: title))),
@@ -66,7 +71,7 @@ class _UserProfileView extends State<UserProfileView>
 
   Widget _galleryList(List<Gallery> list) {
     return SizedBox(
-        height: 200,
+        height: 210,
         child: ListView.separated(
             itemBuilder: (context, index) {
               var gallery = list[index];
@@ -147,9 +152,7 @@ class _UserProfleLogView extends State<UserProfleLogView> {
   late PopupMenuButton<String> Function(Gallery gallery)? menusBuilder;
   void fetchDataFromDb() {
     context
-        .read<SettingsController>()
-        .manager
-        .helper
+        .getSqliteHelper()
         .querySql(
             'select COUNT(1) OVER() AS total_count, id from UserLog where type=? limit 25 offset ?',
             [
@@ -198,6 +201,23 @@ class _UserProfleLogView extends State<UserProfleLogView> {
         });
   }
 
+  void clearData() async {
+    await context
+        .showConfirmDialog(AppLocalizations.of(context)!.clearDataWarn)
+        .then((value) =>
+            context.getSqliteHelper().delete('UserLog', {'type': widget.type}))
+        .then((value) {
+      if (mounted) {
+        context.showSnackBar(AppLocalizations.of(context)!.success);
+        setState(() {
+          data.clear();
+          page = 0;
+          totalCount = 0;
+        });
+      }
+    });
+  }
+
   @override
   void dispose() {
     super.dispose();
@@ -216,7 +236,7 @@ class _UserProfleLogView extends State<UserProfleLogView> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    api = context.read<SettingsController>().hitomi();
+    api = context.read<SettingsController>().hitomi(localDb: true);
     click = (gallery) => Navigator.of(context).pushNamed(
         GalleryDetailsView.routeName,
         arguments: {'gallery': gallery, 'local': false});
@@ -228,7 +248,12 @@ class _UserProfleLogView extends State<UserProfleLogView> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-        appBar: AppBar(title: Text(widget.title)),
+        appBar: AppBar(
+          title: Text(widget.title),
+          actions: [
+            IconButton(onPressed: clearData, icon: const Icon(Icons.clear))
+          ],
+        ),
         body: SafeArea(
             child: Center(
                 child: MaxWidthBox(

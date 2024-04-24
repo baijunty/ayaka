@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:typed_data';
 
+import 'package:easy_image_viewer/easy_image_viewer.dart';
 import 'package:file_saver/file_saver.dart';
 import 'package:flutter/material.dart';
 import 'package:hitomi/gallery/gallery.dart';
@@ -44,6 +45,19 @@ class _AnimatedSaverDialogView extends State<AnimatedSaverDialog> {
     return data;
   }
 
+  Widget imageView() {
+    return EasyImageView(
+        imageProvider: ProxyNetworkImage(
+            dataStream: (chunkEvents) {
+              return buildAnimatedImage(context, chunkEvents);
+            },
+            key: widget.selected.fold(
+                StringBuffer(size.name),
+                (previousValue, element) =>
+                    previousValue..write(element.name))),
+        doubleTapZoomable: true);
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -65,17 +79,9 @@ class _AnimatedSaverDialogView extends State<AnimatedSaverDialog> {
         body: SafeArea(
             child: Column(children: [
           Expanded(
-              child: ThumbImageView(
-                  ProxyNetworkImage(
-                      dataStream: (chunkEvents) {
-                        return buildAnimatedImage(context, chunkEvents);
-                      },
-                      key: widget.selected.fold(
-                          StringBuffer(size.name),
-                          (previousValue, element) =>
-                              previousValue..write(element.name))),
-                  aspectRatio: widget.selected.first.width /
-                      widget.selected.first.height)),
+              child: size == img.ThumbnaiSize.medium
+                  ? Center(child: imageView())
+                  : imageView()),
           Row(mainAxisAlignment: MainAxisAlignment.spaceEvenly, children: [
             Row(children: [
               Text(AppLocalizations.of(context)!.thumb),

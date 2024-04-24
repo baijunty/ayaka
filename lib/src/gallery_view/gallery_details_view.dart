@@ -220,6 +220,23 @@ class _GalleryDetailView extends State<GalleryDetailsView> {
                                 },
                                 child: Text(
                                     AppLocalizations.of(context)!.makeGif)),
+                            const SizedBox(width: 8),
+                            TextButton(
+                                onPressed: () async {
+                                  await context
+                                      .read<GalleryManager>()
+                                      .addAdImageHash(
+                                          _selected.map((e) => e.hash).toList())
+                                      .then((value) {
+                                    if (mounted) {
+                                      context.showSnackBar(
+                                          AppLocalizations.of(context)!
+                                              .success);
+                                    }
+                                  });
+                                },
+                                child: Text(
+                                    AppLocalizations.of(context)!.markAdImg)),
                           ])))
           ])),
     )));
@@ -337,25 +354,6 @@ class GalleryDetailHead extends StatelessWidget {
                             'translate':
                                 mapLangugeType(context, gallery.language ?? '')
                           }, style: smallText, local: local))),
-                  if (artists.isNotEmpty)
-                    SizedBox(
-                        height: 28,
-                        child: Row(children: [
-                          for (var artist in artists)
-                            TagButton(
-                                label: artist,
-                                style: smallText,
-                                commondPrefix: '--${artist['type']}',
-                                local: local,
-                                icon: const Icon(Icons.person)),
-                          for (var group in groupes)
-                            TagButton(
-                                label: group,
-                                style: smallText,
-                                commondPrefix: '--${group['type']}',
-                                local: local,
-                                icon: const Icon(Icons.group))
-                        ])),
                   Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
@@ -387,6 +385,25 @@ class GalleryDetailHead extends StatelessWidget {
                         ),
                         const SizedBox(width: 8),
                       ]),
+                  if (artists.isNotEmpty || groupes.isNotEmpty)
+                    SizedBox(
+                        height: 28,
+                        child: Row(children: [
+                          for (var artist in artists)
+                            TagButton(
+                                label: artist,
+                                style: smallText,
+                                commondPrefix: '--${artist['type']}',
+                                local: local,
+                                icon: const Icon(Icons.person)),
+                          for (var group in groupes)
+                            TagButton(
+                                label: group,
+                                style: smallText,
+                                commondPrefix: '--${group['type']}',
+                                local: local,
+                                icon: const Icon(Icons.group))
+                        ])),
                   SizedBox(
                       height: 28,
                       child: Row(

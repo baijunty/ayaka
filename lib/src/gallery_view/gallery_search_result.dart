@@ -68,8 +68,6 @@ class _GallerySearchResultView extends State<GallerySearchResultView>
                           context.cancelTask(g.id).then((value) => setState(() {
                                 data.removeWhere(
                                     (element) => element.id == g.id);
-                                context.showSnackBar(
-                                    AppLocalizations.of(context)!.success);
                               })))
               ];
             });
@@ -146,10 +144,12 @@ class _GallerySearchResultView extends State<GallerySearchResultView>
           netLoading = false;
         });
       }).catchError((e) {
-        setState(() {
-          netLoading = false;
-          context.showSnackBar('$e');
-        });
+        if (mounted) {
+          setState(() {
+            netLoading = false;
+            context.showSnackBar('$e');
+          });
+        }
       }, test: (error) => true);
     }
   }
@@ -157,28 +157,24 @@ class _GallerySearchResultView extends State<GallerySearchResultView>
   @override
   Widget build(BuildContext context) {
     super.build(context);
-    return Center(
-        child: MaxWidthBox(
-            maxWidth: 1200,
-            child: data.isEmpty
-                ? Center(
-                    child: netLoading
-                        ? const CircularProgressIndicator()
-                        : InkWell(
-                            onTap: _fetchData,
-                            child: Text(
-                                AppLocalizations.of(context)!.emptyContent,
-                                style: Theme.of(context)
-                                    .textTheme
-                                    .bodyLarge
-                                    ?.copyWith(color: Colors.red))))
-                : GalleryListView(
-                    data: data,
-                    onRefresh: null,
-                    click: click,
-                    api: widget.api,
-                    scrollController: scrollController,
-                    menusBuilder: menuBuilder)));
+    return data.isEmpty
+        ? Center(
+            child: netLoading
+                ? const CircularProgressIndicator()
+                : InkWell(
+                    onTap: _fetchData,
+                    child: Text(AppLocalizations.of(context)!.emptyContent,
+                        style: Theme.of(context)
+                            .textTheme
+                            .bodyLarge
+                            ?.copyWith(color: Colors.red))))
+        : GalleryListView(
+            data: data,
+            onRefresh: null,
+            click: click,
+            api: widget.api,
+            scrollController: scrollController,
+            menusBuilder: menuBuilder);
   }
 
   @override

@@ -2,6 +2,7 @@ import 'package:ayaka/src/gallery_view/gallery_tabview.dart';
 import 'package:ayaka/src/gallery_view/gallery_task_view.dart';
 import 'package:ayaka/src/settings/settings_view.dart';
 import 'package:ayaka/src/ui/common_view.dart';
+import 'package:ayaka/src/ui/profile.dart';
 import 'package:ayaka/src/utils/responsive_util.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -33,6 +34,8 @@ class _AyakaHome extends State<AyakaHome> {
       case 1:
         child = const GalleryTaskView();
       case 2:
+        child = const UserProfileView();
+      case 3:
         child = const SettingsView();
       default:
         child = const GalleryTabView();
@@ -73,6 +76,10 @@ class _AyakaHome extends State<AyakaHome> {
                                       label: Text(AppLocalizations.of(context)!
                                           .download)),
                                   NavigationRailDestination(
+                                      icon: const Icon(Icons.person),
+                                      label: Text(AppLocalizations.of(context)!
+                                          .profile)),
+                                  NavigationRailDestination(
                                       icon: const Icon(Icons.settings),
                                       label: Text(AppLocalizations.of(context)!
                                           .setting)),
@@ -93,6 +100,9 @@ class _AyakaHome extends State<AyakaHome> {
                           BottomNavigationBarItem(
                               icon: const Icon(Icons.download),
                               label: AppLocalizations.of(context)!.download),
+                          BottomNavigationBarItem(
+                              icon: const Icon(Icons.person),
+                              label: AppLocalizations.of(context)!.profile),
                           BottomNavigationBarItem(
                               icon: const Icon(Icons.settings),
                               label: AppLocalizations.of(context)!.setting),

@@ -1,6 +1,7 @@
 import 'package:ayaka/src/gallery_view/gallery_search.dart';
 import 'package:ayaka/src/gallery_view/gallery_search_result.dart';
 import 'package:ayaka/src/settings/settings_controller.dart';
+import 'package:ayaka/src/ui/common_view.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
@@ -137,41 +138,46 @@ class _GalleryTabView extends State<GalleryTabView>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-        body: NestedScrollView(
-            controller: scrollController,
-            headerSliverBuilder: (context, innerBoxIsScrolled) => [
-                  SliverAppBar(
-                    forceElevated: innerBoxIsScrolled,
-                    pinned: true,
-                    floating: true,
-                    snap: true,
-                    title: const GallerySearch(),
-                    bottom: TabBar(
-                        tabs: tabs,
-                        controller: tabController,
-                        onTap: (value) => pageController.jumpToPage(value)),
-                    actions: tags.length <= 1 ? [_sortWidget()] : null,
-                  )
-                ],
-            scrollBehavior: MouseEnabledScrollBehavior(),
-            body: NotificationListener(
-                child: PageView.builder(
-                    itemBuilder: (context, index) => children[index],
-                    controller: pageController,
-                    itemCount: children.length,
-                    scrollBehavior: MouseEnabledScrollBehavior(),
-                    onPageChanged: (value) => tabController.animateTo(value)),
-                onNotification: (notification) {
-                  if (notification is ScrollUpdateNotification &&
-                      notification.metrics.runtimeType == FixedScrollMetrics) {
-                    var dy = notification.scrollDelta ?? 0;
-                    if (dy != 0) {
-                      scrollController.position
-                          .jumpTo(scrollController.position.pixels + dy);
+        body: Center(
+      child: MaxWidthBox(
+          maxWidth: 1280,
+          child: NestedScrollView(
+              controller: scrollController,
+              headerSliverBuilder: (context, innerBoxIsScrolled) => [
+                    SliverAppBar(
+                      forceElevated: innerBoxIsScrolled,
+                      pinned: true,
+                      floating: true,
+                      snap: true,
+                      title: const GallerySearch(),
+                      bottom: TabBar(
+                          tabs: tabs,
+                          controller: tabController,
+                          onTap: (value) => pageController.jumpToPage(value)),
+                      actions: tags.length <= 1 ? [_sortWidget()] : null,
+                    )
+                  ],
+              scrollBehavior: MouseEnabledScrollBehavior(),
+              body: NotificationListener(
+                  child: PageView.builder(
+                      itemBuilder: (context, index) => children[index],
+                      controller: pageController,
+                      itemCount: children.length,
+                      scrollBehavior: MouseEnabledScrollBehavior(),
+                      onPageChanged: (value) => tabController.animateTo(value)),
+                  onNotification: (notification) {
+                    if (notification is ScrollUpdateNotification &&
+                        notification.metrics.runtimeType ==
+                            FixedScrollMetrics) {
+                      var dy = notification.scrollDelta ?? 0;
+                      if (dy != 0) {
+                        scrollController.position
+                            .jumpTo(scrollController.position.pixels + dy);
+                      }
                     }
-                  }
-                  return true;
-                })));
+                    return true;
+                  }))),
+    ));
   }
 }
 

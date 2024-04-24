@@ -6,7 +6,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:hitomi/lib.dart';
-import 'package:image/image.dart' as image show Command, Image, PngEncoder;
+import 'package:image/image.dart' as image show Command, PngEncoder;
 import '../settings/settings_controller.dart';
 import 'package:hitomi/gallery/image.dart' as img show Image, ThumbnaiSize;
 
@@ -119,11 +119,11 @@ class GalleryManager with ChangeNotifier {
               .then((value) => value?..frameDuration = 200);
         })
         .filterNonNull()
-        .fold(<image.Image>[],
-            (previous, element) => previous..addAll(element.frames))
-        .then((value) => value
-            .fold(image.PngEncoder(level: 6)..start(value.length),
-                (previousValue, element) => previousValue..addFrame(element))
-            .finish()!);
+        .reduce((previous, element) => element.frames.fold(
+            previous, (previousValue, element) => previous..addFrame(element)))
+        .then((value) {
+          debugPrint('encode length ${value.getBytes().length}');
+          return image.PngEncoder(level: 6).encode(value);
+        });
   }
 }

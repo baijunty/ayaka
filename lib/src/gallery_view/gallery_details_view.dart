@@ -252,13 +252,13 @@ class GalleryDetailHead extends StatelessWidget {
     var format = DateFormat('yyyy-MM-dd');
     var size = currentDevice(context) == DeviceInfo.mobile ? 1 : 2;
     var artists = extendedInfo
-            .where((element) => element['type'] == 'artist')
-            .take(size)
-            .toList() +
-        extendedInfo
-            .where((element) => element['type'] == 'group')
-            .take(size)
-            .toList();
+        .where((element) => element['type'] == 'artist')
+        .take(size)
+        .toList();
+    var groupes = extendedInfo
+        .where((element) => element['type'] == 'group')
+        .take(size)
+        .toList();
     var width = min(MediaQuery.of(context).size.width / 3, 300.0);
     var height = max(
         160.0, width * gallery.files.first.height / gallery.files.first.width);
@@ -280,7 +280,7 @@ class GalleryDetailHead extends StatelessWidget {
         actions: [
           IconButton(
               onPressed: () async {
-                insertToDb(context, collection);
+                insertToDb(context, bookMark);
               },
               icon: const Icon(Icons.bookmark)),
           IconButton(
@@ -346,7 +346,15 @@ class GalleryDetailHead extends StatelessWidget {
                                 label: artist,
                                 style: smallText,
                                 commondPrefix: '--${artist['type']}',
-                                local: local)
+                                local: local,
+                                icon: const Icon(Icons.person)),
+                          for (var group in groupes)
+                            TagButton(
+                                label: group,
+                                style: smallText,
+                                commondPrefix: '--${group['type']}',
+                                local: local,
+                                icon: const Icon(Icons.group))
                         ])),
                   Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,

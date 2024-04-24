@@ -26,6 +26,35 @@ class ThumbImageView extends StatelessWidget {
   const ThumbImageView(this.provider,
       {super.key, this.label, this.aspectRatio = 9 / 16});
 
+  Widget loadingBuilder(
+      BuildContext context, Widget child, ImageChunkEvent? loadingProgress) {
+    return loadingProgress == null
+        ? child
+        : Center(
+            child: CircularProgressIndicator(
+                value: loadingProgress.expectedTotalBytes != null
+                    ? loadingProgress.cumulativeBytesLoaded /
+                        loadingProgress.expectedTotalBytes!
+                    : null));
+  }
+
+  Widget errorBuilder(context, error, stackTrace) {
+    return const Icon(Icons.error);
+  }
+
+  Widget frameBuilder(BuildContext context, Widget child, int? frame,
+      bool wasSynchronouslyLoaded) {
+    if (wasSynchronouslyLoaded) {
+      return child;
+    }
+    return AnimatedOpacity(
+      opacity: frame == null ? 0 : 1,
+      duration: const Duration(seconds: 1),
+      curve: Curves.easeOut,
+      child: child,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Stack(children: [
@@ -33,31 +62,9 @@ class ThumbImageView extends StatelessWidget {
         aspectRatio: max(aspectRatio, 0.5),
         child: Image(
           image: provider,
-          errorBuilder: (context, error, stackTrace) {
-            return const Icon(Icons.error);
-          },
-          loadingBuilder: (context, child, loadingProgress) {
-            return loadingProgress == null
-                ? child
-                : Center(
-                    child: CircularProgressIndicator(
-                        value: loadingProgress.expectedTotalBytes != null
-                            ? loadingProgress.cumulativeBytesLoaded /
-                                loadingProgress.expectedTotalBytes!
-                            : null));
-          },
-          frameBuilder: (BuildContext context, Widget child, int? frame,
-              bool wasSynchronouslyLoaded) {
-            if (wasSynchronouslyLoaded) {
-              return child;
-            }
-            return AnimatedOpacity(
-              opacity: frame == null ? 0 : 1,
-              duration: const Duration(seconds: 1),
-              curve: Curves.easeOut,
-              child: child,
-            );
-          },
+          errorBuilder: errorBuilder,
+          loadingBuilder: loadingBuilder,
+          frameBuilder: frameBuilder,
           fit: BoxFit.cover,
         ),
       ),
@@ -95,7 +102,7 @@ String takeTranslateText(String input) {
 class GalleryListView extends StatelessWidget {
   final List<Gallery> data;
   final Future<dynamic> Function()? onRefresh;
-  final void Function(Gallery) click;
+  final void Function(Gallery gallery) click;
   final Hitomi api;
   final ScrollController? scrollController;
   final PopupMenuButton<String> Function(Gallery gallery)? menusBuilder;
@@ -277,12 +284,14 @@ class TagButton extends StatelessWidget {
   final bool local;
   final ButtonStyle? style;
   final String? commondPrefix;
+  final Icon? icon;
   const TagButton(
       {super.key,
       required this.label,
       required this.local,
       this.style,
-      this.commondPrefix});
+      this.commondPrefix,
+      this.icon});
 
   @override
   Widget build(BuildContext context) {
@@ -297,7 +306,12 @@ class TagButton extends StatelessWidget {
               'tags': [label],
               'local': local
             }),
-        child: Text('${label['translate'] ?? label['name']}'));
+        child: Row(
+          children: [
+            if (icon != null) icon!,
+            Text('${label['translate'] ?? label['name']}')
+          ],
+        ));
   }
 }
 

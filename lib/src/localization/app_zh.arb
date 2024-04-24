@@ -92,5 +92,7 @@
   "runServer":"运行服务器",
   "closed":"已关闭",
   "gallery":"画廊",
+  "profile":"个人中心",
+  "readHistory":"阅读历史",
   "tag":"标签"
 }

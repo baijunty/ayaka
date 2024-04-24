@@ -86,8 +86,6 @@ class _GalleryListView extends State<GalleryItemListView>
                           context.deleteTask(g.id).then((value) => setState(() {
                                 data.removeWhere(
                                     (element) => element.id == g.id);
-                                context.showSnackBar(
-                                    AppLocalizations.of(context)!.success);
                               })))
               ];
             });
@@ -123,21 +121,18 @@ class _GalleryListView extends State<GalleryItemListView>
   }
 
   Widget _bodyContentList() {
-    return Center(
-        child: MaxWidthBox(
-            maxWidth: 1200,
-            child: GalleryListView(
-                data: data,
-                onRefresh: () async {
-                  var before = _page;
-                  _page = 1;
-                  await _fetchData(refresh: true);
-                  _page = before;
-                },
-                click: click,
-                api: widget.api,
-                scrollController: scrollController,
-                menusBuilder: menuBuilder)));
+    return GalleryListView(
+        data: data,
+        onRefresh: () async {
+          var before = _page;
+          _page = 1;
+          await _fetchData(refresh: true);
+          _page = before;
+        },
+        click: click,
+        api: widget.api,
+        scrollController: scrollController,
+        menusBuilder: menuBuilder);
   }
 
   @override

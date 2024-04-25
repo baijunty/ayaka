@@ -68,32 +68,34 @@ class _GallerySimilaerView extends State<GallerySimilaerView> {
         appBar: AppBar(
           leading: const BackButton(),
         ),
-        body: MaxWidthBox(
-            maxWidth: 1200,
-            child: netLoading
-                ? Center(
-                    child: Column(
+        body: Center(
+            child: MaxWidthBox(
+                maxWidth: 1200,
+                child: netLoading
+                    ? Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                        const CircularProgressIndicator(),
-                        Text(AppLocalizations.of(context)!.loading)
-                      ]))
-                : data.isEmpty
-                    ? Center(
-                        child: Text(AppLocalizations.of(context)!.emptyContent))
-                    : GalleryListView(
-                        data: data,
-                        onRefresh: null,
-                        click: click,
-                        api: api,
-                        menusBuilder: (g) =>
-                            PopupMenuButton<String>(itemBuilder: (context) {
-                              return [
-                                PopupMenuItem(
-                                    child: Text(
-                                        AppLocalizations.of(context)!.download),
-                                    onTap: () => context.addTask(g.id)),
-                              ];
-                            }))));
+                            const CircularProgressIndicator(),
+                            Text(AppLocalizations.of(context)!.loading)
+                          ])
+                    : data.isEmpty
+                        ? Center(
+                            child: Text(
+                                AppLocalizations.of(context)!.emptyContent))
+                        : GalleryListView(
+                            data: data,
+                            onRefresh: null,
+                            click: click,
+                            api: api,
+                            menusBuilder: (g) =>
+                                PopupMenuButton<String>(itemBuilder: (context) {
+                                  return [
+                                    PopupMenuItem(
+                                        child: Text(
+                                            AppLocalizations.of(context)!
+                                                .download),
+                                        onTap: () => context.addTask(g.id)),
+                                  ];
+                                })))));
   }
 }

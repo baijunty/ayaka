@@ -460,7 +460,7 @@ extension ContextAction on BuildContext {
     return getSqliteHelper()
         .insertUserLog(id, type,
             mark: data, content: content, extension: extension ?? [])
-        .then((value) => showSnackBar(AppLocalizations.of(this)!.success))
+        .then((value) => debugPrint('$value'))
         .catchError((e) => debugPrint('$e'), test: (error) => true);
   }
 

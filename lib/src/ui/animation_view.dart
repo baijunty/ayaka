@@ -46,15 +46,19 @@ class _AnimatedSaverDialogView extends State<AnimatedSaverDialog> {
   }
 
   Widget imageView() {
-    return EasyImageView(
-        imageProvider: ProxyNetworkImage(
-            dataStream: (chunkEvents) {
-              return buildAnimatedImage(context, chunkEvents);
-            },
-            key: widget.selected.fold(
-                StringBuffer(size.name),
-                (previousValue, element) =>
-                    previousValue..write(element.name))),
+    return EasyImageView.imageWidget(
+        Center(
+            child: ThumbImageView(
+                ProxyNetworkImage(
+                    dataStream: (chunkEvents) {
+                      return buildAnimatedImage(context, chunkEvents);
+                    },
+                    key: widget.selected.fold(
+                        StringBuffer(size.name),
+                        (previousValue, element) =>
+                            previousValue..write(element.name))),
+                aspectRatio: widget.selected.first.width /
+                    widget.selected.first.height)),
         doubleTapZoomable: true);
   }
 

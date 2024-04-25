@@ -7,6 +7,7 @@ import 'package:collection/collection.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:ayaka/src/settings/settings_controller.dart';
 import 'package:flutter/material.dart';
+import 'package:hitomi/gallery/label.dart';
 import 'package:hitomi/lib.dart';
 import 'package:provider/provider.dart';
 
@@ -173,13 +174,7 @@ class _GallerySearch extends State<GallerySearch> {
                 leading: const Icon(Icons.search),
                 onSubmitted: (value) async {
                   if (controller.text.isNotEmpty) {
-                    if (_selected.isNotEmpty) {
-                      Navigator.of(context).restorablePushNamed(
-                          GalleryTabView.routeName,
-                          arguments: {
-                            'tags': _selected,
-                          });
-                    } else if (numberExp.hasMatch(controller.text)) {
+                    if (numberExp.hasMatch(controller.text)) {
                       await api.fetchGallery(controller.text).then(
                           (value) async {
                         await Navigator.of(context).pushNamed(
@@ -190,6 +185,19 @@ class _GallerySearch extends State<GallerySearch> {
                           (e) => context.showSnackBar(
                               '${AppLocalizations.of(context)!.networkError} or ${AppLocalizations.of(context)!.wrongId}'),
                           test: (error) => true);
+                    } else {
+                      Navigator.of(context).restorablePushNamed(
+                          GalleryTabView.routeName,
+                          arguments: {
+                            'tags': _selected.isNotEmpty
+                                ? _selected
+                                : [
+                                    {
+                                      ...QueryText(controller.text).toMap(),
+                                      'include': true
+                                    }
+                                  ],
+                          });
                     }
                   }
                 });

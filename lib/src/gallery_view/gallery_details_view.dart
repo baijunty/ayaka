@@ -127,6 +127,25 @@ class _GalleryDetailView extends State<GalleryDetailsView> {
             color: Theme.of(context).colorScheme.background,
             padding: const EdgeInsets.all(4),
             child: Row(mainAxisAlignment: MainAxisAlignment.end, children: [
+              if (!kIsWeb)
+                TextButton(
+                    onPressed: () async {
+                      await context
+                          .read<GalleryManager>()
+                          .addAdImageHash(_selected.map((e) => e.hash).toList())
+                          .then((value) {
+                        if (mounted) {
+                          gallery.files.removeWhere(
+                              (element) => _selected.contains(element));
+                          setState(() {
+                            context.showSnackBar(
+                                AppLocalizations.of(context)!.success);
+                          });
+                        }
+                      });
+                    },
+                    child: Text(AppLocalizations.of(context)!.markAdImg)),
+              const Spacer(),
               TextButton(
                   onPressed: () => setState(() {
                         _selected.clear();
@@ -147,25 +166,6 @@ class _GalleryDetailView extends State<GalleryDetailsView> {
                             selected: _selected, api: api, gallery: gallery))));
                   },
                   child: Text(AppLocalizations.of(context)!.makeGif)),
-              const SizedBox(width: 8),
-              if (!kIsWeb)
-                TextButton(
-                    onPressed: () async {
-                      await context
-                          .read<GalleryManager>()
-                          .addAdImageHash(_selected.map((e) => e.hash).toList())
-                          .then((value) {
-                        if (mounted) {
-                          gallery.files.removeWhere(
-                              (element) => _selected.contains(element));
-                          setState(() {
-                            context.showSnackBar(
-                                AppLocalizations.of(context)!.success);
-                          });
-                        }
-                      });
-                    },
-                    child: Text(AppLocalizations.of(context)!.markAdImg)),
             ])));
   }
 

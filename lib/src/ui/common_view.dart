@@ -165,6 +165,11 @@ class GalleryInfo extends StatelessWidget {
     var entry = mapGalleryType(context, gallery.type);
     var format = DateFormat('yyyy-MM-dd');
     var image = gallery.files.first;
+    final smallText = TextButton.styleFrom(
+      fixedSize: const Size.fromHeight(25),
+      padding: const EdgeInsets.all(4),
+      minimumSize: const Size(40, 25),
+    );
     return LayoutBuilder(builder: (context, cons) {
       return InkWell(
           key: ValueKey(gallery.id),
@@ -221,22 +226,25 @@ class GalleryInfo extends StatelessWidget {
                                   tag: 'gallery_${gallery.id}_language',
                                   child: Text(mapLangugeType(
                                       context, gallery.language ?? ''))),
-                              const SizedBox(height: 8),
-                              Row(
-                                  mainAxisAlignment:
-                                      MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    Hero(
-                                        tag: 'gallery_${gallery.id}_type',
-                                        child: TagButton(label: {
-                                          ...TypeLabel(gallery.type).toMap(),
-                                          'translate': entry.key
-                                        }, local: false)),
-                                    Hero(
-                                        tag: 'gallery_${gallery.id}_date',
-                                        child: Text(format.format(
-                                            format.parse(gallery.date)))),
-                                  ]),
+                              const SizedBox(width: 8),
+                              SizedBox(
+                                  height: 28,
+                                  child: Row(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.spaceBetween,
+                                      children: [
+                                        Hero(
+                                            tag: 'gallery_${gallery.id}_type',
+                                            child: TagButton(label: {
+                                              ...TypeLabel(gallery.type)
+                                                  .toMap(),
+                                              'translate': entry.key
+                                            }, style: smallText, local: false)),
+                                        Hero(
+                                            tag: 'gallery_${gallery.id}_date',
+                                            child: Text(format.format(
+                                                format.parse(gallery.date)))),
+                                      ])),
                             ])),
                         if (menus != null) menus!
                       ]))));

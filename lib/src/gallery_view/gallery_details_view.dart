@@ -119,6 +119,56 @@ class _GalleryDetailView extends State<GalleryDetailsView> {
     }
   }
 
+  Widget imagesToolbar() {
+    var api = controller.hitomi(localDb: local);
+    return Align(
+        alignment: Alignment.bottomCenter,
+        child: Container(
+            color: Theme.of(context).colorScheme.background,
+            padding: const EdgeInsets.all(4),
+            child: Row(mainAxisAlignment: MainAxisAlignment.end, children: [
+              TextButton(
+                  onPressed: () => setState(() {
+                        _selected.clear();
+                      }),
+                  child: Text(AppLocalizations.of(context)!.cancel)),
+              const SizedBox(width: 8),
+              TextButton(
+                  onPressed: () => setState(() {
+                        _selected.clear();
+                        _selected.addAll(gallery.files);
+                      }),
+                  child: Text(AppLocalizations.of(context)!.selectAll)),
+              const SizedBox(width: 8),
+              TextButton(
+                  onPressed: () {
+                    Navigator.of(context).push(MaterialPageRoute(
+                        builder: ((context) => AnimatedSaverDialog(
+                            selected: _selected, api: api, gallery: gallery))));
+                  },
+                  child: Text(AppLocalizations.of(context)!.makeGif)),
+              const SizedBox(width: 8),
+              if (!kIsWeb)
+                TextButton(
+                    onPressed: () async {
+                      await context
+                          .read<GalleryManager>()
+                          .addAdImageHash(_selected.map((e) => e.hash).toList())
+                          .then((value) {
+                        if (mounted) {
+                          gallery.files.removeWhere(
+                              (element) => _selected.contains(element));
+                          setState(() {
+                            context.showSnackBar(
+                                AppLocalizations.of(context)!.success);
+                          });
+                        }
+                      });
+                    },
+                    child: Text(AppLocalizations.of(context)!.markAdImg)),
+            ])));
+  }
+
   @override
   Widget build(BuildContext context) {
     var api = controller.hitomi(localDb: local);
@@ -185,59 +235,7 @@ class _GalleryDetailView extends State<GalleryDetailsView> {
                         ))));
                   })
             ]),
-            if (_selected.isNotEmpty)
-              Align(
-                  alignment: Alignment.bottomCenter,
-                  child: Container(
-                      color: Theme.of(context).colorScheme.background,
-                      padding: const EdgeInsets.all(4),
-                      child: Row(
-                          mainAxisAlignment: MainAxisAlignment.end,
-                          children: [
-                            TextButton(
-                                onPressed: () => setState(() {
-                                      _selected.clear();
-                                    }),
-                                child:
-                                    Text(AppLocalizations.of(context)!.cancel)),
-                            const SizedBox(width: 8),
-                            TextButton(
-                                onPressed: () => setState(() {
-                                      _selected.clear();
-                                      _selected.addAll(gallery.files);
-                                    }),
-                                child: Text(
-                                    AppLocalizations.of(context)!.selectAll)),
-                            const SizedBox(width: 8),
-                            TextButton(
-                                onPressed: () {
-                                  Navigator.of(context).push(MaterialPageRoute(
-                                      builder: ((context) =>
-                                          AnimatedSaverDialog(
-                                              selected: _selected,
-                                              api: api,
-                                              gallery: gallery))));
-                                },
-                                child: Text(
-                                    AppLocalizations.of(context)!.makeGif)),
-                            const SizedBox(width: 8),
-                            TextButton(
-                                onPressed: () async {
-                                  await context
-                                      .read<GalleryManager>()
-                                      .addAdImageHash(
-                                          _selected.map((e) => e.hash).toList())
-                                      .then((value) {
-                                    if (mounted) {
-                                      context.showSnackBar(
-                                          AppLocalizations.of(context)!
-                                              .success);
-                                    }
-                                  });
-                                },
-                                child: Text(
-                                    AppLocalizations.of(context)!.markAdImg)),
-                          ])))
+            if (_selected.isNotEmpty) imagesToolbar()
           ])),
     )));
   }

@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:ayaka/src/ui/common_view.dart';
 import 'package:file_picker/file_picker.dart' show FilePicker;
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:provider/provider.dart' show WatchContext;
 import 'settings_controller.dart';
@@ -54,32 +55,6 @@ class _StateSetting extends State<SettingsView> {
         .then((value) => true);
   }
 
-  Future<String?> _showDialogInput(
-      {TextInputType type = TextInputType.text,
-      String defaultValue = ''}) async {
-    _textController.text = defaultValue;
-    return showDialog<String?>(
-        context: context,
-        builder: (context) => AlertDialog.adaptive(
-                title: Text(AppLocalizations.of(context)!.inputHint),
-                content: TextField(
-                  controller: _textController,
-                  keyboardType: type,
-                ),
-                actions: [
-                  TextButton(
-                      onPressed: () {
-                        Navigator.of(context).pop(_textController.text);
-                      },
-                      child: Text(AppLocalizations.of(context)!.confirm)),
-                  TextButton(
-                      onPressed: () {
-                        Navigator.of(context).pop();
-                      },
-                      child: Text(AppLocalizations.of(context)!.cancel))
-                ]));
-  }
-
   Widget _settingsContent() {
     return Column(children: [
       ListTile(
@@ -102,9 +77,14 @@ class _StateSetting extends State<SettingsView> {
           subtitle: Text(_settingsController.config.proxy),
           trailing: IconButton(
               onPressed: () async {
-                var s = await _showDialogInput(
-                    type: TextInputType.url,
-                    defaultValue: _settingsController.config.proxy);
+                _textController.text = _settingsController.config.proxy;
+                var s = await context.showDialogInput(
+                    textField: TextField(
+                        controller: _textController,
+                        keyboardType: TextInputType.url,
+                        inputFormatters: [
+                      FilteringTextInputFormatter.singleLineFormatter
+                    ]));
                 if (s?.isNotEmpty == true) {
                   await _settingsController.updateConfig(
                       _settingsController.config.copyWith(proxy: s!));
@@ -129,9 +109,14 @@ class _StateSetting extends State<SettingsView> {
             subtitle: Text(_settingsController.config.remoteHttp),
             trailing: IconButton(
                 onPressed: () async {
-                  var s = await _showDialogInput(
-                      type: TextInputType.url,
-                      defaultValue: _settingsController.config.remoteHttp);
+                  _textController.text = _settingsController.config.remoteHttp;
+                  var s = await context.showDialogInput(
+                      textField: TextField(
+                          controller: _textController,
+                          keyboardType: TextInputType.url,
+                          inputFormatters: [
+                        FilteringTextInputFormatter.singleLineFormatter
+                      ]));
                   if (s?.isNotEmpty == true) {
                     await _settingsController.updateConfig(
                         _settingsController.config.copyWith(remoteHttp: s!));
@@ -146,9 +131,14 @@ class _StateSetting extends State<SettingsView> {
             subtitle: Text(_settingsController.config.auth),
             trailing: IconButton(
                 onPressed: () async {
-                  var s = await _showDialogInput(
-                      type: TextInputType.url,
-                      defaultValue: _settingsController.config.auth);
+                  _textController.text = _settingsController.config.auth;
+                  var s = await context.showDialogInput(
+                      textField: TextField(
+                          controller: _textController,
+                          keyboardType: TextInputType.text,
+                          inputFormatters: [
+                        FilteringTextInputFormatter.singleLineFormatter
+                      ]));
                   if (s?.isNotEmpty == true) {
                     await _settingsController.updateConfig(
                         _settingsController.config.copyWith(auth: s!));

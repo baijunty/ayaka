@@ -96,5 +96,6 @@
   "readHistory":"阅读历史",
   "clearDataWarn":"确认清空数据?",
   "markAdImg":"标记广告图",
+  "pageJumpHint":"输入跳转页码",
   "tag":"标签"
 }

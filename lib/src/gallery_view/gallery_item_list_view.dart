@@ -17,12 +17,14 @@ class GalleryItemListView extends StatefulWidget {
   final Hitomi api;
   final Map<String, dynamic> label;
   final bool local;
+  final int startPage;
   final SortEnum? sortEnum;
   const GalleryItemListView(
       {super.key,
       required this.api,
       required this.label,
       required this.local,
+      this.startPage = 1,
       this.sortEnum});
 
   @override
@@ -39,9 +41,11 @@ class _GalleryListView extends State<GalleryItemListView>
   CancelToken? token;
   late SettingsController settingsController;
   var totalCount = 0;
+  bool netLoading = false;
   late ScrollController scrollController;
   Future<void> _fetchData({bool refresh = false}) async {
     token = CancelToken();
+    netLoading = true;
     return widget.api
         .viewByTag(fromString(widget.label['type'], widget.label['name']),
             page: _page, sort: widget.sortEnum, token: token)
@@ -52,8 +56,10 @@ class _GalleryListView extends State<GalleryItemListView>
               _page++;
               totalCount = value.totalCount;
               totalPage = (value.totalCount / 25).ceil();
+              netLoading = false;
             }))
         .catchError((e) {
+      netLoading = false;
       if (mounted) {
         context.showSnackBar('err $e');
       }
@@ -65,6 +71,7 @@ class _GalleryListView extends State<GalleryItemListView>
     super.initState();
     click = (g) => Navigator.pushNamed(context, GalleryDetailsView.routeName,
         arguments: {'gallery': g, 'local': widget.local});
+    _page = widget.startPage;
     scrollController = ScrollController();
     scrollController.addListener(handleScroll);
     menuBuilder = kIsWeb
@@ -102,7 +109,8 @@ class _GalleryListView extends State<GalleryItemListView>
   void handleScroll() async {
     if (scrollController.position.pixels >=
             scrollController.position.maxScrollExtent &&
-        data.length < totalCount) {
+        data.length < totalCount &&
+        !netLoading) {
       context.showSnackBar(
           '$_page/$totalPage ${AppLocalizations.of(context)!.loading}');
       await _fetchData();
@@ -113,7 +121,7 @@ class _GalleryListView extends State<GalleryItemListView>
   void didChangeDependencies() {
     super.didChangeDependencies();
     settingsController = context.watch<SettingsController>();
-    if (_page == 1) {
+    if (data.isEmpty) {
       _fetchData();
     }
     debugPrint(

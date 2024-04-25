@@ -500,4 +500,26 @@ extension ContextAction on BuildContext {
               ]);
         });
   }
+
+  Future<String?> showDialogInput(
+      {required TextField textField, String? inputHint}) async {
+    return showDialog<String?>(
+        context: this,
+        builder: (context) => AlertDialog.adaptive(
+                title:
+                    Text(inputHint ?? AppLocalizations.of(context)!.inputHint),
+                content: textField,
+                actions: [
+                  TextButton(
+                      onPressed: () {
+                        Navigator.of(context).pop(textField.controller?.text);
+                      },
+                      child: Text(AppLocalizations.of(context)!.confirm)),
+                  TextButton(
+                      onPressed: () {
+                        Navigator.of(context).pop();
+                      },
+                      child: Text(AppLocalizations.of(context)!.cancel))
+                ]));
+  }
 }

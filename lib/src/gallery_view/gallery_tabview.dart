@@ -4,6 +4,7 @@ import 'package:ayaka/src/settings/settings_controller.dart';
 import 'package:ayaka/src/ui/common_view.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/gestures.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:flutter/material.dart';
 import 'package:hitomi/gallery/label.dart';
@@ -32,7 +33,8 @@ class _GalleryTabView extends State<GalleryTabView>
   late ScrollController scrollController;
   List<Widget> children = [];
   List<Widget> tabs = [];
-  List<SortEnum> sortEnums = List.filled(2, SortEnum.Default);
+  List<MapEntry<int, SortEnum>> pageKey =
+      List.filled(2, const MapEntry(1, SortEnum.Default));
   @override
   void initState() {
     super.initState();
@@ -60,25 +62,28 @@ class _GalleryTabView extends State<GalleryTabView>
     children = kIsWeb
         ? [
             GalleryItemListView(
-                key: ValueKey(sortEnums[1]),
+                key: ValueKey(pageKey[0]),
                 api: controller.hitomi(localDb: true),
                 label: tags.first,
-                sortEnum: sortEnums[1],
-                local: true)
+                local: true,
+                sortEnum: pageKey[0].value,
+                startPage: pageKey[0].key)
           ]
         : tags.length <= 1
             ? [
                 GalleryItemListView(
-                    key: ValueKey(sortEnums[0]),
+                    key: ValueKey(pageKey[0]),
                     api: controller.hitomi(),
                     label: tags.first,
                     local: false,
-                    sortEnum: sortEnums[0]),
+                    sortEnum: pageKey[0].value,
+                    startPage: pageKey[0].key),
                 GalleryItemListView(
-                    key: ValueKey(sortEnums[1]),
+                    key: ValueKey(pageKey[1]),
                     api: controller.hitomi(localDb: true),
                     label: tags.first,
-                    sortEnum: sortEnums[1],
+                    sortEnum: pageKey[1].value,
+                    startPage: pageKey[1].key,
                     local: true),
               ]
             : [
@@ -130,7 +135,9 @@ class _GalleryTabView extends State<GalleryTabView>
                 ];
         },
         onSelected: (value) => setState(() {
-              sortEnums[pageController.page!.floor()] = value;
+              var preEntry = pageKey[pageController.page!.floor()];
+              pageKey[pageController.page!.floor()] =
+                  MapEntry(preEntry.key, value);
             }),
         icon: const Icon(Icons.sort));
   }
@@ -154,7 +161,35 @@ class _GalleryTabView extends State<GalleryTabView>
                           tabs: tabs,
                           controller: tabController,
                           onTap: (value) => pageController.jumpToPage(value)),
-                      actions: tags.length <= 1 ? [_sortWidget()] : null,
+                      actions: tags.length <= 1
+                          ? [
+                              _sortWidget(),
+                              IconButton(
+                                  onPressed: () async {
+                                    var s = await context.showDialogInput(
+                                        textField: TextField(
+                                            keyboardType: const TextInputType
+                                                .numberWithOptions(
+                                                signed: true),
+                                            inputFormatters: [
+                                              FilteringTextInputFormatter
+                                                  .digitsOnly
+                                            ]),
+                                        inputHint: AppLocalizations.of(context)!
+                                            .pageJumpHint);
+                                    if (s?.isNotEmpty == true) {
+                                      setState(() {
+                                        var preEntry = pageKey[
+                                            pageController.page!.floor()];
+                                        pageKey[pageController.page!.floor()] =
+                                            MapEntry(
+                                                int.parse(s!), preEntry.value);
+                                      });
+                                    }
+                                  },
+                                  icon: const Icon(Icons.forward_5))
+                            ]
+                          : null,
                     )
                   ],
               scrollBehavior: MouseEnabledScrollBehavior(),

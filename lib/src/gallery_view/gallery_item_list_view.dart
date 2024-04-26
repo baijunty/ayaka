@@ -124,8 +124,6 @@ class _GalleryListView extends State<GalleryItemListView>
     if (data.isEmpty) {
       _fetchData();
     }
-    debugPrint(
-        'didChangeDependencies ${widget.api.runtimeType} $_page ${data.length}');
   }
 
   Widget _bodyContentList() {

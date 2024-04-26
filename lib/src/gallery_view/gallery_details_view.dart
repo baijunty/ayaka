@@ -16,7 +16,6 @@ import 'package:hitomi/gallery/gallery.dart';
 import 'package:hitomi/gallery/label.dart';
 import 'package:hitomi/gallery/language.dart';
 import 'package:hitomi/lib.dart';
-import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:hitomi/gallery/image.dart' as img show Image, ThumbnaiSize;
 import '../utils/label_utils.dart';
@@ -123,56 +122,81 @@ class _GalleryDetailView extends State<GalleryDetailsView> {
     var api = controller.hitomi(localDb: local);
     return Align(
         alignment: Alignment.bottomCenter,
-        child: Container(
-            color: Theme.of(context).colorScheme.background,
-            padding: const EdgeInsets.all(4),
-            child: Row(mainAxisAlignment: MainAxisAlignment.end, children: [
-              if (!kIsWeb)
-                TextButton(
-                    onPressed: () async {
-                      await context
-                          .read<GalleryManager>()
-                          .addAdImageHash(_selected.map((e) => e.hash).toList())
-                          .then((value) {
-                        if (mounted) {
-                          gallery.files.removeWhere(
-                              (element) => _selected.contains(element));
-                          setState(() {
-                            context.showSnackBar(
-                                AppLocalizations.of(context)!.success);
-                          });
-                        }
-                      });
-                    },
-                    child: Text(AppLocalizations.of(context)!.markAdImg)),
-              const Spacer(),
-              TextButton(
-                  onPressed: () => setState(() {
-                        _selected.clear();
-                      }),
-                  child: Text(AppLocalizations.of(context)!.cancel)),
-              const SizedBox(width: 8),
-              TextButton(
-                  onPressed: () => setState(() {
-                        _selected.clear();
-                        _selected.addAll(gallery.files);
-                      }),
-                  child: Text(AppLocalizations.of(context)!.selectAll)),
-              const SizedBox(width: 8),
-              TextButton(
-                  onPressed: () {
-                    Navigator.of(context).push(MaterialPageRoute(
-                        builder: ((context) => AnimatedSaverDialog(
-                            selected: _selected, api: api, gallery: gallery))));
-                  },
-                  child: Text(AppLocalizations.of(context)!.makeGif)),
-            ])));
+        child: AnimatedOpacity(
+            opacity: _selected.isEmpty ? 0 : 1,
+            duration: const Duration(milliseconds: 300),
+            child: Container(
+                color: Theme.of(context).colorScheme.background,
+                padding: const EdgeInsets.all(4),
+                child: Row(mainAxisAlignment: MainAxisAlignment.end, children: [
+                  if (!kIsWeb)
+                    TextButton(
+                        onPressed: _selected.isEmpty
+                            ? null
+                            : () async {
+                                await context
+                                    .read<GalleryManager>()
+                                    .addAdImageHash(
+                                        _selected.map((e) => e.hash).toList())
+                                    .then((value) {
+                                  if (mounted) {
+                                    gallery.files.removeWhere((element) =>
+                                        _selected.contains(element));
+                                    setState(() {
+                                      context.showSnackBar(
+                                          AppLocalizations.of(context)!
+                                              .success);
+                                    });
+                                  }
+                                });
+                              },
+                        child: Text(AppLocalizations.of(context)!.markAdImg)),
+                  const Spacer(),
+                  TextButton(
+                      onPressed: _selected.isEmpty
+                          ? null
+                          : () => setState(() {
+                                _selected.clear();
+                              }),
+                      child: Text(AppLocalizations.of(context)!.cancel)),
+                  const SizedBox(width: 8),
+                  TextButton(
+                      onPressed: _selected.isEmpty
+                          ? null
+                          : () => setState(() {
+                                _selected.clear();
+                                _selected.addAll(gallery.files);
+                              }),
+                      child: Text(AppLocalizations.of(context)!.selectAll)),
+                  const SizedBox(width: 8),
+                  TextButton(
+                      onPressed: _selected.isEmpty
+                          ? null
+                          : () {
+                              Navigator.of(context).push(MaterialPageRoute(
+                                  builder: ((context) => AnimatedSaverDialog(
+                                      selected: _selected,
+                                      api: api,
+                                      gallery: gallery))));
+                            },
+                      child: Text(AppLocalizations.of(context)!.makeGif)),
+                ]))));
   }
 
   @override
   Widget build(BuildContext context) {
     var api = controller.hitomi(localDb: local);
     var refererUrl = 'https://hitomi.la${gallery.urlEncode()}';
+    var isDeskTop = context.currentDevice() == DeviceInfo.deskTop;
+    var tagInfo = GalleryTagDetailInfo(
+      gallery: gallery,
+      extendedInfo: translates,
+      netLoading: netLoading,
+      readIndex: readedIndex,
+      buildChildren: (children) => isDeskTop
+          ? Column(children: children)
+          : SliverList.list(children: children),
+    );
     return Scaffold(
         body: SafeArea(
             child: Center(
@@ -183,18 +207,11 @@ class _GalleryDetailView extends State<GalleryDetailsView> {
               GalleryDetailHead(
                   api: controller.hitomi(localDb: local),
                   gallery: gallery,
-                  local: local,
                   extendedInfo: translates,
                   netLoading: netLoading,
-                  exist: exists),
-              GalleryTagDetailInfo(
-                gallery: gallery,
-                extendedInfo: translates,
-                controller: controller,
-                local: local,
-                netLoading: netLoading,
-                readIndex: readedIndex,
-              ),
+                  exist: exists,
+                  tagInfo: isDeskTop ? tagInfo : null),
+              if (!isDeskTop) tagInfo,
               SliverGrid.builder(
                   gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
                       maxCrossAxisExtent: 300),
@@ -235,7 +252,7 @@ class _GalleryDetailView extends State<GalleryDetailsView> {
                         ))));
                   })
             ]),
-            if (_selected.isNotEmpty) imagesToolbar()
+            imagesToolbar()
           ])),
     )));
   }
@@ -243,29 +260,80 @@ class _GalleryDetailView extends State<GalleryDetailsView> {
 
 class GalleryDetailHead extends StatelessWidget {
   final Gallery gallery;
-  final bool local;
   final List<Map<String, dynamic>> extendedInfo;
   final bool netLoading;
   final Gallery? exist;
   final Hitomi api;
+  final GalleryTagDetailInfo? tagInfo;
   const GalleryDetailHead(
       {super.key,
       required this.api,
       required this.gallery,
-      required this.local,
       required this.extendedInfo,
       required this.netLoading,
-      required this.exist});
+      required this.exist,
+      this.tagInfo});
 
   void insertToDb(BuildContext context, int type) async {
     await context.insertToUserDb((exist ?? gallery).id, type);
   }
 
+  Widget headThumbImage(BuildContext context) {
+    return Hero(
+        tag: 'gallery-thumb ${gallery.id}',
+        child: ThumbImageView(
+          ProxyNetworkImage(
+              dataStream: (chunkEvents) => api.fetchImageData(
+                    gallery.files.first,
+                    id: gallery.id,
+                    size: img.ThumbnaiSize.medium,
+                    refererUrl: 'https://hitomi.la${gallery.urlEncode()}',
+                    onProcess: (now, total) => chunkEvents.add(ImageChunkEvent(
+                        cumulativeBytesLoaded: now, expectedTotalBytes: total)),
+                  ),
+              key: gallery.files.first.hash),
+          label: Text(gallery.files.length.toString(),
+              style: Theme.of(context)
+                  .textTheme
+                  .labelLarge
+                  ?.copyWith(color: Colors.deepOrange)),
+          aspectRatio: gallery.files.first.width / gallery.files.first.height,
+        ));
+  }
+
+  Widget actionButton(BuildContext context) {
+    return Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+      const SizedBox(width: 8),
+      if (!kIsWeb)
+        Expanded(
+            child: Padding(
+                padding: const EdgeInsets.only(right: 8),
+                child: OutlinedButton(
+                    onPressed: netLoading || exist != null
+                        ? null
+                        : () async {
+                            await context.addTask(gallery.id);
+                          },
+                    child: Text(exist != null
+                        ? AppLocalizations.of(context)!.downloaded
+                        : AppLocalizations.of(context)!.download)))),
+      Expanded(
+        child: FilledButton(
+            onPressed: () => Navigator.of(context)
+                    .pushNamed(GalleryViewer.routeName, arguments: {
+                  'gallery': exist ?? gallery,
+                  'local': exist != null,
+                }),
+            child: Text(AppLocalizations.of(context)!.read)),
+      ),
+      const SizedBox(width: 8),
+    ]);
+  }
+
   @override
   Widget build(BuildContext context) {
     var entry = mapGalleryType(context, gallery.type);
-    var format = DateFormat('yyyy-MM-dd');
-    var size = currentDevice(context) == DeviceInfo.mobile ? 1 : 2;
+    var size = context.currentDevice() == DeviceInfo.mobile ? 1 : 2;
     var artists = extendedInfo
         .where((element) => element['type'] == 'artist')
         .take(size)
@@ -274,17 +342,13 @@ class GalleryDetailHead extends StatelessWidget {
         .where((element) => element['type'] == 'group')
         .take(size)
         .toList();
-    var width = min(MediaQuery.of(context).size.width / 3, 300.0);
+    var screenWidth = MediaQuery.of(context).size.width;
+    var width = min(screenWidth / 3, 300.0);
     var height = max(
-        160.0, width * gallery.files.first.height / gallery.files.first.width);
-    debugPrint('w $width h $height');
+        width, width * gallery.files.first.height / gallery.files.first.width);
     var totalHeight =
         height + (Theme.of(context).appBarTheme.toolbarHeight ?? 56);
-    var smallText = TextButton.styleFrom(
-      fixedSize: const Size.fromHeight(25),
-      padding: const EdgeInsets.all(4),
-      minimumSize: const Size(40, 25),
-    );
+    debugPrint('screenW $screenWidth w $width h $height totalH $totalHeight');
     return SliverAppBar(
         backgroundColor: entry.value,
         leading: AppBar(backgroundColor: Colors.transparent),
@@ -310,34 +374,11 @@ class GalleryDetailHead extends StatelessWidget {
           SizedBox(height: Theme.of(context).appBarTheme.toolbarHeight ?? 56),
           Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
             Padding(
-                padding: const EdgeInsets.only(left: 8, right: 8),
+                padding: const EdgeInsets.only(left: 8),
                 child: SizedBox(
                     width: width,
                     height: height - 8,
-                    child: Hero(
-                        tag: 'gallery-thumb ${gallery.id}',
-                        child: ThumbImageView(
-                          ProxyNetworkImage(
-                              dataStream: (chunkEvents) => api.fetchImageData(
-                                    gallery.files.first,
-                                    id: gallery.id,
-                                    size: img.ThumbnaiSize.medium,
-                                    refererUrl:
-                                        'https://hitomi.la${gallery.urlEncode()}',
-                                    onProcess: (now, total) => chunkEvents.add(
-                                        ImageChunkEvent(
-                                            cumulativeBytesLoaded: now,
-                                            expectedTotalBytes: total)),
-                                  ),
-                              key: gallery.files.first.hash),
-                          label: Text(gallery.files.length.toString(),
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .labelLarge
-                                  ?.copyWith(color: Colors.deepOrange)),
-                          aspectRatio: gallery.files.first.width /
-                              gallery.files.first.height,
-                        )))),
+                    child: headThumbImage(context))),
             Expanded(
                 child: Column(
                     mainAxisSize: MainAxisSize.min,
@@ -351,73 +392,29 @@ class GalleryDetailHead extends StatelessWidget {
                             ...Language(name: gallery.language ?? '').toMap(),
                             'translate':
                                 mapLangugeType(context, gallery.language ?? '')
-                          }, style: smallText, local: local))),
-                  Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        const SizedBox(width: 8),
-                        if (!kIsWeb)
-                          Expanded(
-                              child: Padding(
-                                  padding: const EdgeInsets.only(right: 8),
-                                  child: OutlinedButton(
-                                      onPressed: netLoading || exist != null
-                                          ? null
-                                          : () async {
-                                              await context.addTask(gallery.id);
-                                            },
-                                      child: Text(exist != null
-                                          ? AppLocalizations.of(context)!
-                                              .downloaded
-                                          : AppLocalizations.of(context)!
-                                              .download)))),
-                        Expanded(
-                          child: FilledButton(
-                              onPressed: () => Navigator.of(context).pushNamed(
-                                      GalleryViewer.routeName,
-                                      arguments: {
-                                        'gallery': exist ?? gallery,
-                                        'local': exist != null,
-                                      }),
-                              child: Text(AppLocalizations.of(context)!.read)),
-                        ),
-                        const SizedBox(width: 8),
-                      ]),
+                          }, style: smallText))),
+                  actionButton(context),
                   if (artists.isNotEmpty || groupes.isNotEmpty)
                     SizedBox(
                         height: 28,
-                        child: Row(children: [
-                          for (var artist in artists)
-                            TagButton(
-                                label: artist,
-                                style: smallText,
-                                commondPrefix: '--${artist['type']}',
-                                local: local,
-                                icon: const Icon(Icons.person)),
-                          for (var group in groupes)
-                            TagButton(
-                                label: group,
-                                style: smallText,
-                                commondPrefix: '--${group['type']}',
-                                local: local,
-                                icon: const Icon(Icons.group))
-                        ])),
-                  SizedBox(
-                      height: 28,
-                      child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceAround,
-                          children: [
-                            Hero(
-                                tag: 'gallery_${gallery.id}_type',
-                                child: TagButton(label: {
-                                  ...TypeLabel(gallery.type).toMap(),
-                                  'translate': entry.key
-                                }, style: smallText, local: local)),
-                            Hero(
-                                tag: 'gallery_${gallery.id}_date',
-                                child: Text(
-                                    format.format(format.parse(gallery.date))))
-                          ])),
+                        child: ListView(
+                            scrollDirection: Axis.horizontal,
+                            children: [
+                              for (var artist in artists)
+                                TagButton(
+                                    label: artist,
+                                    style: smallText,
+                                    commondPrefix: '--${artist['type']}',
+                                    icon: const Icon(Icons.person)),
+                              for (var group in groupes)
+                                TagButton(
+                                    label: group,
+                                    style: smallText,
+                                    commondPrefix: '--${group['type']}',
+                                    icon: const Icon(Icons.group))
+                            ])),
+                  buildTypeAndDate(gallery, entry.key),
+                  if (tagInfo != null) tagInfo!,
                 ])),
           ])
         ]))));
@@ -428,16 +425,14 @@ class GalleryTagDetailInfo extends StatelessWidget {
   final Gallery gallery;
   final List<Map<String, dynamic>> extendedInfo;
   final bool netLoading;
-  final SettingsController controller;
-  final bool local;
+  final Widget Function(List<Widget> children) buildChildren;
   final int? readIndex;
   const GalleryTagDetailInfo(
       {super.key,
       required this.gallery,
       required this.extendedInfo,
-      required this.controller,
-      required this.local,
       required this.netLoading,
+      required this.buildChildren,
       this.readIndex});
 
   String findMatchLabel(Label label) {
@@ -461,9 +456,8 @@ class GalleryTagDetailInfo extends StatelessWidget {
             '${AppLocalizations.of(context)!.series} & ${AppLocalizations.of(context)!.character}'),
         children: [
           Wrap(children: [
-            for (var serial in series) TagButton(label: serial, local: local),
-            for (var character in characters)
-              TagButton(label: character, local: local),
+            for (var serial in series) TagButton(label: serial),
+            for (var character in characters) TagButton(label: character),
           ])
         ]);
   }
@@ -481,19 +475,16 @@ class GalleryTagDetailInfo extends StatelessWidget {
               for (var female in females)
                 TagButton(
                   label: female,
-                  local: local,
                 ),
             if (males != null)
               for (var male in males)
                 TagButton(
                   label: male,
-                  local: local,
                 ),
             if (tags != null)
               for (var tag in tags)
                 TagButton(
                   label: tag,
-                  local: local,
                 ),
           ])
         ]);
@@ -503,7 +494,7 @@ class GalleryTagDetailInfo extends StatelessWidget {
   Widget build(BuildContext context) {
     var typeList =
         extendedInfo.groupListsBy((element) => element['type'] as String);
-    return SliverList.list(children: [
+    return buildChildren([
       if (readIndex != null) _buildIndexView(readIndex!),
       if (netLoading) const CardLoading(height: 40),
       if (!netLoading &&

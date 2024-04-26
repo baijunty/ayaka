@@ -104,7 +104,6 @@ class _GallerySearchResultView extends State<GallerySearchResultView>
     if (_page <= totalPage) {
       netLoading = true;
       Future<List<int>> idsFuture;
-      debugPrint('search $_page and ids len ${_ids.length}');
       if (_page == 1 || _ids.length < totalCount) {
         idsFuture = widget.api
             .search(

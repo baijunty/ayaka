@@ -11,12 +11,12 @@ import 'package:hitomi/gallery/gallery.dart';
 import 'package:hitomi/gallery/image.dart' as img show Image, ThumbnaiSize;
 import 'package:hitomi/gallery/label.dart';
 import 'package:hitomi/lib.dart';
-import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../model/gallery_manager.dart';
 import '../settings/settings_controller.dart';
+import '../utils/common_define.dart';
 import '../utils/label_utils.dart';
 
 class ThumbImageView extends StatelessWidget {
@@ -163,13 +163,7 @@ class GalleryInfo extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     var entry = mapGalleryType(context, gallery.type);
-    var format = DateFormat('yyyy-MM-dd');
     var image = gallery.files.first;
-    final smallText = TextButton.styleFrom(
-      fixedSize: const Size.fromHeight(25),
-      padding: const EdgeInsets.all(4),
-      minimumSize: const Size(40, 25),
-    );
     return LayoutBuilder(builder: (context, cons) {
       return InkWell(
           key: ValueKey(gallery.id),
@@ -227,29 +221,31 @@ class GalleryInfo extends StatelessWidget {
                                   child: Text(mapLangugeType(
                                       context, gallery.language ?? ''))),
                               const SizedBox(width: 8),
-                              SizedBox(
-                                  height: 28,
-                                  child: Row(
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.spaceBetween,
-                                      children: [
-                                        Hero(
-                                            tag: 'gallery_${gallery.id}_type',
-                                            child: TagButton(label: {
-                                              ...TypeLabel(gallery.type)
-                                                  .toMap(),
-                                              'translate': entry.key
-                                            }, style: smallText, local: false)),
-                                        Hero(
-                                            tag: 'gallery_${gallery.id}_date',
-                                            child: Text(format.format(
-                                                format.parse(gallery.date)))),
-                                      ])),
+                              buildTypeAndDate(gallery, entry.key),
                             ])),
                         if (menus != null) menus!
                       ]))));
     });
   }
+}
+
+Widget buildTypeAndDate(Gallery gallery, String type) {
+  return SizedBox(
+      height: 28,
+      child: Row(mainAxisAlignment: MainAxisAlignment.spaceAround, children: [
+        Hero(
+            tag: 'gallery_${gallery.id}_type',
+            child: TagButton(
+                label: {...TypeLabel(gallery.type).toMap(), 'translate': type},
+                style: TextButton.styleFrom(
+                  fixedSize: const Size.fromHeight(25),
+                  padding: const EdgeInsets.all(4),
+                  minimumSize: const Size(40, 25),
+                ))),
+        Hero(
+            tag: 'gallery_${gallery.id}_date',
+            child: Text(formater.formatString(gallery.date)))
+      ]));
 }
 
 class MaxWidthBox extends StatelessWidget {
@@ -289,14 +285,12 @@ class MaxWidthBox extends StatelessWidget {
 
 class TagButton extends StatelessWidget {
   final Map<String, dynamic> label;
-  final bool local;
   final ButtonStyle? style;
   final String? commondPrefix;
   final Icon? icon;
   const TagButton(
       {super.key,
       required this.label,
-      required this.local,
       this.style,
       this.commondPrefix,
       this.icon});
@@ -311,8 +305,7 @@ class TagButton extends StatelessWidget {
                 TagDetail(tag: label, commondPrefix: commondPrefix)),
         onPressed: () => Navigator.of(context)
                 .pushNamed(GalleryTabView.routeName, arguments: {
-              'tags': [label],
-              'local': local
+              'tags': [label]
             }),
         child: Text('${label['translate'] ?? label['name']}'));
     return icon == null ? button : Row(children: [icon!, button]);
@@ -363,14 +356,15 @@ class TagDetail extends StatelessWidget {
         child: CustomScrollView(slivers: [
           SliverList.list(children: [
             Padding(
-                padding: const EdgeInsets.only(left: 16, right: 16),
+                padding: const EdgeInsets.only(
+                    left: 16, top: 8, right: 16, bottom: 8),
                 child: Row(children: [
                   const Expanded(child: Divider()),
                   Text('${tag['translate']}'),
                   const SizedBox(width: 8),
                   if (tag['count'] != null)
                     Text(
-                        '${AppLocalizations.of(context)!.downloaded}:${tag['count']} ${AppLocalizations.of(context)!.lastUpdatedAt} ${tag['date']}'),
+                        '${AppLocalizations.of(context)!.downloaded}:${tag['count']} at ${formater.formatString(tag['date'])}'),
                   if (commondPrefix != null)
                     IconButton(
                         onPressed: () async => taskControl

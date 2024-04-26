@@ -146,7 +146,7 @@ class _GalleryTaskView extends State<GalleryTaskView> {
             return _buildRunnintTaskItem(item);
           },
           gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-              maxCrossAxisExtent: 400,
+              maxCrossAxisExtent: 500,
               mainAxisExtent: 100,
               mainAxisSpacing: 8,
               crossAxisSpacing: 8),

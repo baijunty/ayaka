@@ -23,7 +23,7 @@ MapEntry<String, Color> mapGalleryType(BuildContext context, String type) {
     case 'gamecg':
       {
         showType = AppLocalizations.of(context)!.gamecg;
-        color = Colors.cyanAccent;
+        color = Colors.teal;
       }
     case 'imageset':
       {

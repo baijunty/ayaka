@@ -27,6 +27,48 @@ class _AyakaHome extends State<AyakaHome> {
     });
   }
 
+  Widget navigationBar(bool portrait) {
+    if (portrait) {
+      return BottomNavigationBar(
+          items: [
+            BottomNavigationBarItem(
+                icon: const Icon(Icons.book),
+                label: AppLocalizations.of(context)!.gallery),
+            BottomNavigationBarItem(
+                icon: const Icon(Icons.download),
+                label: AppLocalizations.of(context)!.download),
+            BottomNavigationBarItem(
+                icon: const Icon(Icons.person),
+                label: AppLocalizations.of(context)!.profile),
+            BottomNavigationBarItem(
+                icon: const Icon(Icons.settings),
+                label: AppLocalizations.of(context)!.setting),
+          ],
+          onTap: _handleIndexClick,
+          currentIndex: index,
+          type: BottomNavigationBarType.fixed);
+    } else {
+      return NavigationRail(
+          destinations: [
+            NavigationRailDestination(
+                icon: const Icon(Icons.book),
+                label: Text(AppLocalizations.of(context)!.gallery)),
+            NavigationRailDestination(
+                icon: const Icon(Icons.download),
+                label: Text(AppLocalizations.of(context)!.download)),
+            NavigationRailDestination(
+                icon: const Icon(Icons.person),
+                label: Text(AppLocalizations.of(context)!.profile)),
+            NavigationRailDestination(
+                icon: const Icon(Icons.settings),
+                label: Text(AppLocalizations.of(context)!.setting)),
+          ],
+          selectedIndex: index,
+          onDestinationSelected: _handleIndexClick,
+          labelType: NavigationRailLabelType.selected);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     Widget child;
@@ -62,54 +104,16 @@ class _AyakaHome extends State<AyakaHome> {
               child: Center(
                   child: MaxWidthBox(
                       maxWidth: 1280,
-                      child: switch (currentOrientation(context)) {
+                      child: switch (context.currentOrientation()) {
                         Orientation.portrait => child,
                         _ => Row(children: [
-                            NavigationRail(
-                                destinations: [
-                                  NavigationRailDestination(
-                                      icon: const Icon(Icons.book),
-                                      label: Text(AppLocalizations.of(context)!
-                                          .gallery)),
-                                  NavigationRailDestination(
-                                      icon: const Icon(Icons.download),
-                                      label: Text(AppLocalizations.of(context)!
-                                          .download)),
-                                  NavigationRailDestination(
-                                      icon: const Icon(Icons.person),
-                                      label: Text(AppLocalizations.of(context)!
-                                          .profile)),
-                                  NavigationRailDestination(
-                                      icon: const Icon(Icons.settings),
-                                      label: Text(AppLocalizations.of(context)!
-                                          .setting)),
-                                ],
-                                selectedIndex: index,
-                                onDestinationSelected: _handleIndexClick,
-                                labelType: NavigationRailLabelType.selected),
+                            if (!kIsWeb) navigationBar(false),
                             Expanded(child: child)
                           ])
                       }))),
           bottomNavigationBar:
-              currentOrientation(context) == Orientation.portrait && !kIsWeb
-                  ? BottomNavigationBar(
-                      items: [
-                          BottomNavigationBarItem(
-                              icon: const Icon(Icons.book),
-                              label: AppLocalizations.of(context)!.gallery),
-                          BottomNavigationBarItem(
-                              icon: const Icon(Icons.download),
-                              label: AppLocalizations.of(context)!.download),
-                          BottomNavigationBarItem(
-                              icon: const Icon(Icons.person),
-                              label: AppLocalizations.of(context)!.profile),
-                          BottomNavigationBarItem(
-                              icon: const Icon(Icons.settings),
-                              label: AppLocalizations.of(context)!.setting),
-                        ],
-                      onTap: _handleIndexClick,
-                      currentIndex: index,
-                      type: BottomNavigationBarType.fixed)
+              context.currentOrientation() == Orientation.portrait && !kIsWeb
+                  ? navigationBar(true)
                   : null,
         ));
   }

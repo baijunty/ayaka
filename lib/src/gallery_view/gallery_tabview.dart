@@ -59,8 +59,7 @@ class _GalleryTabView extends State<GalleryTabView>
         ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>?;
     tags =
         args?['tags'] as List<Map<String, dynamic>>? ?? [QueryText('').toMap()];
-    debugPrint('$tags');
-    children = args != null
+    children = args != null && (tags.length > 1 || tags.first['type'] == '')
         ? [
             GallerySearchResultView(
                 api: controller.hitomi(), selected: tags, local: false),

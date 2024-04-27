@@ -14,7 +14,6 @@ import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:hitomi/gallery/gallery.dart';
 import 'package:hitomi/gallery/label.dart';
-import 'package:hitomi/gallery/language.dart';
 import 'package:hitomi/lib.dart';
 import 'package:provider/provider.dart';
 import 'package:hitomi/gallery/image.dart' as img show Image, ThumbnaiSize;
@@ -193,6 +192,7 @@ class _GalleryDetailView extends State<GalleryDetailsView> {
       extendedInfo: translates,
       netLoading: netLoading,
       readIndex: readedIndex,
+      deskTop: isDeskTop,
       buildChildren: (children) => isDeskTop
           ? Column(children: children)
           : SliverList.list(children: children),
@@ -214,7 +214,7 @@ class _GalleryDetailView extends State<GalleryDetailsView> {
               if (!isDeskTop) tagInfo,
               SliverGrid.builder(
                   gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-                      maxCrossAxisExtent: 300),
+                      maxCrossAxisExtent: 320),
                   itemCount: gallery.files.length,
                   itemBuilder: (context, index) {
                     var image = gallery.files[index];
@@ -344,8 +344,13 @@ class GalleryDetailHead extends StatelessWidget {
         .toList();
     var screenWidth = MediaQuery.of(context).size.width;
     var width = min(screenWidth / 3, 300.0);
-    var height = max(
-        width, width * gallery.files.first.height / gallery.files.first.width);
+    var height = min(
+        140.0,
+        max(
+            width,
+            width *
+                max(1.5,
+                    gallery.files.first.height / gallery.files.first.width)));
     var totalHeight =
         height + (Theme.of(context).appBarTheme.toolbarHeight ?? 56);
     debugPrint('screenW $screenWidth w $width h $height totalH $totalHeight');
@@ -384,15 +389,6 @@ class GalleryDetailHead extends StatelessWidget {
                     mainAxisSize: MainAxisSize.min,
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                  Hero(
-                      tag: 'gallery_${gallery.id}_language',
-                      child: SizedBox(
-                          height: 28,
-                          child: TagButton(label: {
-                            ...Language(name: gallery.language ?? '').toMap(),
-                            'translate':
-                                mapLangugeType(context, gallery.language ?? '')
-                          }, style: smallText))),
                   actionButton(context),
                   if (artists.isNotEmpty || groupes.isNotEmpty)
                     SizedBox(
@@ -413,7 +409,7 @@ class GalleryDetailHead extends StatelessWidget {
                                     commondPrefix: '--${group['type']}',
                                     icon: const Icon(Icons.group))
                             ])),
-                  buildTypeAndDate(gallery, entry.key),
+                  buildTypeAndDate(context, gallery, entry.key),
                   if (tagInfo != null) tagInfo!,
                 ])),
           ])
@@ -427,12 +423,14 @@ class GalleryTagDetailInfo extends StatelessWidget {
   final bool netLoading;
   final Widget Function(List<Widget> children) buildChildren;
   final int? readIndex;
+  final bool deskTop;
   const GalleryTagDetailInfo(
       {super.key,
       required this.gallery,
       required this.extendedInfo,
       required this.netLoading,
       required this.buildChildren,
+      required this.deskTop,
       this.readIndex});
 
   String findMatchLabel(Label label) {
@@ -454,6 +452,7 @@ class GalleryTagDetailInfo extends StatelessWidget {
     return ExpansionTile(
         title: Text(
             '${AppLocalizations.of(context)!.series} & ${AppLocalizations.of(context)!.character}'),
+        initiallyExpanded: deskTop,
         children: [
           Wrap(children: [
             for (var serial in series) TagButton(label: serial),
@@ -469,6 +468,7 @@ class GalleryTagDetailInfo extends StatelessWidget {
       List<Map<String, dynamic>>? tags) {
     return ExpansionTile(
         title: Text(AppLocalizations.of(context)!.tag),
+        initiallyExpanded: deskTop,
         children: [
           Wrap(children: [
             if (females != null)

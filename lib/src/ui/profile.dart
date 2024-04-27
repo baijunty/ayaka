@@ -30,7 +30,7 @@ class _UserProfileView extends State<UserProfileView>
   void didChangeDependencies() {
     super.didChangeDependencies();
     var controller = context.read<SettingsController>();
-    api = controller.hitomi();
+    api = controller.hitomi(localDb: true);
     if (history.length + likes.length + collection.length == 0) {
       var types = [readMask, likeMask, bookMark];
       controller.manager.helper
@@ -71,13 +71,13 @@ class _UserProfileView extends State<UserProfileView>
 
   Widget _galleryList(List<Gallery> list) {
     return SizedBox(
-        height: 210,
+        height: 170,
         child: ListView.separated(
             itemBuilder: (context, index) {
               var gallery = list[index];
               return InkWell(
                   child: SizedBox(
-                      width: 160,
+                      width: 120,
                       child: Column(children: [
                         ThumbImageView(
                             ProxyNetworkImage(

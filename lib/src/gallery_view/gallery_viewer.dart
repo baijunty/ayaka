@@ -100,8 +100,18 @@ class _GalleryViewer extends State<GalleryViewer>
                   title: Column(children: [
                     Text(
                         '${_gallery.name}-${index + 1}/${_gallery.files.length}'),
-                    LinearProgressIndicator(
-                        value: (index + 1) / _gallery.files.length)
+                    Slider(
+                      value: index.toDouble(),
+                      max: _gallery.files.length.toDouble(),
+                      divisions: _gallery.files.length,
+                      label: index.toString(),
+                      onChanged: (double value) {
+                        setState(() {
+                          index = value.floor();
+                          controller.jumpToPage(index);
+                        });
+                      },
+                    )
                   ]),
                   backgroundColor: Theme.of(context).primaryColor,
                   leading: BackButton(

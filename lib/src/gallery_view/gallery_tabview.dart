@@ -59,41 +59,42 @@ class _GalleryTabView extends State<GalleryTabView>
         ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>?;
     tags =
         args?['tags'] as List<Map<String, dynamic>>? ?? [QueryText('').toMap()];
-    children = args != null && (tags.length > 1 || tags.first['type'] == '')
-        ? [
-            GallerySearchResultView(
-                api: controller.hitomi(), selected: tags, local: false),
-            GallerySearchResultView(
-                api: controller.hitomi(localDb: true),
-                selected: tags,
-                local: true)
-          ]
-        : kIsWeb
+    children =
+        args != null && tags.first['name'] != '' && tags.first['type'] != 'type'
             ? [
-                GalleryItemListView(
-                    key: ValueKey(pageKey[0]),
+                GallerySearchResultView(
+                    api: controller.hitomi(), selected: tags, local: false),
+                GallerySearchResultView(
                     api: controller.hitomi(localDb: true),
-                    label: tags.first,
-                    local: true,
-                    sortEnum: pageKey[0].value,
-                    startPage: pageKey[0].key)
+                    selected: tags,
+                    local: true)
               ]
-            : [
-                GalleryItemListView(
-                    key: ValueKey(pageKey[0]),
-                    api: controller.hitomi(),
-                    label: tags.first,
-                    local: false,
-                    sortEnum: pageKey[0].value,
-                    startPage: pageKey[0].key),
-                GalleryItemListView(
-                    key: ValueKey(pageKey[1]),
-                    api: controller.hitomi(localDb: true),
-                    label: tags.first,
-                    sortEnum: pageKey[1].value,
-                    startPage: pageKey[1].key,
-                    local: true),
-              ];
+            : kIsWeb
+                ? [
+                    GalleryItemListView(
+                        key: ValueKey(pageKey[0]),
+                        api: controller.hitomi(localDb: true),
+                        label: tags.first,
+                        local: true,
+                        sortEnum: pageKey[0].value,
+                        startPage: pageKey[0].key)
+                  ]
+                : [
+                    GalleryItemListView(
+                        key: ValueKey(pageKey[0]),
+                        api: controller.hitomi(),
+                        label: tags.first,
+                        local: false,
+                        sortEnum: pageKey[0].value,
+                        startPage: pageKey[0].key),
+                    GalleryItemListView(
+                        key: ValueKey(pageKey[1]),
+                        api: controller.hitomi(localDb: true),
+                        label: tags.first,
+                        sortEnum: pageKey[1].value,
+                        startPage: pageKey[1].key,
+                        local: true),
+                  ];
 
     tabs = kIsWeb
         ? [Tab(text: AppLocalizations.of(context)!.local)]

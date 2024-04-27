@@ -49,6 +49,13 @@ class _GalleryListView extends State<GalleryItemListView>
     return widget.api
         .viewByTag(fromString(widget.label['type'], widget.label['name']),
             page: _page, sort: widget.sortEnum, token: token)
+        .then((value) => context
+            .getManager()
+            .translateLabel(value.data.fold(
+                <Label>[],
+                (previousValue, element) =>
+                    previousValue..addAll(element.labels())))
+            .then((trans) => value))
         .then((value) => setState(() {
               var insertList = value.data
                   .where((element) => data.every((g) => g.id != element.id));

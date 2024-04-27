@@ -8,7 +8,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 import 'package:hitomi/gallery/gallery.dart';
-import 'package:hitomi/gallery/image.dart' as img show Image, ThumbnaiSize;
+import 'package:hitomi/gallery/image.dart' as img show ThumbnaiSize;
 import 'package:hitomi/gallery/label.dart';
 import 'package:hitomi/lib.dart';
 import 'package:provider/provider.dart';
@@ -59,7 +59,7 @@ class ThumbImageView extends StatelessWidget {
   Widget build(BuildContext context) {
     return Stack(children: [
       AspectRatio(
-        aspectRatio: max(aspectRatio, 0.5),
+        aspectRatio: max(aspectRatio, 0.65),
         child: Image(
           image: provider,
           errorBuilder: errorBuilder,
@@ -70,8 +70,8 @@ class ThumbImageView extends StatelessWidget {
       ),
       if (label != null)
         SizedBox(
-            width: 32,
-            height: 32,
+            width: 40,
+            height: 40,
             child: Padding(
                 padding: const EdgeInsets.all(2),
                 child: DecoratedBox(
@@ -120,8 +120,8 @@ class GalleryListView extends StatelessWidget {
     return LayoutBuilder(builder: (context, cons) {
       return MasonryGridView.count(
           controller: scrollController,
-          mainAxisSpacing: 4,
-          crossAxisSpacing: 4,
+          mainAxisSpacing: 8,
+          crossAxisSpacing: 8,
           crossAxisCount: max(cons.maxWidth ~/ 550, 1),
           itemCount: data.length,
           itemBuilder: (BuildContext context, int index) {
@@ -129,7 +129,6 @@ class GalleryListView extends StatelessWidget {
             return GalleryInfo(
               key: ValueKey(item.id),
               gallery: item,
-              image: item.files.first,
               click: click,
               api: api,
               menus: menusBuilder?.call(item),
@@ -148,14 +147,12 @@ class GalleryListView extends StatelessWidget {
 
 class GalleryInfo extends StatelessWidget {
   final Gallery gallery;
-  final img.Image image;
   final Hitomi api;
   final void Function(Gallery) click;
   final PopupMenuButton<String>? menus;
   const GalleryInfo(
       {super.key,
       required this.gallery,
-      required this.image,
       required this.click,
       required this.api,
       required this.menus});
@@ -168,83 +165,86 @@ class GalleryInfo extends StatelessWidget {
       return InkWell(
           key: ValueKey(gallery.id),
           onTap: () => click(gallery),
-          child: Card(
-              child: Container(
-                  color: entry.value,
-                  child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        MaxWidthBox(
-                            maxWidth: min(cons.maxWidth / 3, 300),
-                            child: Hero(
-                                tag: 'gallery-thumb ${gallery.id}',
-                                child: ThumbImageView(
-                                    ProxyNetworkImage(
-                                        dataStream: (chunkEvents) =>
-                                            api.fetchImageData(
-                                              gallery.files.first,
-                                              id: gallery.id,
-                                              size: img.ThumbnaiSize.medium,
-                                              refererUrl:
-                                                  'https://hitomi.la${gallery.urlEncode()}',
-                                              onProcess: (now, total) =>
-                                                  chunkEvents
-                                                      .add(ImageChunkEvent(
-                                                          cumulativeBytesLoaded:
-                                                              now,
-                                                          expectedTotalBytes:
-                                                              total)),
-                                            ),
-                                        key: gallery.files.first.hash),
-                                    label: Text(gallery.files.length.toString(),
-                                        style: Theme.of(context)
-                                            .textTheme
-                                            .labelLarge
-                                            ?.copyWith(
-                                                color: Colors.deepOrange)),
-                                    aspectRatio: image.width / image.height))),
-                        const SizedBox(width: 8),
-                        Expanded(
-                            child: Column(
-                                mainAxisAlignment: MainAxisAlignment.start,
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                              Hero(
-                                  tag: 'gallery_${gallery.id}_name',
-                                  child: Text(gallery.name,
-                                      maxLines: 2,
-                                      overflow: TextOverflow.ellipsis,
-                                      softWrap: true)),
-                              const SizedBox(height: 8),
-                              Hero(
-                                  tag: 'gallery_${gallery.id}_language',
-                                  child: Text(mapLangugeType(
-                                      context, gallery.language ?? ''))),
-                              const SizedBox(width: 8),
-                              buildTypeAndDate(gallery, entry.key),
-                            ])),
-                        if (menus != null) menus!
-                      ]))));
+          child: Container(
+            color: entry.value,
+            child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              MaxWidthBox(
+                  maxWidth: min(cons.maxWidth / 3, 300),
+                  child: Hero(
+                      tag: 'gallery-thumb ${gallery.id}',
+                      child: ThumbImageView(
+                          ProxyNetworkImage(
+                              dataStream: (chunkEvents) => api.fetchImageData(
+                                    gallery.files.first,
+                                    id: gallery.id,
+                                    size: img.ThumbnaiSize.medium,
+                                    refererUrl:
+                                        'https://hitomi.la${gallery.urlEncode()}',
+                                    onProcess: (now, total) => chunkEvents.add(
+                                        ImageChunkEvent(
+                                            cumulativeBytesLoaded: now,
+                                            expectedTotalBytes: total)),
+                                  ),
+                              key: gallery.files.first.hash),
+                          label: Text(gallery.files.length.toString(),
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .labelLarge
+                                  ?.copyWith(color: Colors.deepOrange)),
+                          aspectRatio: image.width / image.height))),
+              Expanded(
+                  child: Stack(children: [
+                Column(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Padding(
+                          padding: const EdgeInsets.only(left: 4),
+                          child: Hero(
+                              tag: 'gallery_${gallery.id}_name',
+                              child: Text(gallery.name,
+                                  maxLines: 2,
+                                  style:
+                                      Theme.of(context).textTheme.titleMedium,
+                                  overflow: TextOverflow.ellipsis,
+                                  softWrap: true))),
+                      const SizedBox(width: 8),
+                      if (gallery.artists?.first.translate != null)
+                        TagButton(
+                            label: gallery.artists!.first.translate!,
+                            style: smallText),
+                      const SizedBox(width: 8),
+                      buildTypeAndDate(context, gallery, entry.key),
+                    ]),
+                if (menus != null)
+                  Align(
+                      alignment: Alignment.centerRight,
+                      child: Column(
+                          children: [const SizedBox(height: 48), menus!]))
+              ])),
+            ]),
+          ));
     });
   }
 }
 
-Widget buildTypeAndDate(Gallery gallery, String type) {
+Widget buildTypeAndDate(BuildContext context, Gallery gallery, String type) {
   return SizedBox(
       height: 28,
-      child: Row(mainAxisAlignment: MainAxisAlignment.spaceAround, children: [
+      child: Row(children: [
         Hero(
             tag: 'gallery_${gallery.id}_type',
             child: TagButton(
                 label: {...TypeLabel(gallery.type).toMap(), 'translate': type},
-                style: TextButton.styleFrom(
-                  fixedSize: const Size.fromHeight(25),
-                  padding: const EdgeInsets.all(4),
-                  minimumSize: const Size(40, 25),
-                ))),
+                style: smallText)),
+        const SizedBox(width: 16),
+        Hero(
+            tag: 'gallery_${gallery.id}_language',
+            child: Text(mapLangugeType(context, gallery.language ?? ''))),
+        const SizedBox(width: 16),
         Hero(
             tag: 'gallery_${gallery.id}_date',
-            child: Text(formater.formatString(gallery.date)))
+            child: Text(formater.formatString(gallery.date))),
       ]));
 }
 
@@ -401,9 +401,6 @@ class TagDetail extends StatelessWidget {
               for (var url in text)
                 TextSpan(
                     text: url.key,
-                    style: url.value.isNotEmpty
-                        ? const TextStyle(color: Colors.blue)
-                        : const TextStyle(color: Colors.black),
                     recognizer: url.value.isNotEmpty
                         ? (TapGestureRecognizer()
                           ..onTap = () => launchUrl(Uri.parse(url.value)))

@@ -61,7 +61,9 @@ class _GalleryTaskView extends State<GalleryTaskView> {
               }).toList();
             }))
         .catchError((e) {
-      context.showSnackBar('err $e');
+      if (mounted) {
+        context.showSnackBar('err $e');
+      }
     }, test: (error) => true).whenComplete(() => _handleVisible());
   }
 
@@ -166,7 +168,6 @@ class _GalleryTaskView extends State<GalleryTaskView> {
             var gallery = pendingTask[index];
             return GalleryInfo(
                 gallery: gallery,
-                image: gallery.files.first,
                 click: (g) => Navigator.of(context).pushNamed(
                     GalleryDetailsView.routeName,
                     arguments: {'gallery': gallery, 'local': false}),

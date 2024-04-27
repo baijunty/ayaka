@@ -74,13 +74,17 @@ class _AyakaHome extends State<AyakaHome> {
     Widget child;
     switch (index) {
       case 1:
-        child = const GalleryTaskView();
+        child = const IndexedStack(
+            index: 1, children: [GalleryTabView(), GalleryTaskView()]);
       case 2:
-        child = const UserProfileView();
+        child = const IndexedStack(
+            index: 1, children: [GalleryTabView(), UserProfileView()]);
       case 3:
-        child = const SettingsView();
+        child = const IndexedStack(
+            index: 1, children: [GalleryTabView(), SettingsView()]);
       default:
-        child = const GalleryTabView();
+        child = const IndexedStack(
+            index: 0, children: [GalleryTabView(), SettingsView()]);
     }
     return PopScope(
         canPop: exitApp,

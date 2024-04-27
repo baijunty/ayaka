@@ -344,13 +344,10 @@ class GalleryDetailHead extends StatelessWidget {
         .toList();
     var screenWidth = MediaQuery.of(context).size.width;
     var width = min(screenWidth / 3, 300.0);
-    var height = min(
-        140.0,
-        max(
-            width,
-            width *
-                max(1.5,
-                    gallery.files.first.height / gallery.files.first.width)));
+    var height = max(
+        width,
+        min(width * 1.5,
+            width * gallery.files.first.height / gallery.files.first.width));
     var totalHeight =
         height + (Theme.of(context).appBarTheme.toolbarHeight ?? 56);
     debugPrint('screenW $screenWidth w $width h $height totalH $totalHeight');
@@ -449,16 +446,18 @@ class GalleryTagDetailInfo extends StatelessWidget {
 
   Widget _serialInfo(BuildContext context, List<Map<String, dynamic>> series,
       List<Map<String, dynamic>> characters) {
-    return ExpansionTile(
-        title: Text(
-            '${AppLocalizations.of(context)!.series} & ${AppLocalizations.of(context)!.character}'),
-        initiallyExpanded: deskTop,
-        children: [
-          Wrap(children: [
-            for (var serial in series) TagButton(label: serial),
-            for (var character in characters) TagButton(label: character),
-          ])
-        ]);
+    var child = Wrap(children: [
+      for (var serial in series) TagButton(label: serial),
+      for (var character in characters) TagButton(label: character),
+    ]);
+
+    var title = Text(
+        '${AppLocalizations.of(context)!.series} & ${AppLocalizations.of(context)!.character}');
+    return deskTop
+        ? Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [ListTile(title: title), child])
+        : ExpansionTile(title: title, children: [child]);
   }
 
   Widget _otherTagInfo(
@@ -466,28 +465,29 @@ class GalleryTagDetailInfo extends StatelessWidget {
       List<Map<String, dynamic>>? females,
       List<Map<String, dynamic>>? males,
       List<Map<String, dynamic>>? tags) {
-    return ExpansionTile(
-        title: Text(AppLocalizations.of(context)!.tag),
-        initiallyExpanded: deskTop,
-        children: [
-          Wrap(children: [
-            if (females != null)
-              for (var female in females)
-                TagButton(
-                  label: female,
-                ),
-            if (males != null)
-              for (var male in males)
-                TagButton(
-                  label: male,
-                ),
-            if (tags != null)
-              for (var tag in tags)
-                TagButton(
-                  label: tag,
-                ),
-          ])
-        ]);
+    var title = Text(AppLocalizations.of(context)!.tag);
+    var child = Wrap(children: [
+      if (females != null)
+        for (var female in females)
+          TagButton(
+            label: female,
+          ),
+      if (males != null)
+        for (var male in males)
+          TagButton(
+            label: male,
+          ),
+      if (tags != null)
+        for (var tag in tags)
+          TagButton(
+            label: tag,
+          ),
+    ]);
+    return deskTop
+        ? Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [ListTile(title: title), child])
+        : ExpansionTile(title: title, children: [child]);
   }
 
   @override

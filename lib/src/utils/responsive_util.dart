@@ -1,3 +1,4 @@
+
 import 'package:ayaka/src/settings/settings_service.dart';
 import 'package:flutter/material.dart';
 import 'package:ayaka/src/settings/settings_service_native.dart'
@@ -22,6 +23,10 @@ extension Responsive on BuildContext {
 
 SettingsService initProxyService() {
   return initService();
+}
+
+Future<String> defaultSavePath() async{
+  return platformSavePath();
 }
 
 enum DeviceInfo { deskTop, mobile, tablet }

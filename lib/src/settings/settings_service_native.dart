@@ -1,10 +1,15 @@
 import 'dart:convert';
 
 import 'package:ayaka/src/settings/settings_service.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 SettingsService initService() {
   return const SettingsServiceNativeImpl();
+}
+
+Future<String> platformSavePath() async {
+  return getApplicationSupportDirectory().then((value) => value.path);
 }
 
 class SettingsServiceNativeImpl implements SettingsService {

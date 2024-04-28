@@ -6,6 +6,10 @@ SettingsService initService() {
   return const WebSettingsService();
 }
 
+Future<String> platformSavePath() async {
+  return '';
+}
+
 class WebSettingsService implements SettingsService {
   const WebSettingsService();
   @override

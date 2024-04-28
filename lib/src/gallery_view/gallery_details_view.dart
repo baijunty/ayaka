@@ -500,12 +500,13 @@ class GalleryTagDetailInfo extends StatelessWidget {
       if (!netLoading &&
           [typeList['series'], typeList['character']]
               .every((element) => element != null))
-        _serialInfo(context, typeList['series']!, typeList['character']!),
+        _serialInfo(context, typeList['series']!.take(10).toList(),
+            typeList['character']!.take(20).toList()),
       if (!netLoading &&
           [typeList['female'], typeList['male'], typeList['tag']]
               .any((element) => element != null))
-        _otherTagInfo(
-            context, typeList['female'], typeList['male'], typeList['tag'])
+        _otherTagInfo(context, typeList['female']?.take(20).toList(),
+            typeList['male'], typeList['tag']?.take(20).toList())
     ]);
   }
 }

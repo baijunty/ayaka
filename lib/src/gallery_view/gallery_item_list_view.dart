@@ -56,21 +56,24 @@ class _GalleryListView extends State<GalleryItemListView>
                 (previousValue, element) =>
                     previousValue..addAll(element.labels())))
             .then((trans) => value))
+        .then((value) {
+          totalCount = value.totalCount;
+          totalPage = (value.totalCount / 25).ceil();
+          return value.data
+              .where((element) => data.every((g) => g.id != element.id));
+        })
         .then((value) => setState(() {
-              var insertList = value.data
-                  .where((element) => data.every((g) => g.id != element.id));
-              refresh ? data.insertAll(0, insertList) : data.addAll(insertList);
+              refresh ? data.insertAll(0, value) : data.addAll(value);
               _page++;
-              totalCount = value.totalCount;
-              totalPage = (value.totalCount / 25).ceil();
               netLoading = false;
             }))
         .catchError((e) {
-      netLoading = false;
-      if (mounted) {
-        context.showSnackBar('err $e');
-      }
-    }, test: (error) => true);
+          debugPrint('$e');
+          netLoading = false;
+          if (mounted) {
+            context.showSnackBar('err $e');
+          }
+        }, test: (error) => true);
   }
 
   @override

@@ -124,6 +124,7 @@ class GalleryListView extends StatelessWidget {
           crossAxisSpacing: 8,
           crossAxisCount: max(cons.maxWidth ~/ 550, 1),
           itemCount: data.length,
+          physics: const AlwaysScrollableScrollPhysics(),
           itemBuilder: (BuildContext context, int index) {
             final item = data[index];
             return GalleryInfo(

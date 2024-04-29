@@ -54,16 +54,6 @@ class _GalleryDetailView extends State<GalleryDetailsView> {
                   gallery = await api.fetchGallery(value!.first, token: token);
                   local = true;
                 }
-                if (mounted) {
-                  var preferLangs = context.getManager().config.languages;
-                  if (!preferLangs.contains(gallery.language)) {
-                    var lang = gallery.languages?.firstWhereOrNull(
-                        (element) => preferLangs.contains(element.name));
-                    if (lang != null) {
-                      gallery = await api.fetchGallery(lang.galleryid);
-                    }
-                  }
-                }
                 return gallery;
               }))
         .then((value) => api.translate(gallery.labels()))
@@ -213,14 +203,26 @@ class _GalleryDetailView extends State<GalleryDetailsView> {
       child: MaxWidthBox(
           maxWidth: 1280,
           child: Stack(children: [
-            CustomScrollView(slivers: [
+            CustomScrollView(key: ValueKey(gallery.id), slivers: [
               GalleryDetailHead(
-                  key: ValueKey(gallery.id),
+                  key: ValueKey('head ${gallery.id}'),
                   api: controller.hitomi(localDb: local),
                   gallery: gallery,
                   extendedInfo: translates,
                   netLoading: netLoading,
                   exist: local,
+                  languageChange: (id) async {
+                    await api
+                        .fetchGallery(id, usePrefence: false)
+                        .then((value) => setState(() {
+                              gallery = value;
+                            }))
+                        .catchError((e) {
+                      if (mounted) {
+                        context.showSnackBar('$e');
+                      }
+                    }, test: (error) => true);
+                  },
                   tagInfo: isDeskTop ? tagInfo : null),
               if (!isDeskTop) tagInfo,
               SliverGrid.builder(
@@ -276,6 +278,7 @@ class GalleryDetailHead extends StatelessWidget {
   final bool exist;
   final Hitomi api;
   final GalleryTagDetailInfo? tagInfo;
+  final Function(int id) languageChange;
   const GalleryDetailHead(
       {super.key,
       required this.api,
@@ -283,6 +286,7 @@ class GalleryDetailHead extends StatelessWidget {
       required this.extendedInfo,
       required this.netLoading,
       required this.exist,
+      required this.languageChange,
       this.tagInfo});
 
   Widget headThumbImage(BuildContext context) {
@@ -316,7 +320,7 @@ class GalleryDetailHead extends StatelessWidget {
             child: Padding(
                 padding: const EdgeInsets.only(right: 8),
                 child: OutlinedButton(
-                    onPressed: netLoading || !exist
+                    onPressed: netLoading || exist
                         ? null
                         : () async {
                             await context.addTask(gallery.id);
@@ -357,7 +361,12 @@ class GalleryDetailHead extends StatelessWidget {
             width * gallery.files.first.height / gallery.files.first.width));
     var totalHeight =
         height + (Theme.of(context).appBarTheme.toolbarHeight ?? 56);
-    debugPrint('screenW $screenWidth w $width h $height totalH $totalHeight');
+    var userLanges = context.getManager().config.languages;
+    var lanuages = gallery.languages
+        ?.where((lang) => userLanges.any((element) => element == lang.name))
+        .toList();
+    debugPrint(
+        '${gallery.id} screenW $screenWidth w $width h $height totalH $totalHeight $lanuages');
     return SliverAppBar(
         backgroundColor: entry.value,
         leading: AppBar(backgroundColor: Colors.transparent),
@@ -413,7 +422,38 @@ class GalleryDetailHead extends StatelessWidget {
                                     commondPrefix: '--${group['type']}',
                                     icon: const Icon(Icons.group))
                             ])),
-                  buildTypeAndDate(context, gallery, entry.key),
+                  Row(children: [
+                    TagButton(label: {
+                      ...TypeLabel(gallery.type).toMap(),
+                      'translate': entry.key
+                    }),
+                    const SizedBox(width: 16),
+                    if (lanuages?.isNotEmpty == true)
+                      DropdownButton<int>(
+                          items: [
+                            if (lanuages!.every((element) =>
+                                element.galleryid!.toInt() != gallery.id))
+                              DropdownMenuItem(
+                                  value: gallery.id,
+                                  child: Text(mapLangugeType(
+                                      context, gallery.language ?? ''))),
+                            for (var language in lanuages)
+                              DropdownMenuItem(
+                                  value: language.galleryid!.toInt(),
+                                  child: Text(
+                                      mapLangugeType(context, language.name))),
+                          ],
+                          value: gallery.id,
+                          onChanged: (id) {
+                            if (id != null) {
+                              languageChange(id);
+                            }
+                          })
+                    else
+                      Text(mapLangugeType(context, gallery.language ?? '')),
+                    const SizedBox(width: 16),
+                    Text(formater.formatString(gallery.date)),
+                  ]),
                   if (tagInfo != null) tagInfo!,
                 ])),
           ])

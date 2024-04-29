@@ -230,23 +230,15 @@ class GalleryInfo extends StatelessWidget {
 }
 
 Widget buildTypeAndDate(BuildContext context, Gallery gallery, String type) {
-  return SizedBox(
-      height: 28,
-      child: Row(children: [
-        Hero(
-            tag: 'gallery_${gallery.id}_type',
-            child: TagButton(
-                label: {...TypeLabel(gallery.type).toMap(), 'translate': type},
-                style: smallText)),
-        const SizedBox(width: 16),
-        Hero(
-            tag: 'gallery_${gallery.id}_language',
-            child: Text(mapLangugeType(context, gallery.language ?? ''))),
-        const SizedBox(width: 16),
-        Hero(
-            tag: 'gallery_${gallery.id}_date',
-            child: Text(formater.formatString(gallery.date))),
-      ]));
+  return Row(children: [
+    TagButton(
+        label: {...TypeLabel(gallery.type).toMap(), 'translate': type},
+        style: smallText),
+    const SizedBox(width: 16),
+    Text(mapLangugeType(context, gallery.language ?? '')),
+    const SizedBox(width: 16),
+    Text(formater.formatString(gallery.date)),
+  ]);
 }
 
 class MaxWidthBox extends StatelessWidget {

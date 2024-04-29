@@ -36,7 +36,6 @@ class _GalleryDetailView extends State<GalleryDetailsView> {
   late SettingsController controller = context.read<SettingsController>();
   late Gallery gallery;
   bool local = false;
-  Gallery? exists;
   bool netLoading = true;
   int? readedIndex;
   CancelToken? token;
@@ -45,20 +44,31 @@ class _GalleryDetailView extends State<GalleryDetailsView> {
   Future<void> _fetchTransLate() async {
     var api = controller.hitomi(localDb: true);
     await (local
-            ? Future.value(gallery).then((value) => exists = value)
+            ? Future.value(gallery)
             : context
                 .read<GalleryManager>()
                 .checkExist(gallery.id)
                 .then((value) => value['value'] as List<dynamic>?)
                 .then((value) async {
                 if (value?.firstOrNull != null) {
-                  exists = await api.fetchGallery(value!.first, token: token);
+                  gallery = await api.fetchGallery(value!.first, token: token);
+                  local = true;
                 }
-                return exists;
-              }).catchError((e) => null, test: (error) => true))
+                if (mounted) {
+                  var preferLangs = context.getManager().config.languages;
+                  if (!preferLangs.contains(gallery.language)) {
+                    var lang = gallery.languages?.firstWhereOrNull(
+                        (element) => preferLangs.contains(element.name));
+                    if (lang != null) {
+                      gallery = await api.fetchGallery(lang.galleryid);
+                    }
+                  }
+                }
+                return gallery;
+              }))
         .then((value) => api.translate(gallery.labels()))
         .then((value) => setState(() {
-              translates.addAll(value);
+              translates = value;
               netLoading = false;
             }))
         .catchError((e) {
@@ -101,9 +111,9 @@ class _GalleryDetailView extends State<GalleryDetailsView> {
   void _handleClick(int index) async {
     if (_selected.isEmpty) {
       await Navigator.pushNamed(context, GalleryViewer.routeName, arguments: {
-        'gallery': exists ?? gallery,
+        'gallery': gallery,
         'index': index,
-        'local': exists != null,
+        'local': local,
       });
     } else {
       setState(() {
@@ -205,11 +215,12 @@ class _GalleryDetailView extends State<GalleryDetailsView> {
           child: Stack(children: [
             CustomScrollView(slivers: [
               GalleryDetailHead(
+                  key: ValueKey(gallery.id),
                   api: controller.hitomi(localDb: local),
                   gallery: gallery,
                   extendedInfo: translates,
                   netLoading: netLoading,
-                  exist: exists,
+                  exist: local,
                   tagInfo: isDeskTop ? tagInfo : null),
               if (!isDeskTop) tagInfo,
               SliverGrid.builder(
@@ -262,7 +273,7 @@ class GalleryDetailHead extends StatelessWidget {
   final Gallery gallery;
   final List<Map<String, dynamic>> extendedInfo;
   final bool netLoading;
-  final Gallery? exist;
+  final bool exist;
   final Hitomi api;
   final GalleryTagDetailInfo? tagInfo;
   const GalleryDetailHead(
@@ -273,10 +284,6 @@ class GalleryDetailHead extends StatelessWidget {
       required this.netLoading,
       required this.exist,
       this.tagInfo});
-
-  void insertToDb(BuildContext context, int type) async {
-    await context.insertToUserDb((exist ?? gallery).id, type);
-  }
 
   Widget headThumbImage(BuildContext context) {
     return Hero(
@@ -309,20 +316,20 @@ class GalleryDetailHead extends StatelessWidget {
             child: Padding(
                 padding: const EdgeInsets.only(right: 8),
                 child: OutlinedButton(
-                    onPressed: netLoading || exist != null
+                    onPressed: netLoading || !exist
                         ? null
                         : () async {
                             await context.addTask(gallery.id);
                           },
-                    child: Text(exist != null
+                    child: Text(exist
                         ? AppLocalizations.of(context)!.downloaded
                         : AppLocalizations.of(context)!.download)))),
       Expanded(
         child: FilledButton(
             onPressed: () => Navigator.of(context)
                     .pushNamed(GalleryViewer.routeName, arguments: {
-                  'gallery': exist ?? gallery,
-                  'local': exist != null,
+                  'gallery': gallery,
+                  'local': exist,
                 }),
             child: Text(AppLocalizations.of(context)!.read)),
       ),
@@ -361,12 +368,12 @@ class GalleryDetailHead extends StatelessWidget {
         actions: [
           IconButton(
               onPressed: () async {
-                insertToDb(context, bookMark);
+                await context.insertToUserDb((gallery).id, bookMark);
               },
               icon: const Icon(Icons.bookmark)),
           IconButton(
               onPressed: () async {
-                insertToDb(context, likeMask);
+                await context.insertToUserDb((gallery).id, likeMask);
               },
               icon: const Icon(Icons.favorite))
         ],

@@ -369,9 +369,12 @@ class TagDetail extends StatelessWidget {
                   if (commondPrefix != null)
                     IconButton(
                         onPressed: () async => taskControl
-                            .addTask('$commondPrefix "${tag['name']}"')
-                            .then((value) => context.showSnackBar(
-                                AppLocalizations.of(context)!.addTaskSuccess)),
+                                .addTask('$commondPrefix "${tag['name']}"')
+                                .then((value) {
+                              Navigator.of(context).pop();
+                              context.showSnackBar(
+                                  AppLocalizations.of(context)!.addTaskSuccess);
+                            }),
                         icon: const Icon(Icons.download)),
                   const Expanded(child: Divider()),
                 ]))

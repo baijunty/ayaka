@@ -65,6 +65,7 @@ class _GalleryViewer extends State<GalleryViewer>
       index = controller.page!.toInt();
       await context.insertToUserDb(_gallery.id, readMask,
           data: index, content: _gallery.name);
+      setState(() {});
     }
   }
 

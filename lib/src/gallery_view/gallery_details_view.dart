@@ -80,12 +80,12 @@ class _GalleryDetailView extends State<GalleryDetailsView> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    controller = context.read<SettingsController>();
-    var args =
-        ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>;
-    gallery = args['gallery'];
-    local = args['local'] ?? local;
     if (translates.isEmpty) {
+      controller = context.read<SettingsController>();
+      var args =
+          ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>;
+      gallery = args['gallery'];
+      local = args['local'] ?? local;
       token = CancelToken();
       _fetchTransLate();
     }

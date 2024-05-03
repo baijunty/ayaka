@@ -1,5 +1,6 @@
 import 'dart:math';
 
+import 'package:collection/collection.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -11,6 +12,7 @@ import 'package:provider/provider.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import '../settings/settings_controller.dart';
 import '../ui/common_view.dart';
+import '../utils/common_define.dart';
 import 'gallery_details_view.dart';
 import 'gallery_similar_view.dart';
 
@@ -41,6 +43,7 @@ class _GallerySearchResultView extends State<GallerySearchResultView>
   var totalCount = 0;
   CancelToken? token;
   var netLoading = false;
+  final readIndexMap = <int, int?>{};
   @override
   void initState() {
     super.initState();
@@ -138,7 +141,21 @@ class _GallerySearchResultView extends State<GallerySearchResultView>
               min(value.length, _page * 25)))
           .then((value) => Future.wait(value.map((e) =>
               widget.api.fetchGallery(e, usePrefence: false, token: token))))
+          .then((value) => context
+              .getManager()
+              .translateLabel(value.fold(
+                  <Label>[],
+                  (previousValue, element) =>
+                      previousValue..addAll(element.labels())))
+              .then((trans) => value))
           .then((value) {
+        return Future.wait(value.map((e) => context.readUserDb(e.id, readMask)))
+            .then((result) => result.foldIndexed(
+                readIndexMap,
+                (index, previous, element) =>
+                    previous..[value[index].id] = element))
+            .then((map) => value);
+      }).then((value) {
         setState(() {
           data.addAll(value);
           _page++;
@@ -175,6 +192,7 @@ class _GallerySearchResultView extends State<GallerySearchResultView>
             click: click,
             api: widget.api,
             scrollController: scrollController,
+            readIndexMap: readIndexMap,
             menusBuilder: menuBuilder);
   }
 

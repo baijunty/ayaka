@@ -165,7 +165,8 @@ class _GalleryTabView extends State<GalleryTabView>
                           onTap: (value) => pageController.jumpToPage(value)),
                       actions: tags.length <= 1
                           ? [
-                              _sortWidget(),
+                              if (children[0] is GalleryItemListView)
+                                _sortWidget(),
                               IconButton(
                                   onPressed: () async {
                                     var s = await context.showDialogInput(

@@ -18,7 +18,7 @@ import 'package:hitomi/lib.dart';
 import 'package:provider/provider.dart';
 import 'package:hitomi/gallery/image.dart' as img show Image, ThumbnaiSize;
 import '../utils/label_utils.dart';
-import '../utils/proxy_netwrok_image.dart';
+import '../utils/proxy_network_image.dart';
 import '../utils/responsive_util.dart';
 
 class GalleryDetailsView extends StatefulWidget {

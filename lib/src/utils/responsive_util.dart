@@ -1,4 +1,3 @@
-
 import 'package:ayaka/src/settings/settings_service.dart';
 import 'package:flutter/material.dart';
 import 'package:ayaka/src/settings/settings_service_native.dart'
@@ -25,8 +24,12 @@ SettingsService initProxyService() {
   return initService();
 }
 
-Future<String> defaultSavePath() async{
+Future<String> defaultSavePath() async {
   return platformSavePath();
+}
+
+Future<String?> localIp() async {
+  return localIpAddress();
 }
 
 enum DeviceInfo { deskTop, mobile, tablet }

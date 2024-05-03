@@ -10,6 +10,10 @@ Future<String> platformSavePath() async {
   return '';
 }
 
+Future<String?> localIpAddress() async {
+  return '';
+}
+
 class WebSettingsService implements SettingsService {
   const WebSettingsService();
   @override

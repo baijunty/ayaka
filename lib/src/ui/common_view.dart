@@ -2,7 +2,7 @@ import 'dart:async';
 import 'dart:math';
 
 import 'package:ayaka/src/gallery_view/gallery_tabview.dart';
-import 'package:ayaka/src/utils/proxy_netwrok_image.dart';
+import 'package:ayaka/src/utils/proxy_network_image.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
@@ -106,15 +106,17 @@ class GalleryListView extends StatelessWidget {
   final Hitomi api;
   final ScrollController? scrollController;
   final PopupMenuButton<String> Function(Gallery gallery)? menusBuilder;
-
-  const GalleryListView(
-      {super.key,
-      required this.data,
-      this.onRefresh,
-      required this.click,
-      required this.api,
-      this.scrollController,
-      this.menusBuilder});
+  final Map<int, int?> readIndexMap;
+  const GalleryListView({
+    super.key,
+    required this.data,
+    this.onRefresh,
+    required this.click,
+    required this.api,
+    this.scrollController,
+    required this.readIndexMap,
+    this.menusBuilder,
+  });
 
   Widget dataList() {
     return LayoutBuilder(builder: (context, cons) {
@@ -133,6 +135,7 @@ class GalleryListView extends StatelessWidget {
               click: click,
               api: api,
               menus: menusBuilder?.call(item),
+              readIndex: readIndexMap[item.id],
             );
           });
     });
@@ -151,12 +154,14 @@ class GalleryInfo extends StatelessWidget {
   final Hitomi api;
   final void Function(Gallery) click;
   final PopupMenuButton<String>? menus;
+  final int? readIndex;
   const GalleryInfo(
       {super.key,
       required this.gallery,
       required this.click,
       required this.api,
-      required this.menus});
+      required this.menus,
+      this.readIndex});
 
   @override
   Widget build(BuildContext context) {
@@ -167,7 +172,12 @@ class GalleryInfo extends StatelessWidget {
           key: ValueKey(gallery.id),
           onTap: () => click(gallery),
           child: Container(
-            color: entry.value,
+            decoration: ShapeDecoration(
+                color: entry.value,
+                shape: LinearBorder.bottom(
+                    size: (readIndex != null ? (readIndex! + 1) : 0) /
+                        gallery.files.length,
+                    side: const BorderSide(color: Colors.green, width: 2))),
             child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
               MaxWidthBox(
                   maxWidth: min(cons.maxWidth / 3, 300),
@@ -465,6 +475,10 @@ extension ContextAction on BuildContext {
 
   TaskManager getManager() {
     return read<SettingsController>().manager;
+  }
+
+  UserConfig getConfig() {
+    return read<SettingsController>().manager.config;
   }
 
   Future<int?> readUserDb(int id, int type, {int? defaultValue}) async {

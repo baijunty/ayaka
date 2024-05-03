@@ -7,7 +7,7 @@ import 'package:hitomi/gallery/gallery.dart';
 import 'package:hitomi/gallery/image.dart' show ThumbnaiSize;
 import 'package:provider/provider.dart';
 
-import '../utils/proxy_netwrok_image.dart';
+import '../utils/proxy_network_image.dart';
 
 class GalleryViewer extends StatefulWidget {
   const GalleryViewer({super.key});

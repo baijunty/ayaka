@@ -1,7 +1,5 @@
 import 'dart:async';
 import 'dart:convert';
-import 'dart:io';
-import 'package:collection/collection.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -9,6 +7,8 @@ import 'package:hitomi/lib.dart';
 import 'package:image/image.dart' as image show Command, PngEncoder;
 import '../settings/settings_controller.dart';
 import 'package:hitomi/gallery/image.dart' as img show Image, ThumbnaiSize;
+
+import '../utils/responsive_util.dart';
 
 class GalleryManager with ChangeNotifier {
   final SettingsController controller;
@@ -21,11 +21,7 @@ class GalleryManager with ChangeNotifier {
             data:
                 json.encode({'auth': controller.config.auth, 'task': command}),
             options: Options(headers: {
-              'x-real-ip': await NetworkInterface.list().then((value) => value
-                  .firstOrNull?.addresses
-                  .firstWhereOrNull(
-                      (element) => element.type == InternetAddressType.IPv4)
-                  ?.address)
+              'x-real-ip': await localIp(),
             }))
         : await controller.manager.parseCommandAndRun(command);
     notifyListeners();
@@ -33,31 +29,23 @@ class GalleryManager with ChangeNotifier {
 
   Future<void> cancelTask(int id) async {
     controller.useProxy
-        ? await controller.manager.dio.post(
-            '${controller.config.remoteHttp}/cancel',
-            data: json.encode({'auth': controller.config.auth, 'id': id}),
-            options: Options(headers: {
-              'x-real-ip': await NetworkInterface.list().then((value) => value
-                  .firstOrNull?.addresses
-                  .firstWhereOrNull(
-                      (element) => element.type == InternetAddressType.IPv4)
-                  ?.address)
-            }))
+        ? await controller.manager.dio
+            .post('${controller.config.remoteHttp}/cancel',
+                data: json.encode({'auth': controller.config.auth, 'id': id}),
+                options: Options(headers: {
+                  'x-real-ip': await localIp(),
+                }))
         : await controller.manager.parseCommandAndRun('-p $id');
   }
 
   Future<void> deleteTask(int id) async {
     controller.useProxy
-        ? await controller.manager.dio.post(
-            '${controller.config.remoteHttp}/delete',
-            data: json.encode({'auth': controller.config.auth, 'id': id}),
-            options: Options(headers: {
-              'x-real-ip': await NetworkInterface.list().then((value) => value
-                  .firstOrNull?.addresses
-                  .firstWhereOrNull(
-                      (element) => element.type == InternetAddressType.IPv4)
-                  ?.address)
-            }))
+        ? await controller.manager.dio
+            .post('${controller.config.remoteHttp}/delete',
+                data: json.encode({'auth': controller.config.auth, 'id': id}),
+                options: Options(headers: {
+                  'x-real-ip': await localIp(),
+                }))
         : await controller.manager.parseCommandAndRun('-d $id');
   }
 

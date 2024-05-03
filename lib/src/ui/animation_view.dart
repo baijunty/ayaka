@@ -11,7 +11,7 @@ import 'package:hitomi/gallery/image.dart' as img show Image, ThumbnaiSize;
 import 'package:provider/provider.dart';
 
 import '../model/gallery_manager.dart';
-import '../utils/proxy_netwrok_image.dart';
+import '../utils/proxy_network_image.dart';
 import 'common_view.dart';
 
 class AnimatedSaverDialog extends StatefulWidget {

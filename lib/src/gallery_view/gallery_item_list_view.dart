@@ -1,4 +1,6 @@
 import 'package:ayaka/src/gallery_view/gallery_details_view.dart';
+import 'package:ayaka/src/utils/common_define.dart';
+import 'package:collection/collection.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
@@ -12,7 +14,6 @@ import 'package:provider/provider.dart';
 import '../settings/settings_controller.dart';
 import 'gallery_similar_view.dart';
 
-/// Displays a list of SampleItems.
 class GalleryItemListView extends StatefulWidget {
   final Hitomi api;
   final Map<String, dynamic> label;
@@ -43,6 +44,7 @@ class _GalleryListView extends State<GalleryItemListView>
   var totalCount = 0;
   bool netLoading = false;
   late ScrollController scrollController;
+  final readIndexMap = <int, int?>{};
   Future<void> _fetchData({bool refresh = false}) async {
     token = CancelToken();
     netLoading = true;
@@ -60,7 +62,17 @@ class _GalleryListView extends State<GalleryItemListView>
           totalCount = value.totalCount;
           totalPage = (value.totalCount / 25).ceil();
           return value.data
-              .where((element) => data.every((g) => g.id != element.id));
+              .where((element) => data.every((g) => g.id != element.id))
+              .toList();
+        })
+        .then((value) {
+          return Future.wait(
+                  value.map((e) => context.readUserDb(e.id, readMask)))
+              .then((result) => result.foldIndexed(
+                  readIndexMap,
+                  (index, previous, element) =>
+                      previous..[value[index].id] = element))
+              .then((map) => value);
         })
         .then((value) => setState(() {
               refresh ? data.insertAll(0, value) : data.addAll(value);
@@ -87,10 +99,20 @@ class _GalleryListView extends State<GalleryItemListView>
     menuBuilder = kIsWeb
         ? null
         : (g) => PopupMenuButton<String>(itemBuilder: (context) {
+              var userLangs = context.getConfig().languages;
+              var langs = g.languages?.where((element) =>
+                  userLangs.any((lang) => lang == element.name) &&
+                  element.galleryid != g.id.toString());
               return [
                 PopupMenuItem(
                     child: Text(AppLocalizations.of(context)!.download),
                     onTap: () => context.addTask(g.id)),
+                if (langs?.isNotEmpty == true)
+                  for (var lang in langs!)
+                    PopupMenuItem(
+                        child: Text(
+                            '${AppLocalizations.of(context)!.download}${lang.languageLocalname}'),
+                        onTap: () => context.addTask(lang.galleryid!.toInt())),
                 PopupMenuItem(
                     child: Text(AppLocalizations.of(context)!.findSimiler),
                     onTap: () => Navigator.of(context).pushNamed(
@@ -148,6 +170,7 @@ class _GalleryListView extends State<GalleryItemListView>
         click: click,
         api: widget.api,
         scrollController: scrollController,
+        readIndexMap: readIndexMap,
         menusBuilder: menuBuilder);
   }
 

@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:ayaka/src/ui/common_view.dart';
+import 'package:ayaka/src/utils/responsive_util.dart';
 import 'package:file_picker/file_picker.dart' show FilePicker;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -85,18 +86,18 @@ class _StateSetting extends State<SettingsView> {
                         inputFormatters: [
                       FilteringTextInputFormatter.singleLineFormatter
                     ]));
-                if (s?.isNotEmpty == true) {
+                if (s != null) {
                   await _settingsController.updateConfig(
-                      _settingsController.config.copyWith(proxy: s!));
+                      _settingsController.config.copyWith(proxy: s));
                 }
               },
               icon: const Icon(Icons.edit))),
       ListTile(
           leading: const ImageIcon(AssetImage('assets/images/direction.png')),
-          title: Text(AppLocalizations.of(context)!.connectType),
+          title: Text(AppLocalizations.of(context)!.gallerySorce),
           subtitle: Text(_settingsController.useProxy
-              ? AppLocalizations.of(context)!.proxy
-              : AppLocalizations.of(context)!.direct),
+              ? AppLocalizations.of(context)!.remote
+              : AppLocalizations.of(context)!.local),
           trailing: Switch.adaptive(
               value: _settingsController.useProxy,
               onChanged: (b) => setState(() {
@@ -151,7 +152,11 @@ class _StateSetting extends State<SettingsView> {
               : Icons.airplanemode_active),
           title: Text(AppLocalizations.of(context)!.runServer),
           subtitle: _settingsController.runServer
-              ? const Text('http://127.0.0.1:7890')
+              ? FutureBuilder(
+                  future: localIp(),
+                  builder: (context, snap) {
+                    return Text('http://${snap.data}:7890');
+                  })
               : Text(AppLocalizations.of(context)!.closed),
           trailing: Switch.adaptive(
               value: _settingsController.runServer,

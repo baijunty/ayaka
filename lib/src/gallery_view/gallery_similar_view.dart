@@ -1,5 +1,6 @@
 import 'package:ayaka/src/gallery_view/gallery_details_view.dart';
 import 'package:ayaka/src/settings/settings_controller.dart';
+import 'package:collection/collection.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:ayaka/src/ui/common_view.dart';
@@ -7,6 +8,8 @@ import 'package:flutter/material.dart';
 import 'package:hitomi/gallery/gallery.dart';
 import 'package:hitomi/lib.dart';
 import 'package:provider/provider.dart';
+
+import '../utils/common_define.dart';
 
 class GallerySimilaerView extends StatefulWidget {
   const GallerySimilaerView({super.key});
@@ -24,7 +27,7 @@ class _GallerySimilaerView extends State<GallerySimilaerView> {
   late void Function(Gallery) click;
   CancelToken? _cancelToken;
   var netLoading = true;
-
+  final readIndexMap = <int, int?>{};
   @override
   void initState() {
     super.initState();
@@ -41,18 +44,29 @@ class _GallerySimilaerView extends State<GallerySimilaerView> {
       _cancelToken = CancelToken();
       api
           .findSimilarGalleryBySearch(gallery, token: _cancelToken)
+          .then((result) {
+            var value = result.data;
+            return Future.wait(
+                    value.map((e) => context.readUserDb(e.id, readMask)))
+                .then((result) => result.foldIndexed(
+                    readIndexMap,
+                    (index, previous, element) =>
+                        previous..[value[index].id] = element))
+                .then((map) => value);
+          })
           .then((value) => setState(() {
                 netLoading = false;
-                data = value.data;
+                data = value;
               }))
           .catchError((e) {
-        if (mounted) {
-          setState(() {
-            netLoading = false;
-            context.showSnackBar('${AppLocalizations.of(context)!.failed}: $e');
+            if (mounted) {
+              setState(() {
+                netLoading = false;
+                context.showSnackBar(
+                    '${AppLocalizations.of(context)!.failed}: $e');
+              });
+            }
           });
-        }
-      });
     }
   }
 
@@ -87,6 +101,7 @@ class _GallerySimilaerView extends State<GallerySimilaerView> {
                             onRefresh: null,
                             click: click,
                             api: api,
+                            readIndexMap: readIndexMap,
                             menusBuilder: (g) =>
                                 PopupMenuButton<String>(itemBuilder: (context) {
                                   return [

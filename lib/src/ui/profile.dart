@@ -1,13 +1,14 @@
 import 'package:ayaka/src/gallery_view/gallery_details_view.dart';
 import 'package:ayaka/src/settings/settings_controller.dart';
 import 'package:ayaka/src/utils/common_define.dart';
+import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:hitomi/gallery/gallery.dart';
 import 'package:hitomi/lib.dart';
 import 'package:provider/provider.dart';
 
-import '../utils/proxy_netwrok_image.dart';
+import '../utils/proxy_network_image.dart';
 import 'common_view.dart';
 
 class UserProfileView extends StatefulWidget {
@@ -35,7 +36,7 @@ class _UserProfileView extends State<UserProfileView>
       var types = [readMask, likeMask, bookMark];
       controller.manager.helper
           .selectSqlMultiResultAsync(
-              'select id from UserLog where type=? limit 10',
+              'select id from UserLog where type=? ORDER by rowid desc limit 10 ',
               types.map((e) => [e]).toList())
           .then((value) {
             var r = value.values.map((e) => e.fold(<int>[],
@@ -65,7 +66,7 @@ class _UserProfileView extends State<UserProfileView>
       tileColor: Theme.of(context).colorScheme.primaryContainer,
       trailing: const Icon(Icons.arrow_forward),
       onTap: () => Navigator.of(context).push(MaterialPageRoute(
-          builder: (context) => UserProfleLogView(type: type, title: title))),
+          builder: (context) => UserProfileLogView(type: type, title: title))),
     );
   }
 
@@ -131,18 +132,19 @@ class _UserProfileView extends State<UserProfileView>
   bool get wantKeepAlive => true;
 }
 
-class UserProfleLogView extends StatefulWidget {
+class UserProfileLogView extends StatefulWidget {
   final int type;
   final String title;
-  const UserProfleLogView({super.key, required this.type, required this.title});
+  const UserProfileLogView(
+      {super.key, required this.type, required this.title});
 
   @override
   State<StatefulWidget> createState() {
-    return _UserProfleLogView();
+    return _UserProfileLogView();
   }
 }
 
-class _UserProfleLogView extends State<UserProfleLogView> {
+class _UserProfileLogView extends State<UserProfileLogView> {
   final List<Gallery> data = [];
   late void Function(Gallery gallery) click;
   late Hitomi api;
@@ -150,11 +152,12 @@ class _UserProfleLogView extends State<UserProfleLogView> {
   int totalCount = 0;
   late ScrollController scrollController;
   late PopupMenuButton<String> Function(Gallery gallery)? menusBuilder;
+  final readIndexMap = <int, int?>{};
   void fetchDataFromDb() {
     context
         .getSqliteHelper()
         .querySql(
-            'select COUNT(1) OVER() AS total_count, id from UserLog where type=? limit 25 offset ?',
+            'select COUNT(1) OVER() AS total_count, id from UserLog where type=? ORDER by rowid desc limit 25 offset ?',
             [
               widget.type,
               page * 25
@@ -167,6 +170,15 @@ class _UserProfleLogView extends State<UserProfleLogView> {
             .asStream()
             .asyncMap((event) => api.fetchGallery(event))
             .fold(<Gallery>[], (previous, element) => data..add(element)))
+        .then((value) {
+          return Future.wait(
+                  value.map((e) => context.readUserDb(e.id, readMask)))
+              .then((result) => result.foldIndexed(
+                  readIndexMap,
+                  (index, previous, element) =>
+                      previous..[value[index].id] = element))
+              .then((map) => value);
+        })
         .then((value) => setState(() {
               if (value.isNotEmpty) {
                 var insertList = value
@@ -262,6 +274,7 @@ class _UserProfleLogView extends State<UserProfleLogView> {
                         data: data,
                         click: click,
                         api: api,
+                        readIndexMap: readIndexMap,
                         scrollController: scrollController,
                         menusBuilder: menusBuilder)))));
   }

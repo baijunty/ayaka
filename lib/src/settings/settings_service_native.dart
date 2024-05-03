@@ -1,6 +1,8 @@
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:ayaka/src/settings/settings_service.dart';
+import 'package:collection/collection.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -10,6 +12,12 @@ SettingsService initService() {
 
 Future<String> platformSavePath() async {
   return getApplicationSupportDirectory().then((value) => value.path);
+}
+
+Future<String?> localIpAddress() async {
+  return NetworkInterface.list().then((value) => value.firstOrNull?.addresses
+      .firstWhereOrNull((element) => element.type == InternetAddressType.IPv4)
+      ?.address);
 }
 
 class SettingsServiceNativeImpl implements SettingsService {

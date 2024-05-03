@@ -51,7 +51,7 @@
   "cancel":"取消",
   "loading":"加载中",
   "delete":"删除",
-  "updateDatabase":"更新翻译数据库",
+  "updateDatabase":"标签翻译数据库",
   "select":"选择",
   "selectAll":"全选",
   "connectType":"连接方式",
@@ -97,5 +97,7 @@
   "clearDataWarn":"确认清空数据?",
   "markAdImg":"标记广告图",
   "pageJumpHint":"输入跳转页码",
+  "gallerySorce":"图源",
+  "remote":"远程",
   "tag":"标签"
 }

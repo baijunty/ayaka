@@ -9,7 +9,7 @@ import 'package:flutter/material.dart';
 import 'package:hitomi/gallery/gallery.dart';
 import 'package:provider/provider.dart';
 
-import '../utils/proxy_netwrok_image.dart';
+import '../utils/proxy_network_image.dart';
 
 class GalleryTaskView extends StatefulWidget {
   static const routeName = '/gallery_task';

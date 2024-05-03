@@ -1,4 +1,5 @@
 SELECT * from Tasks
 SELECT * from Gallery limit 20
 select * from GalleryFile where gid=2792959 order by name
-SELECT * from UserLog
+select id from UserLog where type=? ORDER by rowid desc limit 10 
+pragma table_info('UserLog');

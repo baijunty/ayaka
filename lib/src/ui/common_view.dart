@@ -461,12 +461,20 @@ extension ContextAction on BuildContext {
   }
 
   Future<void> insertToUserDb(int id, int type,
-      {int data = 0, String? content, List<int>? extension}) async {
+      {int data = 0,
+      String? content,
+      List<int>? extension,
+      bool showResult = false}) async {
     return getSqliteHelper()
         .insertUserLog(id, type,
             mark: data, content: content, extension: extension ?? [])
-        .then((value) => debugPrint('$value'))
-        .catchError((e) => debugPrint('$e'), test: (error) => true);
+        .then((value) {
+      if (mounted && showResult) {
+        showSnackBar(AppLocalizations.of(this)!.success);
+      }
+    }).catchError((e) {
+      debugPrint('$e');
+    }, test: (error) => true);
   }
 
   SqliteHelper getSqliteHelper() {

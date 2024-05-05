@@ -91,8 +91,19 @@ class _GalleryListView extends State<GalleryItemListView>
   @override
   void initState() {
     super.initState();
-    click = (g) => Navigator.pushNamed(context, GalleryDetailsView.routeName,
-        arguments: {'gallery': g, 'local': widget.local});
+    click = (g) async {
+      var read = await Navigator.pushNamed(
+          context, GalleryDetailsView.routeName,
+          arguments: {'gallery': g, 'local': widget.local});
+      if (mounted) {
+        (read is int ? Future.value(read) : context.readUserDb(g.id, readMask))
+            .then((value) {
+          setState(() {
+            readIndexMap[g.id] = value;
+          });
+        });
+      }
+    };
     _page = widget.startPage;
     scrollController = ScrollController();
     scrollController.addListener(handleScroll);
@@ -123,6 +134,7 @@ class _GalleryListView extends State<GalleryItemListView>
                       child: Text(AppLocalizations.of(context)!.delete),
                       onTap: () =>
                           context.deleteTask(g.id).then((value) => setState(() {
+                                totalCount -= 1;
                                 data.removeWhere(
                                     (element) => element.id == g.id);
                               })))

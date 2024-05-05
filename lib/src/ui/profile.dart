@@ -249,9 +249,14 @@ class _UserProfileLogView extends State<UserProfileLogView> {
   void didChangeDependencies() {
     super.didChangeDependencies();
     api = context.read<SettingsController>().hitomi(localDb: true);
-    click = (gallery) => Navigator.of(context).pushNamed(
-        GalleryDetailsView.routeName,
-        arguments: {'gallery': gallery, 'local': false});
+    click = (g) async {
+      var read = await Navigator.pushNamed(
+          context, GalleryDetailsView.routeName,
+          arguments: {'gallery': g, 'local': false});
+      setState(() {
+        readIndexMap[g.id] = read as int?;
+      });
+    };
     if (page == 0) {
       fetchDataFromDb();
     }

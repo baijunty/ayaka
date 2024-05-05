@@ -174,6 +174,7 @@ class _GalleryTabView extends State<GalleryTabView>
                                             keyboardType: const TextInputType
                                                 .numberWithOptions(
                                                 signed: true),
+                                            controller: TextEditingController(),
                                             inputFormatters: [
                                               FilteringTextInputFormatter
                                                   .digitsOnly

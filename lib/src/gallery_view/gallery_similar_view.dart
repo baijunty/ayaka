@@ -31,8 +31,19 @@ class _GallerySimilaerView extends State<GallerySimilaerView> {
   @override
   void initState() {
     super.initState();
-    click = (g) => Navigator.of(context).pushNamed(GalleryDetailsView.routeName,
-        arguments: {'gallery': g, 'local': false});
+    click = (g) async {
+      var read = await Navigator.pushNamed(
+          context, GalleryDetailsView.routeName,
+          arguments: {'gallery': g, 'local': false});
+      if (mounted) {
+        (read is int ? Future.value(read) : context.readUserDb(g.id, readMask))
+            .then((value) {
+          setState(() {
+            readIndexMap[g.id] = value;
+          });
+        });
+      }
+    };
   }
 
   @override

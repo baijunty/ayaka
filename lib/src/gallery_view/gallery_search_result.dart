@@ -35,7 +35,6 @@ class _GallerySearchResultView extends State<GallerySearchResultView>
     with AutomaticKeepAliveClientMixin {
   List<Gallery> data = [];
   var _page = 1;
-  int totalPage = 1;
   late void Function(Gallery) click;
   final _ids = <int>[];
   late PopupMenuButton<String> Function(Gallery gallery)? menuBuilder;
@@ -47,8 +46,19 @@ class _GallerySearchResultView extends State<GallerySearchResultView>
   @override
   void initState() {
     super.initState();
-    click = (g) => Navigator.pushNamed(context, GalleryDetailsView.routeName,
-        arguments: {'gallery': g, 'local': widget.local});
+    click = (g) async {
+      var read = await Navigator.pushNamed(
+          context, GalleryDetailsView.routeName,
+          arguments: {'gallery': g, 'local': widget.local});
+      if (mounted) {
+        (read is int ? Future.value(read) : context.readUserDb(g.id, readMask))
+            .then((value) {
+          setState(() {
+            readIndexMap[g.id] = value;
+          });
+        });
+      }
+    };
     scrollController = ScrollController();
     scrollController.addListener(handleScroll);
     menuBuilder = kIsWeb
@@ -68,7 +78,8 @@ class _GallerySearchResultView extends State<GallerySearchResultView>
                   PopupMenuItem(
                       child: Text(AppLocalizations.of(context)!.delete),
                       onTap: () =>
-                          context.cancelTask(g.id).then((value) => setState(() {
+                          context.deleteTask(g.id).then((value) => setState(() {
+                                totalCount -= 1;
                                 data.removeWhere(
                                     (element) => element.id == g.id);
                               })))
@@ -89,7 +100,7 @@ class _GallerySearchResultView extends State<GallerySearchResultView>
             scrollController.position.maxScrollExtent &&
         data.length < totalCount) {
       context.showSnackBar(
-          '$_page/$totalPage ${AppLocalizations.of(context)!.loading}');
+          '$_page/${(totalCount / 25).ceil()} ${AppLocalizations.of(context)!.loading}');
       await _fetchData();
     }
   }
@@ -104,72 +115,69 @@ class _GallerySearchResultView extends State<GallerySearchResultView>
 
   Future<void> _fetchData() async {
     token = CancelToken();
-    if (_page <= totalPage) {
-      netLoading = true;
-      Future<List<int>> idsFuture;
-      if (_page == 1 || _ids.length < totalCount) {
-        idsFuture = widget.api
-            .search(
-                widget.selected
-                        .where(
-                            (element) => (element['include'] ?? true) == true)
-                        .map((e) => fromString(e['type'], e['name']))
-                        .toList() +
-                    context
-                        .read<SettingsController>()
-                        .config
-                        .languages
-                        .map((e) => Language(name: e))
-                        .toList(),
-                exclude: widget.selected
-                    .where((element) => element['include'] == false)
-                    .map((e) => fromString(e['type'], e['name']))
-                    .toList(),
-                page: _page,
-                token: token)
-            .then((value) {
-          totalCount = value.totalCount;
-          totalPage = (value.totalCount / 25).ceil();
-          _ids.addAll(value.data);
-          return _ids;
-        });
-      } else {
-        idsFuture = Future.value(_ids);
-      }
-      idsFuture
-          .then((value) => value.sublist(min(_page * 25 - 25, value.length),
-              min(value.length, _page * 25)))
-          .then((value) => Future.wait(value.map((e) =>
-              widget.api.fetchGallery(e, usePrefence: false, token: token))))
-          .then((value) => context
-              .getManager()
-              .translateLabel(value.fold(
-                  <Label>[],
-                  (previousValue, element) =>
-                      previousValue..addAll(element.labels())))
-              .then((trans) => value))
+    netLoading = true;
+    Future<List<int>> idsFuture;
+    if (_page == 1 || _ids.length < totalCount) {
+      idsFuture = widget.api
+          .search(
+              widget.selected
+                      .where((element) => (element['include'] ?? true) == true)
+                      .map((e) => fromString(e['type'], e['name']))
+                      .toList() +
+                  context
+                      .read<SettingsController>()
+                      .config
+                      .languages
+                      .map((e) => Language(name: e))
+                      .toList(),
+              exclude: widget.selected
+                  .where((element) => element['include'] == false)
+                  .map((e) => fromString(e['type'], e['name']))
+                  .toList(),
+              page: _page,
+              token: token)
           .then((value) {
-        return Future.wait(value.map((e) => context.readUserDb(e.id, readMask)))
-            .then((result) => result.foldIndexed(
-                readIndexMap,
-                (index, previous, element) =>
-                    previous..[value[index].id] = element))
-            .then((map) => value);
-      }).then((value) {
-        setState(() {
-          data.addAll(value);
-          _page++;
-          netLoading = false;
-        });
-      }).catchError((e) {
-        if (mounted) {
-          setState(() {
-            netLoading = false;
-            context.showSnackBar('$e');
-          });
-        }
-      }, test: (error) => true);
+        totalCount = value.totalCount;
+        debugPrint('search found items $totalCount');
+        _ids.addAll(value.data);
+        return _ids;
+      });
+    } else {
+      idsFuture = Future.value(_ids);
     }
+    idsFuture
+        .then((value) => value.sublist(
+            min(_page * 25 - 25, value.length), min(value.length, _page * 25)))
+        .then((value) => Future.wait(value.map((e) =>
+            widget.api.fetchGallery(e, usePrefence: false, token: token))))
+        .then((value) => context
+            .getManager()
+            .translateLabel(value.fold(
+                <Label>[],
+                (previousValue, element) =>
+                    previousValue..addAll(element.labels())))
+            .then((trans) => value))
+        .then((value) {
+      return Future.wait(value.map((e) => context.readUserDb(e.id, readMask)))
+          .then((result) => result.foldIndexed(
+              readIndexMap,
+              (index, previous, element) =>
+                  previous..[value[index].id] = element))
+          .then((map) => value);
+    }).then((value) {
+      setState(() {
+        data.addAll(value);
+        _page++;
+        netLoading = false;
+      });
+    }).catchError((e) {
+      if (mounted) {
+        setState(() {
+          netLoading = false;
+          context.showSnackBar('$e');
+        });
+      }
+    }, test: (error) => true);
   }
 
   @override

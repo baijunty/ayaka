@@ -57,11 +57,14 @@ class _GalleryDetailView extends State<GalleryDetailsView> {
                 return gallery;
               }))
         .then((value) => api.translate(gallery.labels()))
-        .then((value) => setState(() {
-              translates = value;
-              netLoading = false;
-            }))
-        .catchError((e) {
+        .then((value) {
+      if (mounted) {
+        setState(() {
+          translates = value;
+          netLoading = false;
+        });
+      }
+    }).catchError((e) {
       if (mounted) {
         setState(() {
           netLoading = false;
@@ -211,6 +214,7 @@ class _GalleryDetailView extends State<GalleryDetailsView> {
                   extendedInfo: translates,
                   netLoading: netLoading,
                   exist: local,
+                  readIndex: readedIndex,
                   languageChange: (id) async {
                     await api
                         .fetchGallery(id, usePrefence: false)
@@ -278,6 +282,7 @@ class GalleryDetailHead extends StatelessWidget {
   final bool exist;
   final Hitomi api;
   final GalleryTagDetailInfo? tagInfo;
+  final int? readIndex;
   final Function(int id) languageChange;
   const GalleryDetailHead(
       {super.key,
@@ -287,6 +292,7 @@ class GalleryDetailHead extends StatelessWidget {
       required this.netLoading,
       required this.exist,
       required this.languageChange,
+      required this.readIndex,
       this.tagInfo});
 
   Widget headThumbImage(BuildContext context) {
@@ -344,14 +350,22 @@ class GalleryDetailHead extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     var entry = mapGalleryType(context, gallery.type);
-    var size = context.currentDevice() == DeviceInfo.mobile ? 1 : 2;
+    int size;
+    switch (context.currentDevice()) {
+      case DeviceInfo.mobile:
+        size = 2;
+      case DeviceInfo.tablet:
+        size = 5;
+      case DeviceInfo.deskTop:
+        size = 8;
+    }
     var artists = extendedInfo
         .where((element) => element['type'] == 'artist')
         .take(size)
         .toList();
     var groupes = extendedInfo
         .where((element) => element['type'] == 'group')
-        .take(size)
+        .take(size - artists.length)
         .toList();
     var screenWidth = MediaQuery.of(context).size.width;
     var width = min(screenWidth / 3, 300.0);
@@ -369,7 +383,11 @@ class GalleryDetailHead extends StatelessWidget {
         '${gallery.id} screenW $screenWidth w $width h $height totalH $totalHeight $lanuages');
     return SliverAppBar(
         backgroundColor: entry.value,
-        leading: AppBar(backgroundColor: Colors.transparent),
+        leading: AppBar(
+            backgroundColor: Colors.transparent,
+            leading: BackButton(
+              onPressed: () => Navigator.of(context).pop(readIndex),
+            )),
         title:
             Hero(tag: 'gallery_${gallery.id}_name', child: Text(gallery.name)),
         pinned: true,
@@ -377,12 +395,14 @@ class GalleryDetailHead extends StatelessWidget {
         actions: [
           IconButton(
               onPressed: () async {
-                await context.insertToUserDb((gallery).id, bookMark);
+                await context.insertToUserDb((gallery).id, bookMark,
+                    showResult: true);
               },
               icon: const Icon(Icons.bookmark)),
           IconButton(
               onPressed: () async {
-                await context.insertToUserDb((gallery).id, likeMask);
+                await context.insertToUserDb((gallery).id, likeMask,
+                    showResult: true);
               },
               icon: const Icon(Icons.favorite))
         ],

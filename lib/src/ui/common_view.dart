@@ -340,19 +340,19 @@ class TagDetail extends StatelessWidget {
   Widget build(BuildContext context) {
     var dio = context.read<SettingsController>().manager.dio;
     var taskControl = context.read<GalleryManager>();
+    var imgExtension = imageExtension + ['.ico'];
     var imgs = takeUrls(tag['intro'] ?? '')
-        .where((element) => imageExtension
-            .any((extension) => element.value.endsWith(extension)))
+        .where((element) =>
+            imgExtension.any((extension) => element.value.endsWith(extension)))
         .toList();
     var text = takeUrls(tag['intro'] ?? '')
-        .where((element) => !imageExtension
-            .any((extension) => element.value.endsWith(extension)))
+        .where((element) =>
+            !imgExtension.any((extension) => element.value.endsWith(extension)))
         .toList();
     var links = takeUrls(tag['links'] ?? '')
         .where((element) =>
             element.value.isNotEmpty &&
-            !imageExtension
-                .any((extension) => element.value.endsWith(extension)))
+            !imgExtension.any((extension) => element.value.endsWith(extension)))
         .toList();
     return SizedBox(
         height: MediaQuery.of(context).size.height / 2,

@@ -169,7 +169,7 @@ class _GallerySearch extends State<GallerySearch> {
                   controller.openView();
                 },
                 focusNode: focusNode,
-                padding: const MaterialStatePropertyAll<EdgeInsets>(
+                padding: const WidgetStatePropertyAll<EdgeInsets>(
                     EdgeInsets.symmetric(horizontal: 16.0)),
                 leading: const Icon(Icons.search),
                 onSubmitted: (value) async {

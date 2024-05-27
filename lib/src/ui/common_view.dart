@@ -453,7 +453,7 @@ extension ContextAction on BuildContext {
           content: Text(msg, style: Theme.of(this).textTheme.labelMedium),
           duration: const Duration(milliseconds: 2000),
           behavior: SnackBarBehavior.floating,
-          backgroundColor: Theme.of(this).colorScheme.background,
+          backgroundColor: Theme.of(this).colorScheme.surface,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(8.0),
           )));

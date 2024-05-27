@@ -128,7 +128,7 @@ class _GalleryDetailView extends State<GalleryDetailsView> {
             opacity: _selected.isEmpty ? 0 : 1,
             duration: const Duration(milliseconds: 300),
             child: Container(
-                color: Theme.of(context).colorScheme.background,
+                color: Theme.of(context).colorScheme.surface,
                 padding: const EdgeInsets.all(4),
                 child: Row(mainAxisAlignment: MainAxisAlignment.end, children: [
                   if (!kIsWeb)

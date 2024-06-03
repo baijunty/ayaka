@@ -21,6 +21,8 @@ import '../utils/label_utils.dart';
 import '../utils/proxy_network_image.dart';
 import '../utils/responsive_util.dart';
 
+enum GalleryStatus { notExists, exists, upgrade }
+
 class GalleryDetailsView extends StatefulWidget {
   const GalleryDetailsView({super.key});
 
@@ -35,7 +37,7 @@ class GalleryDetailsView extends StatefulWidget {
 class _GalleryDetailView extends State<GalleryDetailsView> {
   late SettingsController controller = context.read<SettingsController>();
   late Gallery gallery;
-  bool local = false;
+  GalleryStatus status = GalleryStatus.notExists;
   bool netLoading = true;
   int? readedIndex;
   CancelToken? token;
@@ -43,7 +45,7 @@ class _GalleryDetailView extends State<GalleryDetailsView> {
   List<Map<String, dynamic>> translates = [];
   Future<void> _fetchTransLate() async {
     var api = controller.hitomi(localDb: true);
-    await (local
+    await (status == GalleryStatus.exists
             ? Future.value(gallery)
             : context
                 .read<GalleryManager>()
@@ -52,7 +54,11 @@ class _GalleryDetailView extends State<GalleryDetailsView> {
                 .then((value) async {
                 if (value?.firstOrNull != null) {
                   gallery = await api.fetchGallery(value!.first, token: token);
-                  local = true;
+                  if (gallery.id != value.first) {
+                    status = GalleryStatus.upgrade;
+                  } else {
+                    status = GalleryStatus.exists;
+                  }
                 }
                 return gallery;
               }))
@@ -88,7 +94,10 @@ class _GalleryDetailView extends State<GalleryDetailsView> {
       var args =
           ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>;
       gallery = args['gallery'];
-      local = args['local'] ?? local;
+      bool local = args['local'] ?? false;
+      if (local) {
+        status = GalleryStatus.exists;
+      }
       token = CancelToken();
       _fetchTransLate();
     }
@@ -106,7 +115,7 @@ class _GalleryDetailView extends State<GalleryDetailsView> {
       await Navigator.pushNamed(context, GalleryViewer.routeName, arguments: {
         'gallery': gallery,
         'index': index,
-        'local': local,
+        'local': status != GalleryStatus.notExists,
       });
     } else {
       setState(() {
@@ -121,7 +130,7 @@ class _GalleryDetailView extends State<GalleryDetailsView> {
   }
 
   Widget imagesToolbar() {
-    var api = controller.hitomi(localDb: local);
+    var api = controller.hitomi(localDb: status != GalleryStatus.notExists);
     return Align(
         alignment: Alignment.bottomCenter,
         child: AnimatedOpacity(
@@ -187,7 +196,7 @@ class _GalleryDetailView extends State<GalleryDetailsView> {
 
   @override
   Widget build(BuildContext context) {
-    var api = controller.hitomi(localDb: local);
+    var api = controller.hitomi(localDb: status != GalleryStatus.notExists);
     var refererUrl = 'https://hitomi.la${gallery.urlEncode()}';
     var isDeskTop = context.currentDevice() == DeviceInfo.deskTop;
     var tagInfo = GalleryTagDetailInfo(
@@ -209,11 +218,11 @@ class _GalleryDetailView extends State<GalleryDetailsView> {
             CustomScrollView(key: ValueKey(gallery.id), slivers: [
               GalleryDetailHead(
                   key: ValueKey('head ${gallery.id}'),
-                  api: controller.hitomi(localDb: local),
+                  api: api,
                   gallery: gallery,
                   extendedInfo: translates,
                   netLoading: netLoading,
-                  exist: local,
+                  status: status,
                   readIndex: readedIndex,
                   languageChange: (id) async {
                     await api
@@ -279,7 +288,7 @@ class GalleryDetailHead extends StatelessWidget {
   final Gallery gallery;
   final List<Map<String, dynamic>> extendedInfo;
   final bool netLoading;
-  final bool exist;
+  final GalleryStatus status;
   final Hitomi api;
   final GalleryTagDetailInfo? tagInfo;
   final int? readIndex;
@@ -290,7 +299,7 @@ class GalleryDetailHead extends StatelessWidget {
       required this.gallery,
       required this.extendedInfo,
       required this.netLoading,
-      required this.exist,
+      required this.status,
       required this.languageChange,
       required this.readIndex,
       this.tagInfo});
@@ -325,21 +334,31 @@ class GalleryDetailHead extends StatelessWidget {
         Expanded(
             child: Padding(
                 padding: const EdgeInsets.only(right: 8),
-                child: OutlinedButton(
-                    onPressed: netLoading || exist
-                        ? null
-                        : () async {
-                            await context.addTask(gallery.id);
-                          },
-                    child: Text(exist
-                        ? AppLocalizations.of(context)!.downloaded
-                        : AppLocalizations.of(context)!.download)))),
+                child: netLoading
+                    ? null
+                    : switch (status) {
+                        GalleryStatus.notExists => OutlinedButton(
+                            onPressed: () async {
+                              await context.addTask(gallery.id);
+                            },
+                            child:
+                                Text(AppLocalizations.of(context)!.download)),
+                        GalleryStatus.exists => OutlinedButton(
+                            onPressed: null,
+                            child:
+                                Text(AppLocalizations.of(context)!.downloaded)),
+                        GalleryStatus.upgrade => OutlinedButton(
+                            onPressed: () async {
+                              await context.addTask(gallery.id);
+                            },
+                            child: Text(AppLocalizations.of(context)!.update)),
+                      })),
       Expanded(
         child: FilledButton(
             onPressed: () => Navigator.of(context)
                     .pushNamed(GalleryViewer.routeName, arguments: {
                   'gallery': gallery,
-                  'local': exist,
+                  'local': status != GalleryStatus.notExists,
                 }),
             child: Text(AppLocalizations.of(context)!.read)),
       ),

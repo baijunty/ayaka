@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:ayaka/src/gallery_view/gallery_details_view.dart';
 import 'package:ayaka/src/settings/settings_controller.dart';
 import 'package:ayaka/src/utils/common_define.dart';
@@ -7,7 +9,7 @@ import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:hitomi/gallery/gallery.dart';
 import 'package:hitomi/lib.dart';
 import 'package:provider/provider.dart';
-
+import 'package:hitomi/gallery/image.dart' as img show ThumbnaiSize, Image;
 import '../utils/proxy_network_image.dart';
 import 'common_view.dart';
 
@@ -124,12 +126,90 @@ class _UserProfileView extends State<UserProfileView>
         _galleryList(likes),
         _itemTitle(AppLocalizations.of(context)!.collect, bookMark),
         _galleryList(collection),
+        ListTile(
+          title: Text(AppLocalizations.of(context)!.adImage,
+              style: Theme.of(context).textTheme.titleLarge),
+          tileColor: Theme.of(context).colorScheme.primaryContainer,
+          trailing: const Icon(Icons.arrow_forward),
+          onTap: () => Navigator.of(context).push(
+              MaterialPageRoute(builder: (context) => const AdImageView())),
+        ),
       ],
     ))));
   }
 
   @override
   bool get wantKeepAlive => true;
+}
+
+class AdImageView extends StatefulWidget {
+  const AdImageView({super.key});
+  @override
+  State<StatefulWidget> createState() {
+    return _AdImageView();
+  }
+}
+
+class _AdImageView extends State<AdImageView> {
+  final List<String> adImages = [];
+  late Hitomi api;
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    var controller = context.read<SettingsController>();
+    api = controller.hitomi();
+    if (adImages.isEmpty) {
+      controller.manager.dio
+          .get<String>('${controller.config.remoteHttp}/adList')
+          .then((data) => json.decode(data.data!) as List)
+          .then((list) => list.map((str) => str as String))
+          .then((d) => setState(() {
+                var set = d.toSet();
+                set.addAll(controller.manager.adImage);
+                adImages.addAll(set);
+                debugPrint('ad image length  ${adImages.length}');
+              }));
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+        appBar: AppBar(
+          title: Text(AppLocalizations.of(context)!.adImage),
+          actions: const [],
+        ),
+        body: SafeArea(
+            child: Center(
+                child: MaxWidthBox(
+                    maxWidth: 1280,
+                    child: GridView.builder(
+                        gridDelegate:
+                            const SliverGridDelegateWithMaxCrossAxisExtent(
+                                maxCrossAxisExtent: 320),
+                        itemCount: adImages.length,
+                        itemBuilder: (context, index) {
+                          var image = adImages[index];
+                          return GestureDetector(
+                            child: ThumbImageView(ProxyNetworkImage(
+                                dataStream: (chunkEvents) => api.fetchImageData(
+                                    img.Image(
+                                        hash: image,
+                                        hasavif: 0,
+                                        width: 0,
+                                        haswebp: 0,
+                                        name: image,
+                                        height: 0),
+                                    size: img.ThumbnaiSize.medium,
+                                    refererUrl: 'https://hitomi.la',
+                                    onProcess: (now, total) => chunkEvents.add(
+                                        ImageChunkEvent(
+                                            cumulativeBytesLoaded: now,
+                                            expectedTotalBytes: total))),
+                                key: image)),
+                          );
+                        })))));
+  }
 }
 
 class UserProfileLogView extends StatefulWidget {

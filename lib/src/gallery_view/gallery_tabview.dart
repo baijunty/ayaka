@@ -63,11 +63,19 @@ class _GalleryTabView extends State<GalleryTabView>
         args != null && tags.first['name'] != '' && tags.first['type'] != 'type'
             ? [
                 GallerySearchResultView(
-                    api: controller.hitomi(), selected: tags, local: false),
+                    key: ValueKey(pageKey[0]),
+                    api: controller.hitomi(),
+                    selected: tags,
+                    local: false,
+                    dateDesc: pageKey[0].value,
+                    startPage: pageKey[0].key),
                 GallerySearchResultView(
+                    key: ValueKey(pageKey[1]),
                     api: controller.hitomi(localDb: true),
                     selected: tags,
-                    local: true)
+                    local: true,
+                    dateDesc: pageKey[1].value,
+                    startPage: pageKey[0].key)
               ]
             : kIsWeb
                 ? [
@@ -109,7 +117,9 @@ class _GalleryTabView extends State<GalleryTabView>
   Widget _sortWidget() {
     return PopupMenuButton<SortEnum>(
         itemBuilder: (context) {
-          return pageController.page == 1 || kIsWeb
+          return pageController.page == 1 ||
+                  kIsWeb ||
+                  children[0] is GallerySearchResultView
               ? <PopupMenuEntry<SortEnum>>[
                   PopupMenuItem(
                       value: SortEnum.Default,
@@ -158,15 +168,19 @@ class _GalleryTabView extends State<GalleryTabView>
                       pinned: true,
                       floating: true,
                       snap: true,
-                      title: const GallerySearch(),
+                      title: children[0] is GallerySearchResultView
+                          ? Text(tags.fold(
+                              '',
+                              (acc, tag) =>
+                                  '${acc + (tag['translate'] ?? tag['name'])},'))
+                          : const GallerySearch(),
                       bottom: TabBar(
                           tabs: tabs,
                           controller: tabController,
                           onTap: (value) => pageController.jumpToPage(value)),
                       actions: tags.length <= 1
                           ? [
-                              if (children[0] is GalleryItemListView)
-                                _sortWidget(),
+                              _sortWidget(),
                               IconButton(
                                   onPressed: () async {
                                     var s = await context.showDialogInput(

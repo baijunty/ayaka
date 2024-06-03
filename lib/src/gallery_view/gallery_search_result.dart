@@ -20,11 +20,15 @@ class GallerySearchResultView extends StatefulWidget {
   final Hitomi api;
   final List<Map<String, dynamic>> selected;
   final bool local;
+  final int startPage;
+  final SortEnum dateDesc;
   const GallerySearchResultView(
       {super.key,
       required this.api,
       required this.selected,
-      required this.local});
+      required this.local,
+      required this.dateDesc,
+      this.startPage = 1});
   @override
   State<StatefulWidget> createState() {
     return _GallerySearchResultView();
@@ -109,6 +113,7 @@ class _GallerySearchResultView extends State<GallerySearchResultView>
   void didChangeDependencies() {
     super.didChangeDependencies();
     if (_page == 1) {
+      _page = widget.startPage;
       _fetchData();
     }
   }
@@ -117,7 +122,7 @@ class _GallerySearchResultView extends State<GallerySearchResultView>
     token = CancelToken();
     netLoading = true;
     Future<List<int>> idsFuture;
-    if (_page == 1 || _ids.length < totalCount) {
+    if (_page == widget.startPage || _ids.length < totalCount) {
       idsFuture = widget.api
           .search(
               widget.selected
@@ -135,10 +140,12 @@ class _GallerySearchResultView extends State<GallerySearchResultView>
                   .map((e) => fromString(e['type'], e['name']))
                   .toList(),
               page: _page,
+              sort: widget.dateDesc,
               token: token)
           .then((value) {
         totalCount = value.totalCount;
-        debugPrint('search found items $totalCount');
+        debugPrint(
+            'search found items $totalCount sample ${value.data.take(5).toList()}');
         _ids.addAll(value.data);
         return _ids;
       });
@@ -147,7 +154,8 @@ class _GallerySearchResultView extends State<GallerySearchResultView>
     }
     idsFuture
         .then((value) => value.sublist(
-            min(_page * 25 - 25, value.length), min(value.length, _page * 25)))
+            min((_page - widget.startPage) * 25, value.length),
+            min(value.length, (_page - widget.startPage + 1) * 25)))
         .then((value) => Future.wait(value.map((e) =>
             widget.api.fetchGallery(e, usePrefence: false, token: token))))
         .then((value) => context

@@ -53,8 +53,12 @@ class _GalleryDetailView extends State<GalleryDetailsView> {
                 .then((value) => value['value'] as List<dynamic>?)
                 .then((value) async {
                 if (value?.firstOrNull != null) {
+                  var before = gallery.files.length;
                   gallery = await api.fetchGallery(value!.first, token: token);
-                  if (gallery.id != value.first) {
+                  debugPrint(
+                      'gallery id: ${gallery.id} down id ${value.first}');
+                  if (gallery.id != value.first ||
+                      gallery.files.length != before) {
                     status = GalleryStatus.upgrade;
                   } else {
                     status = GalleryStatus.exists;

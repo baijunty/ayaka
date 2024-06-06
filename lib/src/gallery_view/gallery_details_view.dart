@@ -53,12 +53,16 @@ class _GalleryDetailView extends State<GalleryDetailsView> {
                 .then((value) => value['value'] as List<dynamic>?)
                 .then((value) async {
                 if (value?.firstOrNull != null) {
-                  var before = gallery.files.length;
                   gallery = await api.fetchGallery(value!.first, token: token);
+                  var before = await controller
+                      .hitomi()
+                      .fetchGallery(value.first,
+                          token: token, usePrefence: false)
+                      .catchError((e) => gallery, test: (error) => true);
                   debugPrint(
-                      'gallery id: ${gallery.id} down id ${value.first}');
-                  if (gallery.id != value.first ||
-                      gallery.files.length != before) {
+                      'gallery id: ${gallery.id} compare to id ${value.first} before ${before.files.length} now len ${gallery.files.length}');
+                  if (before.id != value.first ||
+                      gallery.files.length != before.files.length) {
                     status = GalleryStatus.upgrade;
                   } else {
                     status = GalleryStatus.exists;
@@ -465,38 +469,44 @@ class GalleryDetailHead extends StatelessWidget {
                                     commondPrefix: '--${group['type']}',
                                     icon: const Icon(Icons.group))
                             ])),
-                  Row(children: [
-                    TagButton(label: {
-                      ...TypeLabel(gallery.type).toMap(),
-                      'translate': entry.key
-                    }),
-                    const SizedBox(width: 16),
-                    if (lanuages?.isNotEmpty == true)
-                      DropdownButton<int>(
-                          items: [
-                            if (lanuages!.every((element) =>
-                                element.galleryid!.toInt() != gallery.id))
-                              DropdownMenuItem(
-                                  value: gallery.id,
-                                  child: Text(mapLangugeType(
-                                      context, gallery.language ?? ''))),
-                            for (var language in lanuages)
-                              DropdownMenuItem(
-                                  value: language.galleryid!.toInt(),
-                                  child: Text(
-                                      mapLangugeType(context, language.name))),
-                          ],
-                          value: gallery.id,
-                          onChanged: (id) {
-                            if (id != null) {
-                              languageChange(id);
-                            }
-                          })
-                    else
-                      Text(mapLangugeType(context, gallery.language ?? '')),
-                    const SizedBox(width: 16),
-                    Text(formater.formatString(gallery.date)),
-                  ]),
+                  SizedBox(
+                      height: 40,
+                      child:
+                          ListView(scrollDirection: Axis.horizontal, children: [
+                        Row(children: [
+                          TagButton(label: {
+                            ...TypeLabel(gallery.type).toMap(),
+                            'translate': entry.key
+                          }),
+                          const SizedBox(width: 16),
+                          if (lanuages?.isNotEmpty == true)
+                            DropdownButton<int>(
+                                items: [
+                                  if (lanuages!.every((element) =>
+                                      element.galleryid!.toInt() != gallery.id))
+                                    DropdownMenuItem(
+                                        value: gallery.id,
+                                        child: Text(mapLangugeType(
+                                            context, gallery.language ?? ''))),
+                                  for (var language in lanuages)
+                                    DropdownMenuItem(
+                                        value: language.galleryid!.toInt(),
+                                        child: Text(mapLangugeType(
+                                            context, language.name))),
+                                ],
+                                value: gallery.id,
+                                onChanged: (id) {
+                                  if (id != null) {
+                                    languageChange(id);
+                                  }
+                                })
+                          else
+                            Text(mapLangugeType(
+                                context, gallery.language ?? '')),
+                          const SizedBox(width: 16),
+                          Text(formater.formatString(gallery.date)),
+                        ])
+                      ])),
                   if (tagInfo != null) tagInfo!,
                 ])),
           ])

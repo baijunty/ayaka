@@ -5,6 +5,7 @@ import 'package:ayaka/src/gallery_view/gallery_tabview.dart';
 import 'package:ayaka/src/utils/proxy_network_image.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 import 'package:hitomi/gallery/gallery.dart';
@@ -119,26 +120,43 @@ class GalleryListView extends StatelessWidget {
   });
 
   Widget dataList() {
-    return LayoutBuilder(builder: (context, cons) {
-      return MasonryGridView.count(
-          controller: scrollController,
-          mainAxisSpacing: 8,
-          crossAxisSpacing: 8,
-          crossAxisCount: max(cons.maxWidth ~/ 550, 1),
-          itemCount: data.length,
-          physics: const AlwaysScrollableScrollPhysics(),
-          itemBuilder: (BuildContext context, int index) {
-            final item = data[index];
-            return GalleryInfo(
-              key: ValueKey(item.id),
-              gallery: item,
-              click: click,
-              api: api,
-              menus: menusBuilder?.call(item),
-              readIndex: readIndexMap[item.id],
-            );
-          });
-    });
+    return KeyboardListener(
+        focusNode: FocusNode(),
+        onKeyEvent: (value) {
+          if ((value.physicalKey == PhysicalKeyboardKey.arrowDown) &&
+              scrollController != null) {
+            scrollController!.animateTo(
+                scrollController!.position.pixels + 500.0,
+                duration: const Duration(milliseconds: 250),
+                curve: Curves.easeInOut);
+          } else if ((value.physicalKey == PhysicalKeyboardKey.arrowUp) &&
+              scrollController != null) {
+            scrollController!.animateTo(
+                scrollController!.position.pixels - 500.0,
+                duration: const Duration(milliseconds: 250),
+                curve: Curves.easeInOut);
+          }
+        },
+        child: LayoutBuilder(builder: (context, cons) {
+          return MasonryGridView.count(
+              controller: scrollController,
+              mainAxisSpacing: 8,
+              crossAxisSpacing: 8,
+              crossAxisCount: max(cons.maxWidth ~/ 550, 1),
+              itemCount: data.length,
+              physics: const AlwaysScrollableScrollPhysics(),
+              itemBuilder: (BuildContext context, int index) {
+                final item = data[index];
+                return GalleryInfo(
+                  key: ValueKey(item.id),
+                  gallery: item,
+                  click: click,
+                  api: api,
+                  menus: menusBuilder?.call(item),
+                  readIndex: readIndexMap[item.id],
+                );
+              });
+        }));
   }
 
   @override
@@ -166,7 +184,6 @@ class GalleryInfo extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     var entry = mapGalleryType(context, gallery.type);
-    var image = gallery.files.first;
     return LayoutBuilder(builder: (context, cons) {
       return InkWell(
           key: ValueKey(gallery.id),
@@ -175,34 +192,39 @@ class GalleryInfo extends StatelessWidget {
             decoration: ShapeDecoration(
                 color: entry.value,
                 shape: LinearBorder.bottom(
-                    size: (readIndex != null ? (readIndex! + 1) : 0) /
-                        gallery.files.length,
+                    size: (readIndex != null && gallery.files.isNotEmpty)
+                        ? (readIndex! + 1) / gallery.files.length
+                        : 0,
                     side: const BorderSide(color: Colors.green, width: 2))),
             child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
               MaxWidthBox(
                   maxWidth: min(cons.maxWidth / 3, 300),
                   child: Hero(
                       tag: 'gallery-thumb ${gallery.id}',
-                      child: ThumbImageView(
-                          ProxyNetworkImage(
-                              dataStream: (chunkEvents) => api.fetchImageData(
-                                    gallery.files.first,
-                                    id: gallery.id,
-                                    size: img.ThumbnaiSize.medium,
-                                    refererUrl:
-                                        'https://hitomi.la${gallery.urlEncode()}',
-                                    onProcess: (now, total) => chunkEvents.add(
-                                        ImageChunkEvent(
-                                            cumulativeBytesLoaded: now,
-                                            expectedTotalBytes: total)),
-                                  ),
-                              key: gallery.files.first.hash),
-                          label: Text(gallery.files.length.toString(),
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .labelLarge
-                                  ?.copyWith(color: Colors.deepOrange)),
-                          aspectRatio: image.width / image.height))),
+                      child: gallery.files.isEmpty
+                          ? const Icon(Icons.error)
+                          : ThumbImageView(
+                              ProxyNetworkImage(
+                                  dataStream: (chunkEvents) =>
+                                      api.fetchImageData(
+                                        gallery.files.first,
+                                        id: gallery.id,
+                                        size: img.ThumbnaiSize.medium,
+                                        refererUrl:
+                                            'https://hitomi.la${gallery.urlEncode()}',
+                                        onProcess: (now, total) =>
+                                            chunkEvents.add(ImageChunkEvent(
+                                                cumulativeBytesLoaded: now,
+                                                expectedTotalBytes: total)),
+                                      ),
+                                  key: gallery.files.first.hash),
+                              label: Text(gallery.files.length.toString(),
+                                  style: Theme.of(context)
+                                      .textTheme
+                                      .labelLarge
+                                      ?.copyWith(color: Colors.deepOrange)),
+                              aspectRatio: gallery.files.first.width /
+                                  gallery.files.first.height))),
               Expanded(
                   child: Stack(children: [
                 Column(

@@ -3,6 +3,7 @@ import 'package:ayaka/src/ui/common_view.dart';
 import 'package:ayaka/src/utils/common_define.dart';
 import 'package:easy_image_viewer/easy_image_viewer.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:hitomi/gallery/gallery.dart';
 import 'package:hitomi/gallery/image.dart' show ThumbnaiSize;
 import 'package:provider/provider.dart';
@@ -26,7 +27,7 @@ class _GalleryViewer extends State<GalleryViewer>
   var showAppBar = false;
   late PageController controller;
   late MultiImageProvider provider;
-
+  final FocusNode focusNode = FocusNode();
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
@@ -73,50 +74,72 @@ class _GalleryViewer extends State<GalleryViewer>
   void dispose() {
     super.dispose();
     controller.dispose();
+    focusNode.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-        body: SafeArea(
-            child: Stack(children: [
-      SizedBox.expand(
-          child: Center(
-              child: GestureDetector(
-                  child: EasyImageViewPager(
-                      easyImageProvider: provider,
-                      doubleTapZoomable: true,
-                      pageController: controller),
-                  onTap: () => setState(() {
-                        showAppBar = !showAppBar;
-                      })))),
-      AnimatedOpacity(
-          key: GlobalObjectKey(_gallery),
-          duration: const Duration(milliseconds: 250),
-          opacity: showAppBar ? 1.0 : 0.0,
-          curve: Curves.easeInOut,
-          child: SizedBox(
-              height: 56,
-              child: AppBar(
-                  title: Column(children: [
-                    Text(
-                        '${_gallery.name}-${index + 1}/${_gallery.files.length}'),
-                    Slider(
-                      value: index.toDouble(),
-                      max: _gallery.files.length.toDouble(),
-                      divisions: _gallery.files.length,
-                      label: index.toString(),
-                      onChanged: (double value) {
-                        setState(() {
-                          index = value.floor();
-                          controller.jumpToPage(index);
-                        });
-                      },
-                    )
-                  ]),
-                  backgroundColor: Theme.of(context).primaryColor,
-                  leading: BackButton(
-                      onPressed: () => Navigator.of(context).pop())))),
-    ])));
+    return KeyboardListener(
+        focusNode: focusNode,
+        onKeyEvent: (value) {
+          if ((value.physicalKey == PhysicalKeyboardKey.arrowLeft) &&
+              index > 0) {
+            setState(() {
+              controller.previousPage(
+                  duration: const Duration(milliseconds: 250),
+                  curve: Curves.easeInOut);
+            });
+          } else if ((value.physicalKey == PhysicalKeyboardKey.arrowRight) &&
+              index < _gallery.files.length - 1) {
+            setState(() {
+              controller.nextPage(
+                  duration: const Duration(milliseconds: 250),
+                  curve: Curves.easeInOut);
+            });
+          }
+        },
+        child: Scaffold(
+            body: SafeArea(
+                child: Stack(children: [
+          SizedBox.expand(
+              child: Center(
+                  child: GestureDetector(
+                      child: EasyImageViewPager(
+                          easyImageProvider: provider,
+                          doubleTapZoomable: true,
+                          pageController: controller),
+                      onTap: () => setState(() {
+                            showAppBar = !showAppBar;
+                          })))),
+          AnimatedOpacity(
+              key: GlobalObjectKey(_gallery),
+              duration: const Duration(milliseconds: 250),
+              opacity: showAppBar ? 1.0 : 0.0,
+              curve: Curves.easeInOut,
+              child: SizedBox(
+                  height: 56,
+                  child: AppBar(
+                      title: Column(children: [
+                        Text(
+                            '${_gallery.name}-${index + 1}/${_gallery.files.length}'),
+                        Slider(
+                          value: index.toDouble(),
+                          max: _gallery.files.length.toDouble(),
+                          divisions: _gallery.files.length,
+                          label: index.toString(),
+                          onChanged: (double value) {
+                            setState(() {
+                              index = value.floor();
+                              controller.animateToPage(index,
+                                  duration: const Duration(milliseconds: 250),
+                                  curve: Curves.easeInOut);
+                            });
+                          },
+                        )
+                      ]),
+                      backgroundColor: Theme.of(context).primaryColor,
+                      leading: BackButton(
+                          onPressed: () => Navigator.of(context).pop())))),
+        ]))));
   }
 }

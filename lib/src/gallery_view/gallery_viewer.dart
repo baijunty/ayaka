@@ -57,6 +57,12 @@ class _GalleryViewer extends State<GalleryViewer>
       context
           .readUserDb(_gallery.id, readMask)
           .then((value) => (value ?? 0))
+          .then((value) => context
+              .read<SettingsController>()
+              .manager
+              .helper
+              .delete('UserLog', {'id': _gallery.id, 'type': readMask}).then(
+                  (r) => value))
           .then((value) => controller.jumpToPage(value));
     }
   }
@@ -66,7 +72,6 @@ class _GalleryViewer extends State<GalleryViewer>
       index = controller.page!.toInt();
       await context.insertToUserDb(_gallery.id, readMask,
           data: index, content: _gallery.name);
-      setState(() {});
     }
   }
 

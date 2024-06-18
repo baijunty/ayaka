@@ -87,14 +87,13 @@ class _GalleryViewer extends State<GalleryViewer>
     return KeyboardListener(
         focusNode: focusNode,
         onKeyEvent: (value) {
-          if ((value.physicalKey == PhysicalKeyboardKey.arrowLeft) &&
-              index > 0) {
+          if (value.physicalKey == PhysicalKeyboardKey.arrowLeft && index > 0) {
             setState(() {
               controller.previousPage(
                   duration: const Duration(milliseconds: 250),
                   curve: Curves.easeInOut);
             });
-          } else if ((value.physicalKey == PhysicalKeyboardKey.arrowRight) &&
+          } else if (value.physicalKey == PhysicalKeyboardKey.arrowRight &&
               index < _gallery.files.length - 1) {
             setState(() {
               controller.nextPage(
@@ -116,10 +115,12 @@ class _GalleryViewer extends State<GalleryViewer>
                       onTap: () => setState(() {
                             showAppBar = !showAppBar;
                           })))),
-          AnimatedOpacity(
+          AnimatedPadding(
               key: GlobalObjectKey(_gallery),
               duration: const Duration(milliseconds: 250),
-              opacity: showAppBar ? 1.0 : 0.0,
+              padding: showAppBar
+                  ? const EdgeInsets.only(left: 0)
+                  : EdgeInsets.only(left: MediaQuery.of(context).size.width),
               curve: Curves.easeInOut,
               child: SizedBox(
                   height: 56,

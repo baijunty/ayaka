@@ -4,6 +4,9 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_cache_manager/flutter_cache_manager.dart';
 import 'package:hitomi/gallery/image.dart';
 import 'package:hitomi/lib.dart';
+import 'package:path/path.dart';
+
+import '../utils/responsive_util.dart';
 
 class HitomiImageCacheManager extends CacheManager with ImageCacheManager {
   static const key = 'hitomiCacheKey';
@@ -12,7 +15,7 @@ class HitomiImageCacheManager extends CacheManager with ImageCacheManager {
       : super(Config(key,
             stalePeriod: const Duration(days: 7),
             maxNrOfCacheObjects: 20,
-            repo: JsonCacheInfoRepository(databaseName: key),
+            repo: defaultCacheInfoRepository(),
             fileService: ProxyImageServer(hitomi)));
 }
 
@@ -54,17 +57,17 @@ class ProxyImageServer extends FileService {
       contentStream.close();
       streamController.close();
     }, test: (error) => true);
-    return HitomiFileServiceResponse(contentStream.stream, '$url(${size.name})',
-        await streamController.stream.first);
+    return HitomiFileServiceResponse(contentStream.stream, url,
+        await streamController.stream.first, extension(headers['name']!));
   }
 }
 
 class HitomiFileServiceResponse extends FileServiceResponse {
-  final DateTime _receivedTime = DateTime.now();
   final Stream<List<int>> data;
   final String url;
   final int length;
-  HitomiFileServiceResponse(this.data, this.url, this.length);
+  final String extension;
+  HitomiFileServiceResponse(this.data, this.url, this.length, this.extension);
 
   @override
   Stream<List<int>> get content => data;
@@ -76,11 +79,11 @@ class HitomiFileServiceResponse extends FileServiceResponse {
   String? get eTag => url;
 
   @override
-  String get fileExtension => '.jpg';
+  String get fileExtension => extension;
 
   @override
   int get statusCode => 200;
 
   @override
-  DateTime get validTill => _receivedTime.add(const Duration(days: 7));
+  DateTime get validTill => DateTime.now().add(const Duration(days: 30));
 }

@@ -22,7 +22,7 @@ class MyApp extends StatelessWidget {
     return FutureBuilder(
         future: settingsController.loadConfig(),
         builder: (context, snap) {
-          debugPrint('load result ${snap.data}');
+          debugPrint('load result ${snap.data} error ${snap.error}');
           if (snap.hasData) {
             return ListenableBuilder(
               listenable: settingsController,

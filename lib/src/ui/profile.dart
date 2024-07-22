@@ -192,7 +192,7 @@ class _AdImageView extends State<AdImageView> {
                                     hasavif: 0,
                                     width: 0,
                                     height: 0,
-                                    name: '',
+                                    name: 'test.jpg',
                                     haswebp: 0),
                                 refererUrl: 'https://hitomi.la',
                                 id: '')),

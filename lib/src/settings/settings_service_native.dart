@@ -3,8 +3,10 @@ import 'dart:io';
 
 import 'package:ayaka/src/settings/settings_service.dart';
 import 'package:collection/collection.dart';
+import 'package:flutter_cache_manager/flutter_cache_manager.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 
 SettingsService initService() {
   return const SettingsServiceNativeImpl();
@@ -18,6 +20,12 @@ Future<String?> localIpAddress() async {
   return NetworkInterface.list().then((value) => value.firstOrNull?.addresses
       .firstWhereOrNull((element) => element.type == InternetAddressType.IPv4)
       ?.address);
+}
+
+CacheInfoRepository initCacheInfoRepository() {
+  sqfliteFfiInit();
+  databaseFactory = databaseFactoryFfi;
+  return CacheObjectProvider(databaseName: 'ayaka_cache');
 }
 
 class SettingsServiceNativeImpl implements SettingsService {

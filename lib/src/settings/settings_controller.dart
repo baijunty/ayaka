@@ -9,6 +9,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_cache_manager/flutter_cache_manager.dart';
 import 'package:hitomi/lib.dart';
 import 'settings_service.dart';
+
 /// A class that many Widgets can interact with to read user settings, update
 /// user settings, or listen to user settings changes.
 ///
@@ -48,22 +49,26 @@ class SettingsController with ChangeNotifier {
             (value) => ThemeMode.values
                 .firstWhereOrNull((element) => element.name == value)) ??
         ThemeMode.system;
-    _config = await _settingsService.readConfig<String>('config').then((value) {
+    _config = await _settingsService
+        .readConfig<String>('config', defaultValue: '')
+        .then((value) {
       return UserConfig.fromStr(value ?? '');
     }).catchError(
-        (e) => UserConfig('',
-            languages: const ["japanese", "chinese"],
-            maxTasks: 5,
-            dateLimit: "2013-01-01",
-            remoteHttp: 'https://ayaka.lol'),
-        test: (error) => true);
+            (e) => UserConfig('',
+                languages: const ["japanese", "chinese"],
+                maxTasks: 5,
+                dateLimit: "2013-01-01",
+                remoteHttp: 'http://192.168.1.107:7890'),
+            test: (error) => true);
     _useProxy =
         await _settingsService.readConfig<bool>('useProxy') ?? _useProxy;
     runServer = !kIsWeb &&
         (await _settingsService.readConfig<bool>('runServer') ?? runServer);
     _manager = TaskManager(_config);
+    debugPrint('load config $_config $useProxy $runServer');
     _cacheManager = HitomiImageCacheManager(hitomi());
     _localCacheManager = HitomiImageCacheManager(hitomi(localDb: true));
+    debugPrint('load cache $_cacheManager');
     return !kIsWeb && runServer
         ? run_server(_manager)
             .then((value) => _config)

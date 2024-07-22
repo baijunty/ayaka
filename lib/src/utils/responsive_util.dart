@@ -2,6 +2,7 @@ import 'package:ayaka/src/settings/settings_service.dart';
 import 'package:flutter/material.dart';
 import 'package:ayaka/src/settings/settings_service_native.dart'
     if (dart.library.html) 'package:ayaka/src/settings/settings_service_web.dart';
+import 'package:flutter_cache_manager/flutter_cache_manager.dart';
 
 extension Responsive on BuildContext {
   DeviceInfo currentDevice() {
@@ -30,6 +31,10 @@ Future<String> defaultSavePath() async {
 
 Future<String?> localIp() async {
   return localIpAddress();
+}
+
+CacheInfoRepository defaultCacheInfoRepository() {
+  return initCacheInfoRepository();
 }
 
 enum DeviceInfo { deskTop, mobile, tablet }

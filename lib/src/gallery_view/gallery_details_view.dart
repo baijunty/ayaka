@@ -7,6 +7,7 @@ import 'package:ayaka/src/ui/animation_view.dart';
 import 'package:card_loading/card_loading.dart';
 import 'package:collection/collection.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter_cache_manager/flutter_cache_manager.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:ayaka/src/ui/common_view.dart';
 import 'package:ayaka/src/utils/common_define.dart';
@@ -226,7 +227,8 @@ class _GalleryDetailView extends State<GalleryDetailsView> {
             CustomScrollView(key: ValueKey(gallery.id), slivers: [
               GalleryDetailHead(
                   key: ValueKey('head ${gallery.id}'),
-                  api: api,
+                  manager: context.getCacheManager(
+                      local: status != GalleryStatus.notExists),
                   gallery: gallery,
                   extendedInfo: translates,
                   netLoading: netLoading,
@@ -262,17 +264,12 @@ class _GalleryDetailView extends State<GalleryDetailsView> {
                         child: Card.outlined(
                             child: Center(
                                 child: ThumbImageView(
-                          ProxyNetworkImage(
-                              dataStream: (chunkEvents) => api.fetchImageData(
-                                  image,
-                                  id: gallery.id,
-                                  size: img.ThumbnaiSize.medium,
-                                  refererUrl: refererUrl,
-                                  onProcess: (now, total) => chunkEvents.add(
-                                      ImageChunkEvent(
-                                          cumulativeBytesLoaded: now,
-                                          expectedTotalBytes: total))),
-                              key: image.hash),
+                          CacheImage(
+                              manager: context.getCacheManager(
+                                  local: status != GalleryStatus.notExists),
+                              image: image,
+                              refererUrl: refererUrl,
+                              id: gallery.id.toString()),
                           label: _selected.isEmpty
                               ? Text('${index + 1}',
                                   style: Theme.of(context)
@@ -297,13 +294,13 @@ class GalleryDetailHead extends StatelessWidget {
   final List<Map<String, dynamic>> extendedInfo;
   final bool netLoading;
   final GalleryStatus status;
-  final Hitomi api;
+  final CacheManager manager;
   final GalleryTagDetailInfo? tagInfo;
   final int? readIndex;
   final Function(int id) languageChange;
   const GalleryDetailHead(
       {super.key,
-      required this.api,
+      required this.manager,
       required this.gallery,
       required this.extendedInfo,
       required this.netLoading,
@@ -316,16 +313,12 @@ class GalleryDetailHead extends StatelessWidget {
     return Hero(
         tag: 'gallery-thumb ${gallery.id}',
         child: ThumbImageView(
-          ProxyNetworkImage(
-              dataStream: (chunkEvents) => api.fetchImageData(
-                    gallery.files.first,
-                    id: gallery.id,
-                    size: img.ThumbnaiSize.medium,
-                    refererUrl: 'https://hitomi.la${gallery.urlEncode()}',
-                    onProcess: (now, total) => chunkEvents.add(ImageChunkEvent(
-                        cumulativeBytesLoaded: now, expectedTotalBytes: total)),
-                  ),
-              key: gallery.files.first.hash),
+          CacheImage(
+              manager: manager,
+              image: gallery.files.first,
+              refererUrl: 'https://hitomi.la${gallery.urlEncode()}',
+              id: gallery.id.toString(),
+              size: img.ThumbnaiSize.medium),
           label: Text(gallery.files.length.toString(),
               style: Theme.of(context)
                   .textTheme

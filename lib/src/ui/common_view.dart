@@ -6,6 +6,7 @@ import 'package:ayaka/src/utils/proxy_network_image.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_cache_manager/flutter_cache_manager.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 import 'package:hitomi/gallery/gallery.dart';
@@ -104,7 +105,7 @@ class GalleryListView extends StatelessWidget {
   final List<Gallery> data;
   final Future<dynamic> Function()? onRefresh;
   final void Function(Gallery gallery) click;
-  final Hitomi api;
+  final CacheManager manager;
   final ScrollController? scrollController;
   final PopupMenuButton<String> Function(Gallery gallery)? menusBuilder;
   final Map<int, int?> readIndexMap;
@@ -113,7 +114,7 @@ class GalleryListView extends StatelessWidget {
     required this.data,
     this.onRefresh,
     required this.click,
-    required this.api,
+    required this.manager,
     this.scrollController,
     required this.readIndexMap,
     this.menusBuilder,
@@ -151,7 +152,7 @@ class GalleryListView extends StatelessWidget {
                   key: ValueKey(item.id),
                   gallery: item,
                   click: click,
-                  api: api,
+                  manager: manager,
                   menus: menusBuilder?.call(item),
                   readIndex: readIndexMap[item.id],
                 );
@@ -169,7 +170,7 @@ class GalleryListView extends StatelessWidget {
 
 class GalleryInfo extends StatelessWidget {
   final Gallery gallery;
-  final Hitomi api;
+  final CacheManager manager;
   final void Function(Gallery) click;
   final PopupMenuButton<String>? menus;
   final int? readIndex;
@@ -177,7 +178,7 @@ class GalleryInfo extends StatelessWidget {
       {super.key,
       required this.gallery,
       required this.click,
-      required this.api,
+      required this.manager,
       required this.menus,
       this.readIndex});
 
@@ -204,20 +205,13 @@ class GalleryInfo extends StatelessWidget {
                       child: gallery.files.isEmpty
                           ? const Icon(Icons.error)
                           : ThumbImageView(
-                              ProxyNetworkImage(
-                                  dataStream: (chunkEvents) =>
-                                      api.fetchImageData(
-                                        gallery.files.first,
-                                        id: gallery.id,
-                                        size: img.ThumbnaiSize.medium,
-                                        refererUrl:
-                                            'https://hitomi.la${gallery.urlEncode()}',
-                                        onProcess: (now, total) =>
-                                            chunkEvents.add(ImageChunkEvent(
-                                                cumulativeBytesLoaded: now,
-                                                expectedTotalBytes: total)),
-                                      ),
-                                  key: gallery.files.first.hash),
+                              CacheImage(
+                                  manager: manager,
+                                  image: gallery.files.first,
+                                  refererUrl:
+                                      'https://hitomi.la${gallery.urlEncode()}',
+                                  id: gallery.id.toString(),
+                                  size: img.ThumbnaiSize.medium),
                               label: Text(gallery.files.length.toString(),
                                   style: Theme.of(context)
                                       .textTheme
@@ -509,6 +503,12 @@ extension ContextAction on BuildContext {
 
   UserConfig getConfig() {
     return read<SettingsController>().manager.config;
+  }
+
+  CacheManager getCacheManager({bool local = false}) {
+    return local
+        ? read<SettingsController>().localCacheManager
+        : read<SettingsController>().cacheManager;
   }
 
   Future<int?> readUserDb(int id, int type, {int? defaultValue}) async {

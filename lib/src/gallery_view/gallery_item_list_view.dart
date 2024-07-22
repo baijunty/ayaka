@@ -180,7 +180,7 @@ class _GalleryListView extends State<GalleryItemListView>
           _page = before;
         },
         click: click,
-        api: widget.api,
+        manager: context.getCacheManager(local: widget.local),
         scrollController: scrollController,
         readIndexMap: readIndexMap,
         menusBuilder: menuBuilder);

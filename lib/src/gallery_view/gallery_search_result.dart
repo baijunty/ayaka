@@ -206,7 +206,7 @@ class _GallerySearchResultView extends State<GallerySearchResultView>
             data: data,
             onRefresh: null,
             click: click,
-            api: widget.api,
+            manager: context.getCacheManager(local: widget.local),
             scrollController: scrollController,
             readIndexMap: readIndexMap,
             menusBuilder: menuBuilder);

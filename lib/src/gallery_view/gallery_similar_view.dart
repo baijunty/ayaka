@@ -111,7 +111,7 @@ class _GallerySimilaerView extends State<GallerySimilaerView> {
                             data: data,
                             onRefresh: null,
                             click: click,
-                            api: api,
+                            manager: context.getCacheManager(),
                             readIndexMap: readIndexMap,
                             menusBuilder: (g) =>
                                 PopupMenuButton<String>(itemBuilder: (context) {

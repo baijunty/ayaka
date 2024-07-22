@@ -1,4 +1,6 @@
+import 'dart:async';
 import 'package:collection/collection.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_cache_manager/flutter_cache_manager.dart';
 import 'package:hitomi/gallery/image.dart';
 import 'package:hitomi/lib.dart';
@@ -12,15 +14,6 @@ class HitomiImageCacheManager extends CacheManager with ImageCacheManager {
             maxNrOfCacheObjects: 20,
             repo: JsonCacheInfoRepository(databaseName: key),
             fileService: ProxyImageServer(hitomi)));
-
-  @override
-  Future<FileInfo> downloadFile(String url,
-      {String? key,
-      Map<String, String>? authHeaders,
-      bool force = false}) async {
-    return super
-        .downloadFile(url, key: key, authHeaders: authHeaders, force: force);
-  }
 }
 
 class ProxyImageServer extends FileService {
@@ -31,39 +24,62 @@ class ProxyImageServer extends FileService {
   @override
   Future<FileServiceResponse> get(String url,
       {Map<String, String>? headers}) async {
-    var resp = await hitomi.fetchImageData(
-      Image(hash: url, hasavif: 0, width: 0, haswebp: 0, name: '', height: 0),
-      id: headers?['id']?.toInt() ?? 0,
-      size: ThumbnaiSize.values
-              .firstWhereOrNull((s) => s.name == headers?['size']) ??
-          ThumbnaiSize.medium,
-      refererUrl: headers?['refererUrl'] ?? '',
-    );
-    return HitomiFileServiceResponse(resp, url);
+    final streamController = StreamController<int>();
+    final contentStream = StreamController<List<int>>();
+    final size = ThumbnaiSize.values
+            .firstWhereOrNull((s) => s.name == headers?['size']) ??
+        ThumbnaiSize.medium;
+    hitomi
+        .fetchImageData(
+      Image(
+          hash: url,
+          hasavif: 0,
+          width: 0,
+          haswebp: 0,
+          name: headers!['name']!,
+          height: 0),
+      id: headers['id']?.toInt() ?? 0,
+      size: size,
+      refererUrl: headers['refererUrl'] ?? '',
+      onProcess: (now, total) => streamController.add(total),
+    )
+        .then((d) {
+      contentStream.add(d);
+      contentStream.close();
+      streamController.close();
+    }).catchError((e) {
+      debugPrint('error: $e');
+      contentStream.addError(e);
+      streamController.addError(e);
+      contentStream.close();
+      streamController.close();
+    }, test: (error) => true);
+    return HitomiFileServiceResponse(contentStream.stream, '$url(${size.name})',
+        await streamController.stream.first);
   }
 }
 
 class HitomiFileServiceResponse extends FileServiceResponse {
   final DateTime _receivedTime = DateTime.now();
-
-  final List<int> data;
+  final Stream<List<int>> data;
   final String url;
-  HitomiFileServiceResponse(this.data, this.url);
+  final int length;
+  HitomiFileServiceResponse(this.data, this.url, this.length);
 
   @override
-  Stream<List<int>> get content => throw UnimplementedError();
+  Stream<List<int>> get content => data;
 
   @override
-  int? get contentLength => throw UnimplementedError();
+  int? get contentLength => length;
 
   @override
   String? get eTag => url;
 
   @override
-  String get fileExtension => '$url.jpg';
+  String get fileExtension => '.jpg';
 
   @override
-  int get statusCode => data.isEmpty ? 404 : 200;
+  int get statusCode => 200;
 
   @override
   DateTime get validTill => _receivedTime.add(const Duration(days: 7));

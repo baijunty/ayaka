@@ -2,12 +2,13 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:ayaka/src/model/cache_manager.dart';
 import 'package:collection/collection.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_cache_manager/flutter_cache_manager.dart';
 import 'package:hitomi/lib.dart';
 import 'settings_service.dart';
-
 /// A class that many Widgets can interact with to read user settings, update
 /// user settings, or listen to user settings changes.
 ///
@@ -19,9 +20,13 @@ class SettingsController with ChangeNotifier {
   late ThemeMode _themeMode;
   late UserConfig _config;
   late TaskManager _manager;
+  late CacheManager _cacheManager;
+  late CacheManager _localCacheManager;
   HttpServer? _server;
   ThemeMode get themeMode => _themeMode;
   TaskManager get manager => _manager;
+  CacheManager get cacheManager => _cacheManager;
+  CacheManager get localCacheManager => _localCacheManager;
   UserConfig get config => _config;
   bool _useProxy = kIsWeb;
   bool get useProxy => _useProxy;
@@ -57,6 +62,8 @@ class SettingsController with ChangeNotifier {
     runServer = !kIsWeb &&
         (await _settingsService.readConfig<bool>('runServer') ?? runServer);
     _manager = TaskManager(_config);
+    _cacheManager = HitomiImageCacheManager(hitomi());
+    _localCacheManager = HitomiImageCacheManager(hitomi(localDb: true));
     return !kIsWeb && runServer
         ? run_server(_manager)
             .then((value) => _config)
@@ -89,6 +96,8 @@ class SettingsController with ChangeNotifier {
     _config = config;
     await _settingsService.saveConfig('config', json.encode(config.toJson()));
     _manager = TaskManager(_config);
+    _cacheManager = HitomiImageCacheManager(hitomi());
+    _localCacheManager = HitomiImageCacheManager(hitomi(localDb: true));
     if (runServer) {
       _server?.close(force: true);
       _server = await run_server(_manager);

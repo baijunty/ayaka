@@ -9,7 +9,7 @@ import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:hitomi/gallery/gallery.dart';
 import 'package:hitomi/lib.dart';
 import 'package:provider/provider.dart';
-import 'package:hitomi/gallery/image.dart' as img show ThumbnaiSize, Image;
+import 'package:hitomi/gallery/image.dart' as img show Image;
 import '../utils/proxy_network_image.dart';
 import 'common_view.dart';
 
@@ -83,18 +83,12 @@ class _UserProfileView extends State<UserProfileView>
                       width: 120,
                       child: Column(children: [
                         ThumbImageView(
-                            ProxyNetworkImage(
-                                dataStream: (chunkEvents) => api.fetchImageData(
-                                      gallery.files.first,
-                                      id: gallery.id,
-                                      refererUrl:
-                                          'https://hitomi.la${gallery.urlEncode()}',
-                                      onProcess: (now, total) =>
-                                          chunkEvents.add(ImageChunkEvent(
-                                              cumulativeBytesLoaded: now,
-                                              expectedTotalBytes: total)),
-                                    ),
-                                key: gallery.files.first.hash),
+                            CacheImage(
+                                manager: context.getCacheManager(local: true),
+                                image: gallery.files.first,
+                                refererUrl:
+                                    'https://hitomi.la${gallery.urlEncode()}',
+                                id: gallery.id.toString()),
                             aspectRatio: 1),
                         Text(gallery.name, maxLines: 2, softWrap: true)
                       ])),
@@ -191,22 +185,17 @@ class _AdImageView extends State<AdImageView> {
                         itemBuilder: (context, index) {
                           var image = adImages[index];
                           return GestureDetector(
-                            child: ThumbImageView(ProxyNetworkImage(
-                                dataStream: (chunkEvents) => api.fetchImageData(
-                                    img.Image(
-                                        hash: image,
-                                        hasavif: 0,
-                                        width: 0,
-                                        haswebp: 0,
-                                        name: image,
-                                        height: 0),
-                                    size: img.ThumbnaiSize.medium,
-                                    refererUrl: 'https://hitomi.la',
-                                    onProcess: (now, total) => chunkEvents.add(
-                                        ImageChunkEvent(
-                                            cumulativeBytesLoaded: now,
-                                            expectedTotalBytes: total))),
-                                key: image)),
+                            child: ThumbImageView(CacheImage(
+                                manager: context.getCacheManager(local: true),
+                                image: img.Image(
+                                    hash: image,
+                                    hasavif: 0,
+                                    width: 0,
+                                    height: 0,
+                                    name: '',
+                                    haswebp: 0),
+                                refererUrl: 'https://hitomi.la',
+                                id: '')),
                           );
                         })))));
   }
@@ -358,7 +347,7 @@ class _UserProfileLogView extends State<UserProfileLogView> {
                     child: GalleryListView(
                         data: data,
                         click: click,
-                        api: api,
+                        manager: context.getCacheManager(local: true),
                         readIndexMap: readIndexMap,
                         scrollController: scrollController,
                         menusBuilder: menusBuilder)))));

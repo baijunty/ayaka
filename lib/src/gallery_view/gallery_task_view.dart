@@ -8,7 +8,6 @@ import 'package:ayaka/src/ui/common_view.dart';
 import 'package:flutter/material.dart';
 import 'package:hitomi/gallery/gallery.dart';
 import 'package:provider/provider.dart';
-
 import '../utils/proxy_network_image.dart';
 
 class GalleryTaskView extends StatefulWidget {
@@ -83,20 +82,11 @@ class _GalleryTaskView extends State<GalleryTaskView> {
             SizedBox(
                 width: 120,
                 child: ThumbImageView(
-                    ProxyNetworkImage(
-                        dataStream: (chunkEvents) => controller.controller
-                            .hitomi(localDb: true)
-                            .fetchImageData(
-                              gallery.files.first,
-                              id: gallery.id,
-                              refererUrl:
-                                  'https://hitomi.la${gallery.urlEncode()}',
-                              onProcess: (now, total) => chunkEvents.add(
-                                  ImageChunkEvent(
-                                      cumulativeBytesLoaded: now,
-                                      expectedTotalBytes: total)),
-                            ),
-                        key: gallery.files.first.hash),
+                    CacheImage(
+                        manager: context.getCacheManager(local: true),
+                        image: gallery.files.first,
+                        refererUrl: 'https://hitomi.la${gallery.urlEncode()}',
+                        id: gallery.id.toString()),
                     aspectRatio: 1)),
             Expanded(
                 child: Column(children: [
@@ -171,7 +161,7 @@ class _GalleryTaskView extends State<GalleryTaskView> {
                 click: (g) => Navigator.of(context).pushNamed(
                     GalleryDetailsView.routeName,
                     arguments: {'gallery': gallery, 'local': false}),
-                api: controller.controller.hitomi(localDb: false),
+                manager: context.getCacheManager(),
                 menus: PopupMenuButton<String>(itemBuilder: (context) {
                   return [
                     PopupMenuItem(

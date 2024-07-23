@@ -196,6 +196,7 @@ class _AdImageView extends State<AdImageView> {
                                     haswebp: 0),
                                 refererUrl: 'https://hitomi.la',
                                 id: '1')),
+                            onLongPress: () => context.showSnackBar(image),
                           );
                         })))));
   }

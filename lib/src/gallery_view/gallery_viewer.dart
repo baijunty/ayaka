@@ -41,14 +41,16 @@ class _GalleryViewer extends State<GalleryViewer>
     provider = MultiImageProvider(
         _gallery.files.map((e) {
           return ProxyNetworkImage(
-              dataStream: (chunkEvents) => api.fetchImageData(
+              dataStream: (chunkEvents) => api
+                      .fetchImageData(
                     e,
                     id: _gallery.id,
                     size: ThumbnaiSize.origin,
                     refererUrl: 'https://hitomi.la${_gallery.urlEncode()}',
                     onProcess: (now, total) => chunkEvents.add(ImageChunkEvent(
                         cumulativeBytesLoaded: now, expectedTotalBytes: total)),
-                  ),
+                  )
+                      .fold(<int>[], (acc, l) => acc..addAll(l)),
               key: '${e.hash}_origin');
         }).toList(),
         initialIndex: index);

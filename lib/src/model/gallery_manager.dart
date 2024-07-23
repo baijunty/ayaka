@@ -112,7 +112,7 @@ class GalleryManager with ChangeNotifier {
                   size: size,
                   id: id,
                   refererUrl: 'https://hitomi.la/imageset/test-$id.html')
-              .catchError((e) {
+              .fold(<int>[], (acc, l) => acc..addAll(l)).catchError((e) {
             debugPrint('${event.name} hash ${event.hash} occus $e');
             return <int>[];
           }, test: (error) => true);

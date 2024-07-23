@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'package:collection/collection.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter_cache_manager/flutter_cache_manager.dart';
 import 'package:hitomi/gallery/image.dart';
 import 'package:hitomi/lib.dart';
@@ -28,12 +27,10 @@ class ProxyImageServer extends FileService {
   Future<FileServiceResponse> get(String url,
       {Map<String, String>? headers}) async {
     final streamController = StreamController<int>();
-    final contentStream = StreamController<List<int>>();
     final size = ThumbnaiSize.values
             .firstWhereOrNull((s) => s.name == headers?['size']) ??
         ThumbnaiSize.medium;
-    hitomi
-        .fetchImageData(
+    final contentStream = hitomi.fetchImageData(
       Image(
           hash: url,
           hasavif: 0,
@@ -45,19 +42,8 @@ class ProxyImageServer extends FileService {
       size: size,
       refererUrl: headers['refererUrl'] ?? '',
       onProcess: (now, total) => streamController.add(total),
-    )
-        .then((d) {
-      contentStream.add(d);
-      contentStream.close();
-      streamController.close();
-    }).catchError((e) {
-      debugPrint('error: $e');
-      contentStream.addError(e);
-      streamController.addError(e);
-      contentStream.close();
-      streamController.close();
-    }, test: (error) => true);
-    return HitomiFileServiceResponse(contentStream.stream, url,
+    );
+    return HitomiFileServiceResponse(contentStream, url,
         await streamController.stream.first, extension(headers['name']!));
   }
 }

@@ -442,25 +442,27 @@ class TagDetail extends StatelessWidget {
 
 extension ContextAction on BuildContext {
   Future<void> addTask(int id) async {
-    return read<GalleryManager>()
-        .addTask(id.toString())
-        .then(
-            (value) => showSnackBar(AppLocalizations.of(this)!.addTaskSuccess))
-        .catchError((e) => debugPrint('$e'), test: (error) => true);
+    return progressDialogAction(read<GalleryManager>().addTask(id.toString()));
+  }
+
+  Future<void> progressDialogAction(Future action) async {
+    return showDialog(
+        context: this,
+        builder: (context) {
+          action.then((value) {
+            Navigator.of(context).pop();
+            return showSnackBar(AppLocalizations.of(this)!.success);
+          }).catchError((e) => showSnackBar('$e'), test: (error) => true);
+          return const CircularProgressIndicator();
+        });
   }
 
   Future<void> deleteTask(int id) async {
-    return read<GalleryManager>()
-        .deleteTask(id)
-        .then((value) => showSnackBar(AppLocalizations.of(this)!.success))
-        .catchError((e) => debugPrint('$e'), test: (error) => true);
+    return progressDialogAction(read<GalleryManager>().deleteTask(id));
   }
 
   Future<void> cancelTask(int id) async {
-    return read<GalleryManager>()
-        .cancelTask(id)
-        .then((value) => showSnackBar(AppLocalizations.of(this)!.success))
-        .catchError((e) => debugPrint('$e'), test: (error) => true);
+    return progressDialogAction(read<GalleryManager>().cancelTask(id));
   }
 
   void showSnackBar(String msg) {

@@ -26,7 +26,7 @@ class _UserProfileView extends State<UserProfileView>
     with AutomaticKeepAliveClientMixin {
   final List<Gallery> history = [];
   final List<Gallery> likes = [];
-  final List<Gallery> collection = [];
+  final List<Gallery> todoCollection = [];
   late Hitomi api;
 
   @override
@@ -34,8 +34,8 @@ class _UserProfileView extends State<UserProfileView>
     super.didChangeDependencies();
     var controller = context.read<SettingsController>();
     api = controller.hitomi(localDb: true);
-    if (history.length + likes.length + collection.length == 0) {
-      var types = [readMask, likeMask, bookMark];
+    if (history.length + likes.length + todoCollection.length == 0) {
+      var types = [readMask, likeMask, lateReadMark];
       controller.manager.helper
           .selectSqlMultiResultAsync(
               'select id from UserLog where type=? ORDER by rowid desc limit 10 ',
@@ -55,7 +55,7 @@ class _UserProfileView extends State<UserProfileView>
               setState(() {
                 history.addAll(value[0]);
                 likes.addAll(value[1]);
-                collection.addAll(value[2]);
+                todoCollection.addAll(value[2]);
               });
             }
           });
@@ -118,8 +118,8 @@ class _UserProfileView extends State<UserProfileView>
         _galleryList(history),
         _itemTitle(AppLocalizations.of(context)!.like, likeMask),
         _galleryList(likes),
-        _itemTitle(AppLocalizations.of(context)!.collect, bookMark),
-        _galleryList(collection),
+        _itemTitle(AppLocalizations.of(context)!.readLater, lateReadMark),
+        _galleryList(todoCollection),
         ListTile(
           title: Text(AppLocalizations.of(context)!.adImage,
               style: Theme.of(context).textTheme.titleLarge),

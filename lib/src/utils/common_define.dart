@@ -3,8 +3,7 @@ import 'package:intl/intl.dart';
 
 const int readMask = 1 << 13;
 const int likeMask = 1 << 14;
-const int lateRead = 1 << 15;
-const int bookMark = 1 << 16;
+const int lateReadMark = 1 << 16;
 final formater = DateFormat('yyyy-MM-dd');
 final smallText = TextButton.styleFrom(
   fixedSize: const Size.fromHeight(28),

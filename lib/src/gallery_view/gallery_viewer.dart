@@ -74,6 +74,12 @@ class _GalleryViewer extends State<GalleryViewer>
       index = controller.page!.toInt();
       await context.insertToUserDb(_gallery.id, readMask,
           data: index, content: _gallery.name);
+      if (index == _gallery.files.length - 1 && mounted) {
+        await context
+            .getSqliteHelper()
+            .delete('UserLog', {'id': _gallery.id, 'type': lateReadMark});
+      }
+      setState(() {});
     }
   }
 
@@ -132,8 +138,8 @@ class _GalleryViewer extends State<GalleryViewer>
                             '${_gallery.name}-${index + 1}/${_gallery.files.length}'),
                         Slider(
                           value: index.toDouble(),
-                          max: _gallery.files.length.toDouble(),
-                          divisions: _gallery.files.length,
+                          max: (_gallery.files.length - 1).toDouble(),
+                          divisions: _gallery.files.length - 1,
                           label: index.toString(),
                           onChanged: (double value) {
                             setState(() {

@@ -415,10 +415,10 @@ class GalleryDetailHead extends StatelessWidget {
         actions: [
           IconButton(
               onPressed: () async {
-                await context.insertToUserDb((gallery).id, bookMark,
+                await context.insertToUserDb((gallery).id, lateReadMark,
                     showResult: true);
               },
-              icon: const Icon(Icons.bookmark)),
+              icon: const Icon(Icons.playlist_add)),
           IconButton(
               onPressed: () async {
                 await context.insertToUserDb((gallery).id, likeMask,

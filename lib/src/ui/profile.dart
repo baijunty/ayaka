@@ -186,7 +186,7 @@ class _AdImageView extends State<AdImageView> {
                           var image = adImages[index];
                           return GestureDetector(
                             child: ThumbImageView(CacheImage(
-                                manager: context.getCacheManager(local: true),
+                                manager: context.getCacheManager(),
                                 image: img.Image(
                                     hash: image,
                                     hasavif: 0,
@@ -195,7 +195,7 @@ class _AdImageView extends State<AdImageView> {
                                     name: 'test.jpg',
                                     haswebp: 0),
                                 refererUrl: 'https://hitomi.la',
-                                id: '')),
+                                id: '1')),
                           );
                         })))));
   }

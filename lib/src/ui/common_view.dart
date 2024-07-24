@@ -453,7 +453,7 @@ extension ContextAction on BuildContext {
             Navigator.of(context).pop();
             return showSnackBar(AppLocalizations.of(this)!.success);
           }).catchError((e) => showSnackBar('$e'), test: (error) => true);
-          return const CircularProgressIndicator();
+          return const Center(child: CircularProgressIndicator());
         });
   }
 

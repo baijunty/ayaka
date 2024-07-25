@@ -97,10 +97,11 @@
   "clearDataWarn":"确认清空数据?",
   "markAdImg":"标记广告图",
   "pageJumpHint":"输入跳转页码",
-  "gallerySorce":"图源",
+  "gallerySorce":"图片仓库",
   "remote":"远程",
   "update":"更新",
   "adImage":"广告图",
   "readLater":"稍后阅读",
+  "fix":"修复",
   "tag":"标签"
 }

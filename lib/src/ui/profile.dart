@@ -35,7 +35,7 @@ class _UserProfileView extends State<UserProfileView>
     var controller = context.read<SettingsController>();
     api = controller.hitomi(localDb: true);
     if (history.length + likes.length + todoCollection.length == 0) {
-      var types = [readMask, likeMask, lateReadMark];
+      var types = [readMask, bookMask, lateReadMark];
       controller.manager.helper
           .selectSqlMultiResultAsync(
               'select id from UserLog where type=? ORDER by rowid desc limit 10 ',
@@ -116,7 +116,7 @@ class _UserProfileView extends State<UserProfileView>
         const SizedBox(height: 8),
         _itemTitle(AppLocalizations.of(context)!.readHistory, readMask),
         _galleryList(history),
-        _itemTitle(AppLocalizations.of(context)!.like, likeMask),
+        _itemTitle(AppLocalizations.of(context)!.collect, bookMask),
         _galleryList(likes),
         _itemTitle(AppLocalizations.of(context)!.readLater, lateReadMark),
         _galleryList(todoCollection),

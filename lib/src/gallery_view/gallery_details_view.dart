@@ -63,7 +63,7 @@ class _GalleryDetailView extends State<GalleryDetailsView> {
                   debugPrint(
                       'gallery id: ${gallery.id} compare to id ${value.first} before ${before.files.length} now len ${gallery.files.length}');
                   if (before.id != value.first ||
-                      gallery.files.length != before.files.length) {
+                      gallery.files.length > before.files.length) {
                     status = GalleryStatus.upgrade;
                   } else {
                     status = GalleryStatus.exists;
@@ -345,9 +345,10 @@ class GalleryDetailHead extends StatelessWidget {
                             child:
                                 Text(AppLocalizations.of(context)!.download)),
                         GalleryStatus.exists => OutlinedButton(
-                            onPressed: null,
-                            child:
-                                Text(AppLocalizations.of(context)!.downloaded)),
+                            onPressed: () async {
+                              await context.addTask(gallery.id);
+                            },
+                            child: Text(AppLocalizations.of(context)!.fix)),
                         GalleryStatus.upgrade => OutlinedButton(
                             onPressed: () async {
                               await context.addTask(gallery.id);
@@ -418,13 +419,15 @@ class GalleryDetailHead extends StatelessWidget {
                 await context.insertToUserDb((gallery).id, lateReadMark,
                     showResult: true);
               },
-              icon: const Icon(Icons.playlist_add)),
+              icon: const Icon(Icons.playlist_add_circle),
+              tooltip: AppLocalizations.of(context)!.readLater),
           IconButton(
               onPressed: () async {
-                await context.insertToUserDb((gallery).id, likeMask,
+                await context.insertToUserDb((gallery).id, bookMask,
                     showResult: true);
               },
-              icon: const Icon(Icons.favorite))
+              icon: const Icon(Icons.bookmark),
+              tooltip: AppLocalizations.of(context)!.collect)
         ],
         flexibleSpace: FlexibleSpaceBar(
             background: SafeArea(

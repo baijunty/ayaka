@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:ayaka/src/gallery_view/gallery_details_view.dart';
 import 'package:ayaka/src/model/gallery_manager.dart';
@@ -8,6 +9,7 @@ import 'package:ayaka/src/ui/common_view.dart';
 import 'package:flutter/material.dart';
 import 'package:hitomi/gallery/gallery.dart';
 import 'package:provider/provider.dart';
+import 'package:web_socket_channel/web_socket_channel.dart';
 import '../utils/proxy_network_image.dart';
 
 class GalleryTaskView extends StatefulWidget {
@@ -26,50 +28,53 @@ class _GalleryTaskView extends State<GalleryTaskView> {
   final Debounce _debounce = Debounce();
   final deration = const Duration(seconds: 2);
   late GalleryManager controller;
+  WebSocketChannel? _channel;
   @override
   void dispose() {
     super.dispose();
     _debounce.dispose();
+    controller.controller.manager.addTaskObserver(setTaskResult);
+    _channel?.sink.close();
   }
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
     controller = context.watch<GalleryManager>();
-    _handleVisible();
+    _fetchTasks();
   }
 
   Future<void> _fetchTasks() async {
-    await controller
-        .listTask()
-        .then((result) => setState(() {
-              pendingTask =
-                  (result['pendingTask'] as List<Map<String, dynamic>>)
-                      .map((e) {
-                return e['gallery'] is Gallery
-                    ? e['gallery'] as Gallery
-                    : Gallery.fromJson(e['gallery'] as String);
-              }).toList();
-              runningTask =
-                  (result['runningTask'] as List<Map<String, dynamic>>)
-                      .map((e) {
-                e['gallery'] = e['gallery'] is Gallery
-                    ? e['gallery'] as Gallery
-                    : Gallery.fromJson(e['gallery'] as String);
-                return e;
-              }).toList();
-            }))
-        .catchError((e) {
-      if (mounted) {
-        context.showSnackBar('err $e');
-      }
-    }, test: (error) => true).whenComplete(() => _handleVisible());
+    if (controller.controller.remoteLib) {
+      var uri = Uri.parse(controller.controller.config.remoteHttp);
+      var socketUri = 'ws://${uri.host}:${uri.port}';
+      debugPrint('socketUri:$socketUri');
+      _channel = WebSocketChannel.connect(Uri.parse(socketUri));
+      _channel!.sink.add('list');
+      _channel!.stream.listen((d) => setTaskResult(json.decoder.convert(d)));
+    } else {
+      controller.controller.manager.addTaskObserver(setTaskResult);
+    }
   }
 
-  void _handleVisible() {
-    if (mounted) {
-      _debounce.runDebounce(_fetchTasks, duration: deration);
-    }
+  void setTaskResult(Map<String, dynamic> result) {
+    setState(() {
+      pendingTask = (result['pendingTask'] as List<dynamic>)
+          .map((e) => e as Map<String, dynamic>)
+          .map((e) {
+        return e['gallery'] is Gallery
+            ? e['gallery'] as Gallery
+            : Gallery.fromJson(e['gallery'] as String);
+      }).toList();
+      runningTask = (result['runningTask'] as List<dynamic>)
+          .map((e) => e as Map<String, dynamic>)
+          .map((e) {
+        e['gallery'] = e['gallery'] is Gallery
+            ? e['gallery'] as Gallery
+            : Gallery.fromJson(e['gallery'] as String);
+        return e;
+      }).toList();
+    });
   }
 
   Widget _buildRunnintTaskItem(Map<String, dynamic> item) {

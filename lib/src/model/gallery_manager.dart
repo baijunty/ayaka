@@ -15,7 +15,7 @@ class GalleryManager with ChangeNotifier {
   GalleryManager({required this.controller});
 
   Future<void> addTask(String command) async {
-    controller.useProxy
+    controller.remoteLib
         ? await controller.manager.dio.post(
             '${controller.config.remoteHttp}/addTask',
             data:
@@ -28,7 +28,7 @@ class GalleryManager with ChangeNotifier {
   }
 
   Future<void> cancelTask(int id) async {
-    controller.useProxy
+    controller.remoteLib
         ? await controller.manager.dio
             .post('${controller.config.remoteHttp}/cancel',
                 data: json.encode({'auth': controller.config.auth, 'id': id}),
@@ -39,7 +39,7 @@ class GalleryManager with ChangeNotifier {
   }
 
   Future<void> deleteTask(int id) async {
-    controller.useProxy
+    controller.remoteLib
         ? await controller.manager.dio
             .post('${controller.config.remoteHttp}/delete',
                 data: json.encode({'auth': controller.config.auth, 'id': id}),
@@ -49,27 +49,8 @@ class GalleryManager with ChangeNotifier {
         : await controller.manager.parseCommandAndRun('-d $id');
   }
 
-  Future<Map<String, dynamic>> listTask() async {
-    return controller.useProxy
-        ? await controller.manager.dio
-            .post<String>('${controller.config.remoteHttp}/listTask',
-                data: json.encode({'auth': controller.config.auth}),
-                options: Options(responseType: ResponseType.json))
-            .then((value) {
-            var result = json.decode(value.data!) as Map<String, dynamic>;
-            result['pendingTask'] = (result['pendingTask'] as List<dynamic>)
-                .map((e) => e as Map<String, dynamic>)
-                .toList();
-            result['runningTask'] = (result['runningTask'] as List<dynamic>)
-                .map((e) => e as Map<String, dynamic>)
-                .toList();
-            return result;
-          })
-        : await controller.manager.parseCommandAndRun('-l');
-  }
-
   Future<Map<String, dynamic>> checkExist(int id) async {
-    return controller.useProxy
+    return controller.remoteLib
         ? controller.manager.dio
             .post<String>('${controller.config.remoteHttp}/checkId',
                 data: json.encode({'auth': controller.config.auth, 'id': id}),
@@ -82,7 +63,7 @@ class GalleryManager with ChangeNotifier {
   }
 
   Future<bool> addAdImageHash(List<String> hashes) async {
-    if (controller.useProxy) {
+    if (controller.remoteLib) {
       await controller.manager.dio
           .post<String>('${controller.config.remoteHttp}/addAdMark',
               data:

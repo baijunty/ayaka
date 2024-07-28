@@ -95,15 +95,15 @@ class _StateSetting extends State<SettingsView> {
       ListTile(
           leading: const ImageIcon(AssetImage('assets/images/direction.png')),
           title: Text(AppLocalizations.of(context)!.gallerySorce),
-          subtitle: Text(_settingsController.useProxy
+          subtitle: Text(_settingsController.remoteLib
               ? AppLocalizations.of(context)!.remote
               : AppLocalizations.of(context)!.local),
           trailing: Switch.adaptive(
-              value: _settingsController.useProxy,
+              value: _settingsController.remoteLib,
               onChanged: (b) => setState(() {
                     _settingsController.switchConn(b);
                   }))),
-      if (_settingsController.useProxy)
+      if (_settingsController.remoteLib)
         ListTile(
             leading: const ImageIcon(AssetImage('assets/images/url.png')),
             title: Text(AppLocalizations.of(context)!.remoteAddr),
@@ -124,7 +124,7 @@ class _StateSetting extends State<SettingsView> {
                   }
                 },
                 icon: const Icon(Icons.edit))),
-      if (_settingsController.useProxy)
+      if (_settingsController.remoteLib)
         ListTile(
             leading: const ImageIcon(
                 AssetImage('assets/images/user-authentication.png')),

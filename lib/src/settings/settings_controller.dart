@@ -29,10 +29,10 @@ class SettingsController with ChangeNotifier {
   CacheManager get cacheManager => _cacheManager;
   CacheManager get localCacheManager => _localCacheManager;
   UserConfig get config => _config;
-  bool _useProxy = kIsWeb;
-  bool get useProxy => _useProxy;
+  bool _remoteLib = kIsWeb;
+  bool get remoteLib => _remoteLib;
   bool runServer = false;
-  Hitomi hitomi({bool localDb = false}) => localDb && useProxy
+  Hitomi hitomi({bool localDb = false}) => localDb && remoteLib
       ? _manager.getApiFromProxy(_config.auth, _config.remoteHttp)
       : _manager.getApiDirect(local: localDb);
 
@@ -60,12 +60,12 @@ class SettingsController with ChangeNotifier {
                 dateLimit: "2013-01-01",
                 remoteHttp: 'http://192.168.1.107:7890'),
             test: (error) => true);
-    _useProxy =
-        await _settingsService.readConfig<bool>('useProxy') ?? _useProxy;
+    _remoteLib =
+        await _settingsService.readConfig<bool>('useProxy') ?? _remoteLib;
     runServer = !kIsWeb &&
         (await _settingsService.readConfig<bool>('runServer') ?? runServer);
     _manager = TaskManager(_config);
-    debugPrint('load config $_config $useProxy $runServer');
+    debugPrint('load config $_config $remoteLib $runServer');
     _cacheManager = HitomiImageCacheManager(hitomi());
     _localCacheManager = HitomiImageCacheManager(hitomi(localDb: true));
     debugPrint('load cache $_cacheManager');
@@ -78,7 +78,7 @@ class SettingsController with ChangeNotifier {
 
   Future<void> switchConn(bool useProxy) async {
     await _settingsService.saveConfig('useProxy', useProxy);
-    _useProxy = useProxy;
+    _remoteLib = useProxy;
     notifyListeners();
   }
 

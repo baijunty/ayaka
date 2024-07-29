@@ -33,7 +33,7 @@ class _GalleryTaskView extends State<GalleryTaskView> {
   void dispose() {
     super.dispose();
     _debounce.dispose();
-    controller.controller.manager.addTaskObserver(setTaskResult);
+    controller.controller.manager.removeTaskObserver(setTaskResult);
     _channel?.sink.close();
   }
 

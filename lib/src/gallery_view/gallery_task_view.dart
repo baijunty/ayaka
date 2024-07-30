@@ -161,6 +161,7 @@ class _GalleryTaskView extends State<GalleryTaskView> {
           itemBuilder: (context, index) {
             var gallery = pendingTask[index];
             return GalleryInfo(
+                key: ValueKey(gallery.id),
                 gallery: gallery,
                 click: (g) => Navigator.of(context).pushNamed(
                     GalleryDetailsView.routeName,

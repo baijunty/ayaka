@@ -47,6 +47,9 @@ class _GallerySearch extends State<GallerySearch> {
     return _debounce.runDebounce(() {
       debugPrint('net fetch $text');
       try {
+        if (lastQuery != text) {
+          return [];
+        }
         return api.fetchSuggestions(text).then((value) {
           if (lastQuery != text) {
             return [];

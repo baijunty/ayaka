@@ -97,8 +97,7 @@ class _GalleryTaskView extends State<GalleryTaskView> {
                 child: Column(children: [
               Text(gallery.dirName,
                   maxLines: 2, overflow: TextOverflow.ellipsis),
-              LinearProgressIndicator(
-                  value: item['current'] / gallery.files.length),
+              LinearProgressIndicator(value: item['now'] / item['length']),
               Row(mainAxisAlignment: MainAxisAlignment.end, children: [
                 Text('${(item['speed'] as double).toStringAsFixed(2)}KB'),
                 const SizedBox(width: 8),

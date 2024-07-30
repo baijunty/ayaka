@@ -47,7 +47,7 @@ class _UserProfileView extends State<UserProfileView>
           })
           .then((value) => Future.wait(value.map((e) => e
               .asStream()
-              .asyncMap((event) => api.fetchGallery(event))
+              .asyncMap((event) => api.fetchGallery(event, usePrefence: false))
               .fold(
                   <Gallery>[], (previous, element) => previous..add(element)))))
           .then((value) {
@@ -238,7 +238,7 @@ class _UserProfileLogView extends State<UserProfileLogView> {
             }))
         .then((value) => value
             .asStream()
-            .asyncMap((event) => api.fetchGallery(event))
+            .asyncMap((event) => api.fetchGallery(event, usePrefence: false))
             .fold(<Gallery>[], (previous, element) => data..add(element)))
         .then((value) {
           return Future.wait(

@@ -4,6 +4,7 @@ import 'dart:convert';
 import 'package:ayaka/src/gallery_view/gallery_details_view.dart';
 import 'package:ayaka/src/model/gallery_manager.dart';
 import 'package:ayaka/src/utils/debounce.dart';
+import 'package:collection/collection.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:ayaka/src/ui/common_view.dart';
 import 'package:flutter/material.dart';
@@ -59,26 +60,72 @@ class _GalleryTaskView extends State<GalleryTaskView> {
 
   void setTaskResult(Map<String, dynamic> result) {
     setState(() {
-      pendingTask = (result['pendingTask'] as List<dynamic>)
-          .map((e) => e as Map<String, dynamic>)
-          .map((e) {
-        return e['gallery'] is Gallery
-            ? e['gallery'] as Gallery
-            : Gallery.fromJson(e['gallery'] as String);
-      }).toList();
-      runningTask = (result['runningTask'] as List<dynamic>)
-          .map((e) => e as Map<String, dynamic>)
-          .map((e) {
-        e['gallery'] = e['gallery'] is Gallery
-            ? e['gallery'] as Gallery
-            : Gallery.fromJson(e['gallery'] as String);
-        return e;
-      }).toList();
+      switch (result['type']) {
+        case 'list':
+          {
+            pendingTask = (result['pendingTask'] as List<dynamic>)
+                .map((e) => e as Map<String, dynamic>)
+                .map((e) {
+              return e['gallery'] is Gallery
+                  ? e['gallery'] as Gallery
+                  : Gallery.fromJson(e['gallery'] as String);
+            }).toList();
+            runningTask = (result['runningTask'] as List<dynamic>)
+                .map((e) => e as Map<String, dynamic>)
+                .map((e) {
+              e['gallery'] = e['gallery'] is Gallery
+                  ? e['gallery'] as Gallery
+                  : Gallery.fromJson(e['gallery'] as String);
+              return e;
+            }).toList();
+          }
+        case 'add':
+          {
+            Gallery gallery = result['gallery'] is Gallery
+                ? result['gallery'] as Gallery
+                : Gallery.fromJson(result['gallery'] as String);
+            var target = result['target'];
+            if (target == 'pending') {
+              pendingTask.add(gallery);
+            } else {
+              result['gallery'] = gallery;
+              runningTask.add(result);
+            }
+          }
+        case 'remove':
+          {
+            var id = result['id'];
+            var target = result['target'];
+            if (target == 'pending') {
+              pendingTask.removeWhere((g) => g.id == id);
+            } else {
+              runningTask.removeWhere((e) =>
+                  id ==
+                  (e['gallery'] is Gallery
+                          ? e['gallery'] as Gallery
+                          : Gallery.fromJson(e['gallery'] as String))
+                      .id);
+            }
+          }
+        case 'update':
+          {
+            var id = result['id'];
+            var g = runningTask.map((e) {
+              e['gallery'] = e['gallery'] is Gallery
+                  ? e['gallery'] as Gallery
+                  : Gallery.fromJson(e['gallery'] as String);
+              return e;
+            }).firstWhereOrNull((g) => id == g['gallery'].id);
+            g?.addAll(result);
+          }
+      }
     });
   }
 
   Widget _buildRunnintTaskItem(Map<String, dynamic> item) {
-    Gallery gallery = item['gallery'];
+    Gallery gallery = item['gallery'] is Gallery
+        ? item['gallery'] as Gallery
+        : Gallery.fromJson(item['gallery'] as String);
     return InkWell(
         child: Row(
           key: ValueKey(gallery.id),

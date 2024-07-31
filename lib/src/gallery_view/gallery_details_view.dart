@@ -235,7 +235,7 @@ class _GalleryDetailView extends State<GalleryDetailsView> {
                   status: status,
                   readIndex: readedIndex,
                   languageChange: (id) async {
-                    await api
+                    await context.progressDialogAction(api
                         .fetchGallery(id, usePrefence: false)
                         .then((value) => setState(() {
                               gallery = value;
@@ -244,7 +244,7 @@ class _GalleryDetailView extends State<GalleryDetailsView> {
                       if (mounted) {
                         context.showSnackBar('$e');
                       }
-                    }, test: (error) => true);
+                    }, test: (error) => true));
                   },
                   tagInfo: isDeskTop ? tagInfo : null),
               if (!isDeskTop) tagInfo,

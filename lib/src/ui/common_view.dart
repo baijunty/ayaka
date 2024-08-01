@@ -450,8 +450,10 @@ extension ContextAction on BuildContext {
         context: this,
         builder: (context) {
           action.then((value) {
-            Navigator.of(context).pop();
-            return showSnackBar(AppLocalizations.of(this)!.success);
+            if (mounted) {
+              Navigator.of(context).pop();
+              return showSnackBar(AppLocalizations.of(this)!.failed);
+            }
           }).catchError((e) => showSnackBar('$e'), test: (error) => true);
           return const Center(child: CircularProgressIndicator());
         });

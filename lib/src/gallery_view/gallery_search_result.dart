@@ -45,7 +45,6 @@ class _GallerySearchResultView extends State<GallerySearchResultView>
   late ScrollController scrollController;
   var totalCount = 0;
   CancelToken? token;
-  var netLoading = false;
   final readIndexMap = <int, int?>{};
   @override
   void initState() {
@@ -120,7 +119,6 @@ class _GallerySearchResultView extends State<GallerySearchResultView>
 
   Future<void> _fetchData() async {
     token = CancelToken();
-    netLoading = true;
     Future<List<int>> idsFuture;
     if (_page == widget.startPage || _ids.length < totalCount) {
       idsFuture = widget.api
@@ -176,12 +174,10 @@ class _GallerySearchResultView extends State<GallerySearchResultView>
       setState(() {
         data.addAll(value);
         _page++;
-        netLoading = false;
       });
     }).catchError((e) {
       if (mounted) {
         setState(() {
-          netLoading = false;
           context.showSnackBar('$e');
         });
       }
@@ -193,15 +189,13 @@ class _GallerySearchResultView extends State<GallerySearchResultView>
     super.build(context);
     return data.isEmpty
         ? Center(
-            child: netLoading
-                ? const CircularProgressIndicator()
-                : InkWell(
-                    onTap: _fetchData,
-                    child: Text(AppLocalizations.of(context)!.emptyContent,
-                        style: Theme.of(context)
-                            .textTheme
-                            .bodyLarge
-                            ?.copyWith(color: Colors.red))))
+            child: InkWell(
+                onTap: _fetchData,
+                child: Text(AppLocalizations.of(context)!.emptyContent,
+                    style: Theme.of(context)
+                        .textTheme
+                        .bodyLarge
+                        ?.copyWith(color: Colors.red))))
         : GalleryListView(
             data: data,
             onRefresh: null,

@@ -52,7 +52,13 @@ class _GalleryTaskView extends State<GalleryTaskView> {
       debugPrint('socketUri:$socketUri');
       _channel = WebSocketChannel.connect(Uri.parse(socketUri));
       _channel!.sink.add('list');
-      _channel!.stream.listen((d) => setTaskResult(json.decoder.convert(d)));
+      _channel!.stream.listen((d) => setTaskResult(json.decoder.convert(d)),
+          onError: (e) {
+        _channel!.sink.close();
+        if (mounted) {
+          _fetchTasks();
+        }
+      });
     } else {
       controller.controller.manager.addTaskObserver(setTaskResult);
     }
@@ -148,7 +154,7 @@ class _GalleryTaskView extends State<GalleryTaskView> {
               Row(mainAxisAlignment: MainAxisAlignment.end, children: [
                 Text('${(item['speed'] as double).toStringAsFixed(2)}KB'),
                 const SizedBox(width: 8),
-                Text('${item['current']}/${gallery.files.length}'),
+                Text('${item['current'] + 1}/${gallery.files.length}'),
                 PopupMenuButton<String>(itemBuilder: (context) {
                   return [
                     PopupMenuItem(

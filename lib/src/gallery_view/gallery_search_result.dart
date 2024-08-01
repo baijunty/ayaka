@@ -45,6 +45,7 @@ class _GallerySearchResultView extends State<GallerySearchResultView>
   late ScrollController scrollController;
   var totalCount = 0;
   CancelToken? token;
+  var netLoading = false;
   final readIndexMap = <int, int?>{};
   @override
   void initState() {
@@ -120,6 +121,9 @@ class _GallerySearchResultView extends State<GallerySearchResultView>
   Future<void> _fetchData() async {
     token = CancelToken();
     Future<List<int>> idsFuture;
+    setState(() {
+      netLoading = true;
+    });
     if (_page == widget.startPage || _ids.length < totalCount) {
       idsFuture = widget.api
           .search(
@@ -150,7 +154,7 @@ class _GallerySearchResultView extends State<GallerySearchResultView>
     } else {
       idsFuture = Future.value(_ids);
     }
-    context.progressDialogAction(idsFuture
+    idsFuture
         .then((value) => value.sublist(
             min((_page - widget.startPage) * 25, value.length),
             min(value.length, (_page - widget.startPage + 1) * 25)))
@@ -174,36 +178,41 @@ class _GallerySearchResultView extends State<GallerySearchResultView>
       setState(() {
         data.addAll(value);
         _page++;
+        netLoading = false;
       });
     }).catchError((e) {
       if (mounted) {
         setState(() {
           context.showSnackBar('$e');
         });
+        netLoading = false;
       }
-    }, test: (error) => true));
+    }, test: (error) => true);
   }
 
   @override
   Widget build(BuildContext context) {
     super.build(context);
-    return data.isEmpty
-        ? Center(
-            child: InkWell(
-                onTap: _fetchData,
-                child: Text(AppLocalizations.of(context)!.emptyContent,
-                    style: Theme.of(context)
-                        .textTheme
-                        .bodyLarge
-                        ?.copyWith(color: Colors.red))))
-        : GalleryListView(
-            data: data,
-            onRefresh: null,
-            click: click,
-            manager: context.getCacheManager(local: widget.local),
-            scrollController: scrollController,
-            readIndexMap: readIndexMap,
-            menusBuilder: menuBuilder);
+    return Stack(children: [
+      data.isEmpty && !netLoading
+          ? Center(
+              child: InkWell(
+                  onTap: _fetchData,
+                  child: Text(AppLocalizations.of(context)!.emptyContent,
+                      style: Theme.of(context)
+                          .textTheme
+                          .bodyLarge
+                          ?.copyWith(color: Colors.red))))
+          : GalleryListView(
+              data: data,
+              onRefresh: null,
+              click: click,
+              manager: context.getCacheManager(local: widget.local),
+              scrollController: scrollController,
+              readIndexMap: readIndexMap,
+              menusBuilder: menuBuilder),
+      if (netLoading) const Center(child: CircularProgressIndicator())
+    ]);
   }
 
   @override

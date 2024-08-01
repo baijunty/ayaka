@@ -47,8 +47,10 @@ class _GalleryListView extends State<GalleryItemListView>
   final readIndexMap = <int, int?>{};
   Future<void> _fetchData({bool refresh = false}) async {
     token = CancelToken();
-    netLoading = true;
-    return context.progressDialogAction(widget.api
+    setState(() {
+      netLoading = true;
+    });
+    return widget.api
         .viewByTag(fromString(widget.label['type'], widget.label['name']),
             page: _page, sort: widget.sortEnum, token: token)
         .then((value) => context
@@ -85,7 +87,7 @@ class _GalleryListView extends State<GalleryItemListView>
           if (mounted) {
             context.showSnackBar('err $e');
           }
-        }, test: (error) => true));
+        }, test: (error) => true);
   }
 
   @override
@@ -189,7 +191,10 @@ class _GalleryListView extends State<GalleryItemListView>
   @override
   Widget build(BuildContext context) {
     super.build(context);
-    return _bodyContentList();
+    return Stack(children: [
+      _bodyContentList(),
+      if (netLoading) const Center(child: CircularProgressIndicator())
+    ]);
   }
 
   @override

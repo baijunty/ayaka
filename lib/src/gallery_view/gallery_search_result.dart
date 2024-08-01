@@ -152,7 +152,7 @@ class _GallerySearchResultView extends State<GallerySearchResultView>
     } else {
       idsFuture = Future.value(_ids);
     }
-    idsFuture
+    context.progressDialogAction(idsFuture
         .then((value) => value.sublist(
             min((_page - widget.startPage) * 25, value.length),
             min(value.length, (_page - widget.startPage + 1) * 25)))
@@ -185,7 +185,7 @@ class _GallerySearchResultView extends State<GallerySearchResultView>
           context.showSnackBar('$e');
         });
       }
-    }, test: (error) => true);
+    }, test: (error) => true));
   }
 
   @override

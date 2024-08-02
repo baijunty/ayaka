@@ -51,7 +51,8 @@ class _GalleryTaskView extends State<GalleryTaskView> {
       var socketUri = 'ws://${uri.host}:${uri.port}';
       debugPrint('socketUri:$socketUri');
       _channel = WebSocketChannel.connect(Uri.parse(socketUri));
-      _channel!.sink.add('list');
+      _channel!.sink.add(json
+          .encode({'auth': controller.controller.config.auth, 'type': 'list'}));
       _channel!.stream.listen((d) => setTaskResult(json.decoder.convert(d)),
           onError: (e) {
         _channel!.sink.close();

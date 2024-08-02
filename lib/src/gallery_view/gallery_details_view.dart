@@ -98,7 +98,7 @@ class _GalleryDetailView extends State<GalleryDetailsView> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    if (translates.isEmpty) {
+    if (token == null) {
       controller = context.read<SettingsController>();
       var args =
           ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>;

@@ -449,13 +449,16 @@ extension ContextAction on BuildContext {
     return showDialog(
         context: this,
         builder: (context) {
-          action.then((value) {
-            if (mounted) {
-              Navigator.of(context).pop();
-              return showSnackBar(AppLocalizations.of(this)!.success);
-            }
-          }).catchError((e) => showSnackBar('$e'), test: (error) => true);
-          return const Center(child: CircularProgressIndicator());
+          return FutureBuilder(
+              future: action,
+              builder: (c, d) {
+                if (d.hasData || d.hasError) {
+                  showSnackBar(AppLocalizations.of(context)!.success)
+                      .then((v) => Navigator.of(context).pop());
+                  return Container();
+                }
+                return const Center(child: CircularProgressIndicator());
+              });
         });
   }
 
@@ -467,17 +470,20 @@ extension ContextAction on BuildContext {
     return progressDialogAction(read<GalleryManager>().cancelTask(id));
   }
 
-  void showSnackBar(String msg) {
+  Future<Future<SnackBarClosedReason>?> showSnackBar(String msg) async {
     if (mounted) {
-      ScaffoldMessenger.of(this).showSnackBar(SnackBar(
-          content: Text(msg, style: Theme.of(this).textTheme.labelMedium),
-          duration: const Duration(milliseconds: 2000),
-          behavior: SnackBarBehavior.floating,
-          backgroundColor: Theme.of(this).colorScheme.surface,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(8.0),
-          )));
+      return ScaffoldMessenger.of(this)
+          .showSnackBar(SnackBar(
+              content: Text(msg, style: Theme.of(this).textTheme.labelMedium),
+              duration: const Duration(milliseconds: 2000),
+              behavior: SnackBarBehavior.floating,
+              backgroundColor: Theme.of(this).colorScheme.surface,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8.0),
+              )))
+          .closed;
     }
+    return null;
   }
 
   Future<void> insertToUserDb(int id, int type,

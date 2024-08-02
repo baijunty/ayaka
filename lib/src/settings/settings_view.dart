@@ -28,7 +28,6 @@ class SettingsView extends StatefulWidget {
 
 class _StateSetting extends State<SettingsView> {
   late SettingsController _settingsController;
-  bool netLoading = false;
   late TextEditingController _textController;
 
   @override
@@ -168,16 +167,8 @@ class _StateSetting extends State<SettingsView> {
           title: Text(AppLocalizations.of(context)!.updateDatabase),
           trailing: IconButton(
               onPressed: () async {
-                setState(() {
-                  netLoading = true;
-                });
-                await _settingsController.manager
-                    .parseCommandAndRun('-u')
-                    .then((value) => setState(() {
-                          netLoading = false;
-                          context.showSnackBar(
-                              AppLocalizations.of(context)!.success);
-                        }));
+                await context.progressDialogAction(
+                    _settingsController.manager.parseCommandAndRun('-u'));
               },
               icon: const ImageIcon(AssetImage('assets/images/refresh.png')))),
       ListTile(
@@ -216,13 +207,6 @@ class _StateSetting extends State<SettingsView> {
             child: SingleChildScrollView(
                 child: Padding(
                     padding: const EdgeInsets.all(16),
-                    child: Stack(children: [
-                      _settingsContent(),
-                      if (netLoading)
-                        SizedBox(
-                            height: MediaQuery.of(context).size.height,
-                            child: const Center(
-                                child: CircularProgressIndicator())),
-                    ])))));
+                    child: _settingsContent()))));
   }
 }

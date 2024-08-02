@@ -56,6 +56,7 @@ class _GalleryTaskView extends State<GalleryTaskView> {
       _channel!.stream.listen((d) => setTaskResult(json.decoder.convert(d)),
           onError: (e) {
         _channel!.sink.close();
+        debugPrint('connect err $e');
         if (mounted) {
           _fetchTasks();
         }

@@ -450,11 +450,14 @@ extension ContextAction on BuildContext {
         context: this,
         builder: (context) {
           return FutureBuilder(
-              future: action,
+              future: action
+                  .then((r) =>
+                      showSnackBar(AppLocalizations.of(context)!.success))
+                  .then((v) => Navigator.of(context).canPop()
+                      ? Navigator.pop(context)
+                      : v),
               builder: (c, d) {
                 if (d.hasData || d.hasError) {
-                  showSnackBar(AppLocalizations.of(context)!.success)
-                      .then((v) => Navigator.of(context).pop());
                   return Container();
                 }
                 return const Center(child: CircularProgressIndicator());
@@ -470,7 +473,7 @@ extension ContextAction on BuildContext {
     return progressDialogAction(read<GalleryManager>().cancelTask(id));
   }
 
-  Future<Future<SnackBarClosedReason>?> showSnackBar(String msg) async {
+  Future<SnackBarClosedReason?> showSnackBar(String msg) async {
     if (mounted) {
       return ScaffoldMessenger.of(this)
           .showSnackBar(SnackBar(

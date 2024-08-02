@@ -47,10 +47,7 @@ class _GalleryListView extends State<GalleryItemListView>
   final readIndexMap = <int, int?>{};
   Future<void> _fetchData({bool refresh = false}) async {
     token = CancelToken();
-    setState(() {
-      netLoading = true;
-    });
-    return widget.api
+    widget.api
         .viewByTag(fromString(widget.label['type'], widget.label['name']),
             page: _page, sort: widget.sortEnum, token: token)
         .then((value) => context
@@ -159,7 +156,7 @@ class _GalleryListView extends State<GalleryItemListView>
         !netLoading) {
       context.showSnackBar(
           '$_page/$totalPage ${AppLocalizations.of(context)!.loading}');
-      await _fetchData();
+      await context.progressDialogAction(_fetchData());
     }
   }
 
@@ -168,6 +165,9 @@ class _GalleryListView extends State<GalleryItemListView>
     super.didChangeDependencies();
     settingsController = context.watch<SettingsController>();
     if (data.isEmpty) {
+      setState(() {
+        netLoading = true;
+      });
       _fetchData();
     }
   }
@@ -178,7 +178,7 @@ class _GalleryListView extends State<GalleryItemListView>
         onRefresh: () async {
           var before = _page;
           _page = 1;
-          await _fetchData(refresh: true);
+          await context.progressDialogAction(_fetchData(refresh: true));
           _page = before;
         },
         click: click,

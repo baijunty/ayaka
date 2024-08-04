@@ -69,6 +69,7 @@ class SettingsController with ChangeNotifier {
     _localCacheManager = HitomiImageCacheManager(hitomi(localDb: true));
     return !kIsWeb && runServer
         ? run_server(_manager)
+            .then((v) => _manager.parseCommandAndRun('-c'))
             .then((value) => _config)
             .catchError((e) => _config, test: (error) => true)
         : Future.value(_config);

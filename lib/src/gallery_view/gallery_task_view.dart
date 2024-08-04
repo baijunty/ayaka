@@ -62,11 +62,18 @@ class _GalleryTaskView extends State<GalleryTaskView> {
         }
       });
     } else {
-      controller.controller.manager.addTaskObserver(setTaskResult);
+      var manager = controller.controller.manager;
+      setTaskResult({
+        'type': 'list',
+        "queryTask": manager.queryTask,
+        ...manager.down.allTask
+      });
+      manager.addTaskObserver(setTaskResult);
     }
   }
 
   void setTaskResult(Map<String, dynamic> result) {
+    debugPrint('get $result');
     setState(() {
       switch (result['type']) {
         case 'list':
@@ -95,14 +102,13 @@ class _GalleryTaskView extends State<GalleryTaskView> {
             var target = result['target'];
             if (target == 'pending') {
               pendingTask.add(gallery);
-            } else {
+            } else  if(runningTask.every((g)=>g['gallery'].id != gallery.id)){
               result['gallery'] = gallery;
               runningTask.add(result);
             }
           }
         case 'remove':
           {
-            debugPrint('remove $result');
             var id = result['id'];
             var target = result['target'];
             if (target == 'pending') {

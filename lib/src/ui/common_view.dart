@@ -343,7 +343,7 @@ class TagButton extends StatelessWidget {
                                     name: label['name'],
                                     weight: 1.0))));
                           context.showSnackBar(
-                              AppLocalizations.of(context)!.addTaskSuccess);
+                              AppLocalizations.of(context)!.success);
                           Navigator.of(context).pop();
                         }
                       },

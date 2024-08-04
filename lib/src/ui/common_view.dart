@@ -320,8 +320,37 @@ class TagButton extends StatelessWidget {
         style: style ?? Theme.of(context).textButtonTheme.style,
         onLongPress: () => showModalBottomSheet(
             context: context,
-            builder: (context) =>
-                TagDetail(tag: label, commondPrefix: commondPrefix)),
+            builder: (context) => TagDetail(
+                  tag: label,
+                  icon: IconButton(
+                      onPressed: () async {
+                        if (commondPrefix != null) {
+                          return context
+                              .read<GalleryManager>()
+                              .addTask('$commondPrefix "${label['name']}"')
+                              .then((value) {
+                            Navigator.of(context).pop();
+                            context.showSnackBar(
+                                AppLocalizations.of(context)!.addTaskSuccess);
+                          });
+                        } else {
+                          var settings = context.read<SettingsController>();
+                          var config = settings.config;
+                          settings.updateConfig(config.copyWith(
+                              excludes: config.excludes.toList()
+                                ..add(FilterLabel(
+                                    type: label['type'],
+                                    name: label['name'],
+                                    weight: 1.0))));
+                          context.showSnackBar(
+                              AppLocalizations.of(context)!.addTaskSuccess);
+                          Navigator.of(context).pop();
+                        }
+                      },
+                      icon: Icon(commondPrefix == null
+                          ? Icons.block
+                          : Icons.download)),
+                )),
         onPressed: () => Navigator.of(context)
                 .pushNamed(GalleryTabView.routeName, arguments: {
               'tags': [label]
@@ -335,8 +364,8 @@ class TagDetail extends StatelessWidget {
   final Map<String, dynamic> tag;
   static final urlExp =
       RegExp(r'!?\[(?<name>.*?)\]\(#*\s*\"?(?<url>\S+?)\"?\)');
-  final String? commondPrefix;
-  const TagDetail({super.key, required this.tag, this.commondPrefix});
+  final Widget icon;
+  const TagDetail({super.key, required this.tag, required this.icon});
 
   List<MapEntry<String, String>> takeUrls(String input) {
     var urls = <MapEntry<String, String>>[];
@@ -355,7 +384,6 @@ class TagDetail extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     var dio = context.read<SettingsController>().manager.dio;
-    var taskControl = context.read<GalleryManager>();
     var imgExtension = imageExtension + ['.ico'];
     var imgs = takeUrls(tag['intro'] ?? '')
         .where((element) =>
@@ -384,16 +412,7 @@ class TagDetail extends StatelessWidget {
                   if (tag['count'] != null)
                     Text(
                         '${AppLocalizations.of(context)!.downloaded}:${tag['count']} at ${formater.formatString(tag['date'])}'),
-                  if (commondPrefix != null)
-                    IconButton(
-                        onPressed: () async => taskControl
-                                .addTask('$commondPrefix "${tag['name']}"')
-                                .then((value) {
-                              Navigator.of(context).pop();
-                              context.showSnackBar(
-                                  AppLocalizations.of(context)!.addTaskSuccess);
-                            }),
-                        icon: const Icon(Icons.download)),
+                  icon,
                   const Expanded(child: Divider()),
                 ]))
           ]),
@@ -449,19 +468,17 @@ extension ContextAction on BuildContext {
     return showDialog(
         context: this,
         builder: (context) {
-          return FutureBuilder(
-              future: action
-                  .then((r) =>
-                      showSnackBar(AppLocalizations.of(context)!.success))
-                  .then((v) => Navigator.of(context).canPop()
-                      ? Navigator.pop(context)
-                      : v),
-              builder: (c, d) {
-                if (d.hasData || d.hasError) {
-                  return Container();
-                }
-                return const Center(child: CircularProgressIndicator());
-              });
+          return FutureBuilder(future: action.then((r) {
+            if (Navigator.of(context).canPop()) {
+              Navigator.pop(context);
+            }
+            return showSnackBar(AppLocalizations.of(context)!.success);
+          }), builder: (c, d) {
+            if (d.hasData || d.hasError) {
+              return Container();
+            }
+            return const Center(child: CircularProgressIndicator());
+          });
         });
   }
 

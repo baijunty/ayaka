@@ -51,9 +51,8 @@ class SettingsController with ChangeNotifier {
         ThemeMode.system;
     _config = await _settingsService
         .readConfig<String>('config', defaultValue: '')
-        .then((value) {
-      return UserConfig.fromStr(value ?? '');
-    }).catchError(
+        .then((value) => UserConfig.fromStr(value ?? ''))
+        .catchError(
             (e) => UserConfig('',
                 languages: const ["japanese", "chinese"],
                 maxTasks: 5,
@@ -68,7 +67,6 @@ class SettingsController with ChangeNotifier {
     debugPrint('load config $_config $remoteLib $runServer');
     _cacheManager = HitomiImageCacheManager(hitomi());
     _localCacheManager = HitomiImageCacheManager(hitomi(localDb: true));
-    debugPrint('load cache $_cacheManager');
     return !kIsWeb && runServer
         ? run_server(_manager)
             .then((value) => _config)
@@ -99,6 +97,7 @@ class SettingsController with ChangeNotifier {
   Future<void> updateConfig(UserConfig config) async {
     if (config == _config) return;
     _config = config;
+    debugPrint('update config $_config');
     await _settingsService.saveConfig('config', json.encode(config.toJson()));
     _manager = TaskManager(_config);
     _cacheManager = HitomiImageCacheManager(hitomi());

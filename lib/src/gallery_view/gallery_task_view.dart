@@ -102,6 +102,7 @@ class _GalleryTaskView extends State<GalleryTaskView> {
           }
         case 'remove':
           {
+            debugPrint('remove $result');
             var id = result['id'];
             var target = result['target'];
             if (target == 'pending') {

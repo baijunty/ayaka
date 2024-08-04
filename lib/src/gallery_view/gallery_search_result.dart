@@ -137,9 +137,11 @@ class _GallerySearchResultView extends State<GallerySearchResultView>
                       .languages
                       .map((e) => Language(name: e))
                       .toList(),
-              exclude: widget.selected
-                  .where((element) => element['include'] == false)
-                  .map((e) => fromString(e['type'], e['name']))
+              exclude: context
+                  .read<SettingsController>()
+                  .config
+                  .excludes
+                  .map((e) => fromString(e.type, e.name))
                   .toList(),
               page: _page,
               sort: widget.dateDesc,

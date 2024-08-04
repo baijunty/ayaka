@@ -1,10 +1,13 @@
 import 'dart:io';
 
 import 'package:ayaka/src/ui/common_view.dart';
+import 'package:ayaka/src/utils/label_utils.dart';
 import 'package:ayaka/src/utils/responsive_util.dart';
 import 'package:file_picker/file_picker.dart' show FilePicker;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:hitomi/gallery/label.dart';
+import 'package:hitomi/gallery/language.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:provider/provider.dart' show WatchContext;
 import 'settings_controller.dart';
@@ -197,6 +200,70 @@ class _StateSetting extends State<SettingsView> {
                 }
               },
               icon: const Icon(Icons.edit))),
+      ListTile(
+        leading: const Icon(Icons.language),
+        title: Text(AppLocalizations.of(context)!.language),
+        subtitle: Text(Iterable.iterableToFullString(
+            _settingsController.config.languages
+                .map((l) => mapLangugeType(context, l)),
+            '',
+            '')),
+        trailing: const Icon(Icons.arrow_forward_ios),
+        onTap: () async {
+          var languages = await _settingsController
+              .hitomi(localDb: true)
+              .translate(
+                  [Language.chinese, Language.japanese, Language.english]);
+          for (var item in languages) {
+            item['selected'] =
+                _settingsController.config.languages.contains(item['name']);
+          }
+          if (mounted) {
+            List<Map<String, dynamic>>? data = await Navigator.push(
+                context,
+                MaterialPageRoute(
+                    builder: (c) => MultiSelectListView(items: languages)));
+            if (data != null) {
+              setState(() {
+                _settingsController.updateConfig(_settingsController.config
+                    .copyWith(
+                        languages: data
+                            .map((e) => e['name'] as String)
+                            .toList(growable: false)));
+              });
+            }
+          }
+        },
+      ),
+      ListTile(
+        leading: const Icon(Icons.block),
+        title: Text(AppLocalizations.of(context)!.blockTag),
+        trailing: const Icon(Icons.arrow_forward_ios),
+        onTap: () async {
+          var items = await _settingsController
+              .hitomi(localDb: true)
+              .translate(_settingsController.config.excludes);
+          for (var item in items) {
+            item['selected'] = true;
+          }
+          if (mounted) {
+            List<Map<String, dynamic>>? data = await Navigator.push(
+                context,
+                MaterialPageRoute(
+                    builder: (c) => MultiSelectListView(items: items)));
+            if (data != null) {
+              setState(() {
+                _settingsController.updateConfig(_settingsController.config
+                    .copyWith(
+                        excludes: data
+                            .map((e) => FilterLabel(
+                                type: e['type'], name: e['name'], weight: 1.0))
+                            .toList(growable: false)));
+              });
+            }
+          }
+        },
+      ),
     ]);
   }
 
@@ -208,5 +275,61 @@ class _StateSetting extends State<SettingsView> {
                 child: Padding(
                     padding: const EdgeInsets.all(16),
                     child: _settingsContent()))));
+  }
+}
+
+class MultiSelectListView extends StatefulWidget {
+  const MultiSelectListView({
+    super.key,
+    required this.items,
+  });
+
+  final List<Map<String, dynamic>> items;
+
+  @override
+  State<MultiSelectListView> createState() => _MultiSelectListViewState();
+}
+
+class _MultiSelectListViewState extends State<MultiSelectListView> {
+  @override
+  void initState() {
+    super.initState();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+        appBar: AppBar(actions: [
+          IconButton(
+              onPressed: () => Navigator.pop(
+                  context,
+                  widget.items
+                      .where((item) => item['selected'] ?? false)
+                      .toList()),
+              icon: const Icon(Icons.done))
+        ]),
+        body: ReorderableListView(
+            children: [
+              for (var item in widget.items)
+                ListTile(
+                  key: Key(item['name']),
+                  title: Text(item['translate']),
+                  selected: item['selected'] ?? false,
+                  onTap: () {
+                    setState(() {
+                      item['selected'] = !(item['selected'] ?? false);
+                    });
+                  },
+                ),
+            ],
+            onReorder: (oldIndex, newIndex) {
+              setState(() {
+                if (oldIndex < newIndex) {
+                  newIndex -= 1;
+                }
+                var item = widget.items.removeAt(oldIndex);
+                widget.items.insert(newIndex, item);
+              });
+            }));
   }
 }

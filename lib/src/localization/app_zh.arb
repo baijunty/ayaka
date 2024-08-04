@@ -74,7 +74,7 @@
   "popWeek":"本周热门",
   "popMonth":"本月热门",
   "popYear":"年度热门",
-  "blockTag":"屏蔽该TAG", 
+  "blockTag":"屏蔽TAG", 
   "pullToRefresh": "下拉刷新",
   "releaseReady": "释放开始",
   "refreshing": "刷新中...",

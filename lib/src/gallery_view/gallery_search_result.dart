@@ -162,9 +162,8 @@ class _GallerySearchResultView extends State<GallerySearchResultView>
             min(value.length, (_page - widget.startPage + 1) * 25)))
         .then((value) => Future.wait(value.map((e) =>
             widget.api.fetchGallery(e, usePrefence: false, token: token))))
-        .then((value) => context
-            .getManager()
-            .translateLabel(value.fold(
+        .then((value) => widget.api
+            .translate(value.fold(
                 <Label>[],
                 (previousValue, element) =>
                     previousValue..addAll(element.labels())))

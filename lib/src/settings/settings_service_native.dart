@@ -28,6 +28,10 @@ CacheInfoRepository initCacheInfoRepository() {
   return CacheObjectProvider(databaseName: 'ayaka_cache');
 }
 
+Future<String> defaultAddress() async {
+  return 'http://${await localIpAddress()}:7890';
+}
+
 class SettingsServiceNativeImpl implements SettingsService {
   const SettingsServiceNativeImpl();
 

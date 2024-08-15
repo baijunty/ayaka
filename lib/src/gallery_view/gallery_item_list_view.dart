@@ -50,9 +50,8 @@ class _GalleryListView extends State<GalleryItemListView>
     widget.api
         .viewByTag(fromString(widget.label['type'], widget.label['name']),
             page: _page, sort: widget.sortEnum, token: token)
-        .then((value) => context
-            .getManager()
-            .translateLabel(value.data.fold(
+        .then((value) => widget.api
+            .translate(value.data.fold(
                 <Label>[],
                 (previousValue, element) =>
                     previousValue..addAll(element.labels())))

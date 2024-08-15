@@ -33,6 +33,10 @@ Future<String?> localIp() async {
   return localIpAddress();
 }
 
+Future<String> defaultRemoteAddress() {
+  return defaultAddress();
+}
+
 CacheInfoRepository defaultCacheInfoRepository() {
   return initCacheInfoRepository();
 }

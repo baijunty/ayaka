@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:ayaka/src/model/cache_manager.dart';
+import 'package:ayaka/src/utils/responsive_util.dart';
 import 'package:collection/collection.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -49,16 +50,17 @@ class SettingsController with ChangeNotifier {
             (value) => ThemeMode.values
                 .firstWhereOrNull((element) => element.name == value)) ??
         ThemeMode.system;
+    var defaultConfig = UserConfig('',
+        languages: const ["japanese", "chinese"],
+        maxTasks: 5,
+        dateLimit: "2013-01-01",
+        remoteHttp: await defaultRemoteAddress());
     _config = await _settingsService
         .readConfig<String>('config', defaultValue: '')
-        .then((value) => UserConfig.fromStr(value ?? ''))
-        .catchError(
-            (e) => UserConfig('',
-                languages: const ["japanese", "chinese"],
-                maxTasks: 5,
-                dateLimit: "2013-01-01",
-                remoteHttp: 'http://192.168.1.107:7890'),
-            test: (error) => true);
+        .then((value) => value?.isNotEmpty == true
+            ? UserConfig.fromStr(value!)
+            : defaultConfig)
+        .catchError((e) => defaultConfig, test: (error) => true);
     _remoteLib =
         await _settingsService.readConfig<bool>('useProxy') ?? _remoteLib;
     runServer = !kIsWeb &&

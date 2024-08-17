@@ -162,13 +162,17 @@ class _GallerySearchResultView extends State<GallerySearchResultView>
             min(value.length, (_page - widget.startPage + 1) * 25)))
         .then((value) => Future.wait(value.map((e) =>
             widget.api.fetchGallery(e, usePrefence: false, token: token))))
-        .then((value) => widget.api
-            .translate(value.fold(
-                <Label>[],
-                (previousValue, element) =>
-                    previousValue..addAll(element.labels())))
-            .then((trans) => value))
         .then((value) {
+      var labels = value.fold(<Label>[],
+          (previousValue, element) => previousValue..addAll(element.labels()));
+      return widget.api.translate(labels).then((trans) {
+        for (var g in labels) {
+          g.translate = trans.firstWhereOrNull(
+              (l) => g.type == l['type'] && g.name == l['name']);
+        }
+        return value;
+      });
+    }).then((value) {
       return Future.wait(value.map((e) => context.readUserDb(e.id, readMask)))
           .then((result) => result.foldIndexed(
               readIndexMap,

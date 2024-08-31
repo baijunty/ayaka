@@ -47,6 +47,7 @@ class _GalleryListView extends State<GalleryItemListView>
   final readIndexMap = <int, int?>{};
   Future<void> _fetchData({bool refresh = false}) async {
     token = CancelToken();
+    netLoading = true;
     widget.api
         .viewByTag(fromString(widget.label['type'], widget.label['name']),
             page: _page, sort: widget.sortEnum, token: token)
@@ -171,10 +172,8 @@ class _GalleryListView extends State<GalleryItemListView>
     super.didChangeDependencies();
     settingsController = context.watch<SettingsController>();
     if (data.isEmpty) {
-      setState(() {
-        netLoading = true;
-      });
       _fetchData();
+      setState(() {});
     }
   }
 

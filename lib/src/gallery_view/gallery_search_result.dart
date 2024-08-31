@@ -102,7 +102,8 @@ class _GallerySearchResultView extends State<GallerySearchResultView>
   void handleScroll() async {
     if (scrollController.position.pixels >=
             scrollController.position.maxScrollExtent &&
-        data.length < totalCount) {
+        data.length < totalCount &&
+        !netLoading) {
       context.showSnackBar(
           '$_page/${(totalCount / 25).ceil()} ${AppLocalizations.of(context)!.loading}');
       await context.progressDialogAction(_fetchData());
@@ -114,16 +115,15 @@ class _GallerySearchResultView extends State<GallerySearchResultView>
     super.didChangeDependencies();
     if (_page == 1) {
       _page = widget.startPage;
-      setState(() {
-        netLoading = true;
-      });
       _fetchData();
+      setState(() {});
     }
   }
 
   Future<void> _fetchData() async {
     token = CancelToken();
     Future<List<int>> idsFuture;
+    netLoading = true;
     if (_page == widget.startPage || _ids.length < totalCount) {
       idsFuture = widget.api
           .search(

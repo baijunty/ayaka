@@ -59,12 +59,11 @@ class _GalleryViewer extends State<GalleryViewer>
       context
           .readUserDb(_gallery.id, readMask)
           .then((value) => (value ?? 0))
-          .then((value) => context
-              .read<SettingsController>()
-              .manager
-              .helper
-              .delete('UserLog', {'id': _gallery.id, 'type': readMask}).then(
-                  (r) => value))
+          .then((value) => mounted
+              ? context.read<SettingsController>().manager.helper.delete(
+                  'UserLog',
+                  {'id': _gallery.id, 'type': readMask}).then((r) => value)
+              : Future.value(value))
           .then((value) => controller.jumpToPage(value));
     }
   }

@@ -241,7 +241,7 @@ class _GalleryDetailView extends State<GalleryDetailsView> {
                               gallery = value;
                             }))
                         .catchError((e) {
-                      if (mounted) {
+                      if (context.mounted) {
                         context.showSnackBar('$e');
                       }
                     }, test: (error) => true));

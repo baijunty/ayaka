@@ -75,8 +75,8 @@ class _AnimatedSaverDialogView extends State<AnimatedSaverDialog> {
                         bytes: cacheDate)
                     .catchError((e) {
                   return '$e';
-                }, test: (error) => true).then(
-                        (value) => context.showSnackBar(value));
+                }, test: (error) => true).then((value) =>
+                        context.mounted ? context.showSnackBar(value) : false);
               },
               icon: const Icon(Icons.save))
         ]),

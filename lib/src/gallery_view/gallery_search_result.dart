@@ -69,10 +69,9 @@ class _GallerySearchResultView extends State<GallerySearchResultView>
         ? null
         : (g) => PopupMenuButton<String>(itemBuilder: (context) {
               return [
-                if (!widget.local)
-                  PopupMenuItem(
-                      child: Text(AppLocalizations.of(context)!.download),
-                      onTap: () => context.addTask(g.id)),
+                PopupMenuItem(
+                    child: Text(AppLocalizations.of(context)!.download),
+                    onTap: () => context.addTask(g.id)),
                 PopupMenuItem(
                     child: Text(AppLocalizations.of(context)!.findSimiler),
                     onTap: () => Navigator.of(context).pushNamed(

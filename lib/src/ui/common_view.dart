@@ -329,9 +329,11 @@ class TagButton extends StatelessWidget {
                               .read<GalleryManager>()
                               .addTask('$commondPrefix "${label['name']}"')
                               .then((value) {
-                            Navigator.of(context).pop();
-                            context.showSnackBar(
-                                AppLocalizations.of(context)!.addTaskSuccess);
+                            if (context.mounted) {
+                              Navigator.of(context).pop();
+                              context.showSnackBar(
+                                  AppLocalizations.of(context)!.addTaskSuccess);
+                            }
                           });
                         } else {
                           var settings = context.read<SettingsController>();
@@ -469,10 +471,12 @@ extension ContextAction on BuildContext {
         context: this,
         builder: (context) {
           return FutureBuilder(future: action.then((r) {
-            if (Navigator.of(context).canPop()) {
+            if (mounted && Navigator.of(context).canPop()) {
               Navigator.pop(context);
             }
-            return showSnackBar(AppLocalizations.of(context)!.success);
+            return mounted
+                ? showSnackBar(AppLocalizations.of(context)!.success)
+                : false;
           }), builder: (c, d) {
             if (d.hasData || d.hasError) {
               return Container();
@@ -553,7 +557,7 @@ extension ContextAction on BuildContext {
         }, test: (error) => true);
   }
 
-  Future<bool?> showConfirmDialog(String msg) async {
+  Future<bool?> showConfirmDialog(String msg) {
     return showDialog(
         context: this,
         builder: (context) {

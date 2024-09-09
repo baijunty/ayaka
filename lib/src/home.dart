@@ -88,7 +88,7 @@ class _AyakaHome extends State<AyakaHome> {
     }
     return PopScope(
         canPop: exitApp,
-        onPopInvoked: (didPop) {
+        onPopInvokedWithResult: (didPop, _) {
           if (!exitApp) {
             setState(() async {
               context.showSnackBar(AppLocalizations.of(context)!.exitConfirm);

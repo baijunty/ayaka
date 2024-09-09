@@ -181,13 +181,17 @@ class _GallerySearch extends State<GallerySearch> {
                       await api
                           .fetchGallery(controller.text, usePrefence: false)
                           .then((value) async {
-                        await Navigator.of(context).pushNamed(
-                            GalleryDetailsView.routeName,
-                            arguments: {'gallery': value, 'local': false});
+                        if (context.mounted) {
+                          await Navigator.of(context).pushNamed(
+                              GalleryDetailsView.routeName,
+                              arguments: {'gallery': value, 'local': false});
+                        }
                         return debugPrint('fetch ${value.name}');
                       }).catchError(
-                              (e) => context.showSnackBar(
-                                  '${AppLocalizations.of(context)!.networkError} or ${AppLocalizations.of(context)!.wrongId}'),
+                              (e) => context.mounted
+                                  ? context.showSnackBar(
+                                      '${AppLocalizations.of(context)!.networkError} or ${AppLocalizations.of(context)!.wrongId}')
+                                  : false,
                               test: (error) => true);
                     } else {
                       Navigator.of(context).restorablePushNamed(

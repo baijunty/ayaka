@@ -286,9 +286,11 @@ class _UserProfileLogView extends State<UserProfileLogView> {
   void clearData() async {
     await context
         .showConfirmDialog(AppLocalizations.of(context)!.clearDataWarn)
-        .then((value) =>
-            context.getSqliteHelper().delete('UserLog', {'type': widget.type}))
         .then((value) {
+      if (mounted) {
+        context.getSqliteHelper().delete('UserLog', {'type': widget.type});
+      }
+    }).then((value) {
       if (mounted) {
         context.showSnackBar(AppLocalizations.of(context)!.success);
         setState(() {

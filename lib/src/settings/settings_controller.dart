@@ -5,6 +5,7 @@ import 'dart:io';
 import 'package:ayaka/src/model/cache_manager.dart';
 import 'package:ayaka/src/utils/responsive_util.dart';
 import 'package:collection/collection.dart';
+import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_cache_manager/flutter_cache_manager.dart';
@@ -22,6 +23,7 @@ class SettingsController with ChangeNotifier {
   late ThemeMode _themeMode;
   late UserConfig _config;
   late TaskManager _manager;
+  late bool exntension = false;
   late CacheManager _cacheManager;
   late CacheManager _localCacheManager;
   HttpServer? _server;
@@ -74,7 +76,19 @@ class SettingsController with ChangeNotifier {
             .then((v) => _manager.parseCommandAndRun('-c'))
             .then((value) => _config)
             .catchError((e) => _config, test: (error) => true)
-        : Future.value(_config);
+        : Future.value(_config).then((c) async {
+            if (remoteLib) {
+              await _manager.dio
+                  .get<Map<String, dynamic>>('${_config.remoteHttp}/test',
+                      options: Options(responseType: ResponseType.json))
+                  .then((d) {
+                var resp = d.data;
+                exntension = resp!['success'] && resp['feature'];
+                return resp;
+              });
+            }
+            return config;
+          });
   }
 
   Future<void> switchConn(bool useProxy) async {

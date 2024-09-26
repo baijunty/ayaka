@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:hitomi/gallery/gallery.dart';
 import 'package:hitomi/gallery/image.dart' show ThumbnaiSize;
+import 'package:hitomi/lib.dart';
 import 'package:provider/provider.dart';
 
 import '../utils/proxy_network_image.dart';
@@ -25,8 +26,12 @@ class _GalleryViewer extends State<GalleryViewer>
   late Gallery _gallery;
   var index = 0;
   var showAppBar = false;
+  var extension = false;
+  var translate = false;
+  var lang = 'ja';
   late PageController controller;
   late MultiImageProvider provider;
+  late Hitomi api;
   final FocusNode focusNode = FocusNode();
   @override
   void didChangeDependencies() {
@@ -37,23 +42,9 @@ class _GalleryViewer extends State<GalleryViewer>
     index = args['index'] ?? 0;
     controller = PageController(initialPage: index);
     var settings = context.read<SettingsController>();
-    final api = settings.hitomi(localDb: args['local']);
-    provider = MultiImageProvider(
-        _gallery.files.map((e) {
-          return ProxyNetworkImage(
-              dataStream: (chunkEvents) => api
-                      .fetchImageData(
-                    e,
-                    id: _gallery.id,
-                    size: ThumbnaiSize.origin,
-                    refererUrl: 'https://hitomi.la${_gallery.urlEncode()}',
-                    onProcess: (now, total) => chunkEvents.add(ImageChunkEvent(
-                        cumulativeBytesLoaded: now, expectedTotalBytes: total)),
-                  )
-                      .fold(<int>[], (acc, l) => acc..addAll(l)),
-              key: '${e.hash}_origin');
-        }).toList(),
-        initialIndex: index);
+    extension = settings.exntension;
+    api = settings.hitomi(localDb: args['local']);
+    buildProvider();
     controller.addListener(handlePageChange);
     if (args['index'] == null) {
       context
@@ -66,6 +57,28 @@ class _GalleryViewer extends State<GalleryViewer>
               : Future.value(value))
           .then((value) => controller.jumpToPage(value));
     }
+    lang = _gallery.language == 'english' ? 'en' : lang;
+  }
+
+  void buildProvider() {
+    provider = MultiImageProvider(
+        _gallery.files.map((e) {
+          return ProxyNetworkImage(
+              dataStream: (chunkEvents) => api
+                      .fetchImageData(
+                    e,
+                    id: _gallery.id,
+                    size: ThumbnaiSize.origin,
+                    refererUrl: 'https://hitomi.la${_gallery.urlEncode()}',
+                    lang: lang,
+                    translate: translate,
+                    onProcess: (now, total) => chunkEvents.add(ImageChunkEvent(
+                        cumulativeBytesLoaded: now, expectedTotalBytes: total)),
+                  )
+                      .fold(<int>[], (acc, l) => acc..addAll(l)),
+              key: '${e.hash}:${translate}_origin');
+        }).toList(),
+        initialIndex: index);
   }
 
   void handlePageChange() async {
@@ -152,7 +165,17 @@ class _GalleryViewer extends State<GalleryViewer>
                       ]),
                       backgroundColor: Theme.of(context).primaryColor,
                       leading: BackButton(
-                          onPressed: () => Navigator.of(context).pop())))),
+                          onPressed: () => Navigator.of(context).pop()),
+                      actions: (extension
+                          ? [
+                              IconButton(
+                                  onPressed: () => setState(() {
+                                        translate = !translate;
+                                        buildProvider();
+                                      }),
+                                  icon: const Icon(Icons.translate))
+                            ]
+                          : null)))),
         ]))));
   }
 }

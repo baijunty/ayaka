@@ -173,7 +173,6 @@ class _GalleryListView extends State<GalleryItemListView>
     settingsController = context.watch<SettingsController>();
     if (data.isEmpty) {
       _fetchData();
-      setState(() {});
     }
   }
 

@@ -41,11 +41,9 @@ class _GalleryViewer extends State<GalleryViewer>
     if (index == 0) {
       index = args['index'] ?? 0;
       _gallery = args['gallery'];
-      controller = PageController(initialPage: index);
       var settings = context.read<SettingsController>();
       extension = settings.exntension;
       api = settings.hitomi(localDb: args['local']);
-      controller.addListener(handlePageChange);
       if (args['index'] == null) {
         context
             .readUserDb(_gallery.id, readMask)
@@ -63,6 +61,8 @@ class _GalleryViewer extends State<GalleryViewer>
   }
 
   void buildProvider() {
+    controller = PageController(initialPage: index);
+    controller.addListener(handlePageChange);
     provider = MultiImageProvider(
         _gallery.files.map((e) {
           return ProxyNetworkImage(
@@ -173,6 +173,8 @@ class _GalleryViewer extends State<GalleryViewer>
                               IconButton(
                                   onPressed: () => setState(() {
                                         translate = !translate;
+                                        controller
+                                            .removeListener(handlePageChange);
                                         buildProvider();
                                       }),
                                   icon: Icon(translate

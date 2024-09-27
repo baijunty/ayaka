@@ -38,26 +38,28 @@ class _GalleryViewer extends State<GalleryViewer>
     super.didChangeDependencies();
     var args =
         ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>;
-    _gallery = args['gallery'];
-    index = args['index'] ?? 0;
-    controller = PageController(initialPage: index);
-    var settings = context.read<SettingsController>();
-    extension = settings.exntension;
-    api = settings.hitomi(localDb: args['local']);
-    buildProvider();
-    controller.addListener(handlePageChange);
-    if (args['index'] == null) {
-      context
-          .readUserDb(_gallery.id, readMask)
-          .then((value) => (value ?? 0))
-          .then((value) => mounted
-              ? context.read<SettingsController>().manager.helper.delete(
-                  'UserLog',
-                  {'id': _gallery.id, 'type': readMask}).then((r) => value)
-              : Future.value(value))
-          .then((value) => controller.jumpToPage(value));
+    if (index == 0) {
+      index = args['index'] ?? 0;
+      _gallery = args['gallery'];
+      controller = PageController(initialPage: index);
+      var settings = context.read<SettingsController>();
+      extension = settings.exntension;
+      api = settings.hitomi(localDb: args['local']);
+      controller.addListener(handlePageChange);
+      if (args['index'] == null) {
+        context
+            .readUserDb(_gallery.id, readMask)
+            .then((value) => (value ?? 0))
+            .then((value) => mounted
+                ? context.read<SettingsController>().manager.helper.delete(
+                    'UserLog',
+                    {'id': _gallery.id, 'type': readMask}).then((r) => value)
+                : Future.value(value))
+            .then((value) => controller.jumpToPage(value));
+      }
+      lang = _gallery.language == 'english' ? 'en' : lang;
+      buildProvider();
     }
-    lang = _gallery.language == 'english' ? 'en' : lang;
   }
 
   void buildProvider() {
@@ -136,7 +138,7 @@ class _GalleryViewer extends State<GalleryViewer>
                             showAppBar = !showAppBar;
                           })))),
           AnimatedPadding(
-              key: GlobalObjectKey(_gallery),
+              key: GlobalObjectKey(_gallery.id),
               duration: const Duration(milliseconds: 250),
               padding: showAppBar
                   ? const EdgeInsets.only(left: 0)
@@ -173,7 +175,9 @@ class _GalleryViewer extends State<GalleryViewer>
                                         translate = !translate;
                                         buildProvider();
                                       }),
-                                  icon: const Icon(Icons.translate))
+                                  icon: Icon(translate
+                                      ? Icons.translate_sharp
+                                      : Icons.g_translate))
                             ]
                           : null)))),
         ]))));

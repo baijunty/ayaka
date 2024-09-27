@@ -83,7 +83,11 @@ class SettingsController with ChangeNotifier {
                       options: Options(responseType: ResponseType.json))
                   .then((d) {
                 var resp = d.data;
-                exntension = resp!['success'] && resp['feature'];
+                exntension = resp!['success'];
+                if (exntension) {
+                  _config = config.copyWith(aiTagPath: resp['feature']);
+                  _manager = TaskManager(_config);
+                }
                 return resp;
               });
             }

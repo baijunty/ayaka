@@ -21,6 +21,49 @@ class GalleryViewer extends StatefulWidget {
   }
 }
 
+class LoadingMultiImageProvider extends MultiImageProvider {
+  LoadingMultiImageProvider(super.imageProviders, {super.initialIndex});
+
+  Widget loadingBuilder(
+      BuildContext context, Widget child, ImageChunkEvent? loadingProgress) {
+    return loadingProgress == null
+        ? child
+        : Center(
+            child: CircularProgressIndicator(
+                value: loadingProgress.expectedTotalBytes != null
+                    ? loadingProgress.cumulativeBytesLoaded /
+                        loadingProgress.expectedTotalBytes!
+                    : null));
+  }
+
+  Widget errorBuilder(context, error, stackTrace) {
+    return const Icon(Icons.error);
+  }
+
+  Widget frameBuilder(BuildContext context, Widget child, int? frame,
+      bool wasSynchronouslyLoaded) {
+    if (wasSynchronouslyLoaded) {
+      return child;
+    }
+    return AnimatedOpacity(
+      opacity: frame == null ? 0 : 1,
+      duration: const Duration(seconds: 1),
+      curve: Curves.easeOut,
+      child: child,
+    );
+  }
+
+  @override
+  Widget imageWidgetBuilder(BuildContext context, int index) {
+    return Image(
+      image: imageBuilder(context, index),
+      errorBuilder: errorBuilder,
+      loadingBuilder: loadingBuilder,
+      frameBuilder: frameBuilder,
+    );
+  }
+}
+
 class _GalleryViewer extends State<GalleryViewer>
     with SingleTickerProviderStateMixin {
   late Gallery _gallery;
@@ -42,7 +85,8 @@ class _GalleryViewer extends State<GalleryViewer>
       index = args['index'] ?? 0;
       _gallery = args['gallery'];
       var settings = context.read<SettingsController>();
-      extension = settings.exntension;
+      extension = settings.exntension &&
+          !settings.config.languages.contains(_gallery.language);
       api = settings.hitomi(localDb: args['local']);
       if (args['index'] == null) {
         context
@@ -55,7 +99,9 @@ class _GalleryViewer extends State<GalleryViewer>
                 : Future.value(value))
             .then((value) => controller.jumpToPage(value));
       }
-      lang = _gallery.language == 'english' ? 'en' : lang;
+      lang = ['english', 'korean'].contains(_gallery.language)
+          ? _gallery.language!.substring(0, 2)
+          : lang;
       buildProvider();
     }
   }
@@ -63,21 +109,25 @@ class _GalleryViewer extends State<GalleryViewer>
   void buildProvider() {
     controller = PageController(initialPage: index);
     controller.addListener(handlePageChange);
-    provider = MultiImageProvider(
+    provider = LoadingMultiImageProvider(
         _gallery.files.map((e) {
           return ProxyNetworkImage(
-              dataStream: (chunkEvents) => api
-                      .fetchImageData(
-                    e,
-                    id: _gallery.id,
-                    size: ThumbnaiSize.origin,
-                    refererUrl: 'https://hitomi.la${_gallery.urlEncode()}',
-                    lang: lang,
-                    translate: translate,
-                    onProcess: (now, total) => chunkEvents.add(ImageChunkEvent(
-                        cumulativeBytesLoaded: now, expectedTotalBytes: total)),
-                  )
-                      .fold(<int>[], (acc, l) => acc..addAll(l)),
+              dataStream: (chunkEvents) {
+                chunkEvents.add(const ImageChunkEvent(
+                    cumulativeBytesLoaded: 0, expectedTotalBytes: null));
+                return api
+                    .fetchImageData(
+                  e,
+                  id: _gallery.id,
+                  size: ThumbnaiSize.origin,
+                  refererUrl: 'https://hitomi.la${_gallery.urlEncode()}',
+                  lang: lang,
+                  translate: translate,
+                  onProcess: (now, total) => chunkEvents.add(ImageChunkEvent(
+                      cumulativeBytesLoaded: now, expectedTotalBytes: total)),
+                )
+                    .fold(<int>[], (acc, l) => acc..addAll(l));
+              },
               key: '${e.hash}:${translate}_origin');
         }).toList(),
         initialIndex: index);

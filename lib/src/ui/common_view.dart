@@ -3,6 +3,7 @@ import 'dart:math';
 
 import 'package:ayaka/src/gallery_view/gallery_tabview.dart';
 import 'package:ayaka/src/utils/proxy_network_image.dart';
+import 'package:dio/dio.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -60,22 +61,26 @@ class ThumbImageView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Stack(children: [
-      AspectRatio(
-        aspectRatio: max(aspectRatio, 0.65),
-        child: Image(
-          image: provider,
-          errorBuilder: errorBuilder,
-          loadingBuilder: loadingBuilder,
-          frameBuilder: frameBuilder,
-          fit: BoxFit.cover,
-        ),
-      ),
+      Padding(
+          padding: const EdgeInsets.all(4),
+          child: ClipRRect(
+              borderRadius: BorderRadius.circular(4),
+              child: AspectRatio(
+                aspectRatio: max(aspectRatio, 0.65),
+                child: Image(
+                  image: provider,
+                  errorBuilder: errorBuilder,
+                  loadingBuilder: loadingBuilder,
+                  frameBuilder: frameBuilder,
+                  fit: BoxFit.cover,
+                ),
+              ))),
       if (label != null)
         SizedBox(
             width: 40,
             height: 40,
             child: Padding(
-                padding: const EdgeInsets.all(2),
+                padding: const EdgeInsets.all(4),
                 child: DecoratedBox(
                   decoration: const BoxDecoration(
                       shape: BoxShape.circle, color: Colors.black45),
@@ -464,6 +469,20 @@ class TagDetail extends StatelessWidget {
 extension ContextAction on BuildContext {
   Future<void> addTask(int id) async {
     return progressDialogAction(read<GalleryManager>().addTask(id.toString()));
+  }
+
+  Future<List<Gallery>> getSuggesution(int id) async {
+    var controller = read<SettingsController>();
+    var requests = controller.remoteLib
+        ? controller.manager.dio
+            .get<List<dynamic>>('${controller.config.remoteHttp}/suggest',
+                queryParameters: {'id': id},
+                options: Options(responseType: ResponseType.json))
+            .then((resp) => resp.data!)
+            .then((list) => list.cast<int>())
+        : controller.manager.findSugguestGallery(id);
+    return requests.then((list) => Future.wait(
+        list.map((id) => controller.hitomi(localDb: true).fetchGallery(id))));
   }
 
   Future<void> progressDialogAction(Future action) async {

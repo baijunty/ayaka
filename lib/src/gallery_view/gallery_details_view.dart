@@ -248,6 +248,7 @@ class _GalleryDetailView extends State<GalleryDetailsView> {
                   },
                   tagInfo: isDeskTop ? tagInfo : null),
               if (!isDeskTop) tagInfo,
+              if (!netLoading) SugguestView(gallery),
               SliverGrid.builder(
                   gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
                       maxCrossAxisExtent: 320),
@@ -602,7 +603,95 @@ class GalleryTagDetailInfo extends StatelessWidget {
           [typeList['female'], typeList['male'], typeList['tag']]
               .any((element) => element != null))
         _otherTagInfo(context, typeList['female']?.take(20).toList(),
-            typeList['male'], typeList['tag']?.take(20).toList())
+            typeList['male'], typeList['tag']?.take(20).toList()),
     ]);
+  }
+}
+
+class SugguestView extends StatefulWidget {
+  final Gallery gallery;
+  const SugguestView(this.gallery, {super.key});
+  @override
+  State<StatefulWidget> createState() {
+    return _SuggestView();
+  }
+}
+
+class _SuggestView extends State<SugguestView> {
+  final suggestGallerys = <Gallery>[];
+  var inited = false;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (!inited) {
+      widget.gallery.related?.isNotEmpty == true
+          ? Future.wait(widget.gallery.related!.map((id) => context
+              .read<SettingsController>()
+              .hitomi()
+              .fetchGallery(id, usePrefence: false))).then((resp) {
+              suggestGallerys.addAll(resp);
+              setState(() {
+                inited = true;
+              });
+            }).catchError((e) {
+              debugPrint('$e');
+            }, test: (error) => true)
+          : context.getSuggesution(widget.gallery.id).then((resp) async {
+              suggestGallerys.addAll(resp);
+              setState(() {
+                inited = true;
+              });
+            }).catchError((e) {
+              debugPrint('$e');
+            }, test: (error) => true);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return SliverToBoxAdapter(
+        child: SizedBox(
+            height: suggestGallerys.isEmpty ? 0 : 120,
+            child: ListView.separated(
+              itemCount: suggestGallerys.length,
+              separatorBuilder: (BuildContext context, int index) =>
+                  const Divider(),
+              itemBuilder: (context, index) {
+                var gallery = suggestGallerys[index];
+                return SizedBox(
+                    width: 120,
+                    child: InkWell(
+                        child: Column(children: [
+                          SizedBox(
+                              height: 100,
+                              child: ThumbImageView(
+                                  CacheImage(
+                                      manager: context.getCacheManager(
+                                          local:
+                                              widget.gallery.related == null),
+                                      image: gallery.files.first,
+                                      refererUrl:
+                                          'https://hitomi.la${gallery.urlEncode()}',
+                                      id: gallery.id.toString(),
+                                      size: img.ThumbnaiSize.smaill),
+                                  label: Text(gallery.files.length.toString(),
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .labelLarge
+                                          ?.copyWith(color: Colors.deepOrange)),
+                                  aspectRatio: 1)),
+                          Text(gallery.name,
+                              maxLines: 1,
+                              style: Theme.of(context).textTheme.labelSmall,
+                              overflow: TextOverflow.ellipsis,
+                              softWrap: true),
+                        ]),
+                        onTap: () => Navigator.of(context).pushNamed(
+                            GalleryDetailsView.routeName,
+                            arguments: {'gallery': gallery, 'local': true})));
+              },
+              scrollDirection: Axis.horizontal,
+            )));
   }
 }

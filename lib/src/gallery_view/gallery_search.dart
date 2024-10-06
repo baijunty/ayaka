@@ -37,7 +37,7 @@ class _GallerySearch extends State<GallerySearch> {
   Future<Iterable<Widget>> fetchLabels(SearchController controller) async {
     var text = controller.value.text;
     text = text.substring(min(text.lastIndexOf(',') + 1, text.length));
-    if (text.length < 2 || !zhAndJpCodeExp.hasMatch(text)) {
+    if (text.length < 2) {
       return [];
     }
     if (lastQuery == text) {

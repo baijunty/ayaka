@@ -43,6 +43,7 @@ class _GalleryDetailView extends State<GalleryDetailsView> {
   int? readedIndex;
   CancelToken? token;
   final List<img.Image> _selected = [];
+  final List<Gallery> suggestGallerys = [];
   List<Map<String, dynamic>> translates = [];
   Future<void> _fetchTransLate() async {
     var api = controller.hitomi(localDb: true);
@@ -203,11 +204,38 @@ class _GalleryDetailView extends State<GalleryDetailsView> {
                 ]))));
   }
 
+  void fetchSuggestData(bool b) {
+    if (suggestGallerys.isEmpty && b) {
+      gallery.related?.isNotEmpty == true
+          ? Future.wait(gallery.related!.map((id) => context
+              .read<SettingsController>()
+              .hitomi()
+              .fetchGallery(id, usePrefence: false))).then((resp) {
+              setState(() {
+                suggestGallerys.addAll(resp);
+              });
+            }).catchError((e) {
+              debugPrint('$e');
+            }, test: (error) => true)
+          : context.getSuggesution(gallery.id).then((resp) async {
+              setState(() {
+                suggestGallerys.addAll(resp);
+              });
+            }).catchError((e) {
+              debugPrint('$e');
+            }, test: (error) => true);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     var api = controller.hitomi(localDb: status != GalleryStatus.notExists);
     var refererUrl = 'https://hitomi.la${gallery.urlEncode()}';
     var isDeskTop = context.currentDevice() == DeviceInfo.deskTop;
+    var suggest = ExpansionTile(
+        title: Text(AppLocalizations.of(context)!.suggest),
+        onExpansionChanged: fetchSuggestData,
+        children: [SugguestView(gallery, suggestGallerys)]);
     var tagInfo = GalleryTagDetailInfo(
       gallery: gallery,
       extendedInfo: translates,
@@ -215,8 +243,8 @@ class _GalleryDetailView extends State<GalleryDetailsView> {
       readIndex: readedIndex,
       deskTop: isDeskTop,
       buildChildren: (children) => isDeskTop
-          ? Column(children: children)
-          : SliverList.list(children: children),
+          ? Column(children: [...children, suggest])
+          : SliverList.list(children: [...children, suggest]),
     );
     return Scaffold(
         body: SafeArea(
@@ -248,7 +276,6 @@ class _GalleryDetailView extends State<GalleryDetailsView> {
                   },
                   tagInfo: isDeskTop ? tagInfo : null),
               if (!isDeskTop) tagInfo,
-              if (!netLoading) SugguestView(gallery),
               SliverGrid.builder(
                   gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
                       maxCrossAxisExtent: 320),
@@ -610,7 +637,8 @@ class GalleryTagDetailInfo extends StatelessWidget {
 
 class SugguestView extends StatefulWidget {
   final Gallery gallery;
-  const SugguestView(this.gallery, {super.key});
+  final List<Gallery> suggestGallerys;
+  const SugguestView(this.gallery, this.suggestGallerys, {super.key});
   @override
   State<StatefulWidget> createState() {
     return _SuggestView();
@@ -618,80 +646,48 @@ class SugguestView extends StatefulWidget {
 }
 
 class _SuggestView extends State<SugguestView> {
-  final suggestGallerys = <Gallery>[];
-  var inited = false;
-
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    if (!inited) {
-      widget.gallery.related?.isNotEmpty == true
-          ? Future.wait(widget.gallery.related!.map((id) => context
-              .read<SettingsController>()
-              .hitomi()
-              .fetchGallery(id, usePrefence: false))).then((resp) {
-              suggestGallerys.addAll(resp);
-              setState(() {
-                inited = true;
-              });
-            }).catchError((e) {
-              debugPrint('$e');
-            }, test: (error) => true)
-          : context.getSuggesution(widget.gallery.id).then((resp) async {
-              suggestGallerys.addAll(resp);
-              setState(() {
-                inited = true;
-              });
-            }).catchError((e) {
-              debugPrint('$e');
-            }, test: (error) => true);
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
-    return SliverToBoxAdapter(
-        child: SizedBox(
-            height: suggestGallerys.isEmpty ? 0 : 120,
-            child: ListView.separated(
-              itemCount: suggestGallerys.length,
-              separatorBuilder: (BuildContext context, int index) =>
-                  const Divider(),
-              itemBuilder: (context, index) {
-                var gallery = suggestGallerys[index];
-                return SizedBox(
-                    width: 120,
-                    child: InkWell(
-                        child: Column(children: [
-                          SizedBox(
-                              height: 100,
-                              child: ThumbImageView(
-                                  CacheImage(
-                                      manager: context.getCacheManager(
-                                          local:
-                                              widget.gallery.related == null),
-                                      image: gallery.files.first,
-                                      refererUrl:
-                                          'https://hitomi.la${gallery.urlEncode()}',
-                                      id: gallery.id.toString(),
-                                      size: img.ThumbnaiSize.smaill),
-                                  label: Text(gallery.files.length.toString(),
-                                      style: Theme.of(context)
-                                          .textTheme
-                                          .labelLarge
-                                          ?.copyWith(color: Colors.deepOrange)),
-                                  aspectRatio: 1)),
-                          Text(gallery.name,
-                              maxLines: 1,
-                              style: Theme.of(context).textTheme.labelSmall,
-                              overflow: TextOverflow.ellipsis,
-                              softWrap: true),
-                        ]),
-                        onTap: () => Navigator.of(context).pushNamed(
-                            GalleryDetailsView.routeName,
-                            arguments: {'gallery': gallery, 'local': true})));
-              },
-              scrollDirection: Axis.horizontal,
-            )));
+    return SizedBox(
+        height: widget.suggestGallerys.isEmpty ? 0 : 120,
+        child: ListView.separated(
+          itemCount: widget.suggestGallerys.length,
+          separatorBuilder: (BuildContext context, int index) =>
+              const Divider(),
+          itemBuilder: (context, index) {
+            var gallery = widget.suggestGallerys[index];
+            return SizedBox(
+                width: 120,
+                child: InkWell(
+                    child: Column(children: [
+                      SizedBox(
+                          height: 100,
+                          child: ThumbImageView(
+                              CacheImage(
+                                  manager: context.getCacheManager(
+                                      local: widget.gallery.related == null),
+                                  image: gallery.files.first,
+                                  refererUrl:
+                                      'https://hitomi.la${gallery.urlEncode()}',
+                                  id: gallery.id.toString(),
+                                  size: img.ThumbnaiSize.smaill),
+                              label: Text(gallery.files.length.toString(),
+                                  style: Theme.of(context)
+                                      .textTheme
+                                      .labelLarge
+                                      ?.copyWith(color: Colors.deepOrange)),
+                              aspectRatio: 1)),
+                      Text(gallery.name,
+                          maxLines: 1,
+                          style: Theme.of(context).textTheme.labelSmall,
+                          overflow: TextOverflow.ellipsis,
+                          softWrap: true),
+                    ]),
+                    onTap: () => Navigator.of(context).pushNamed(
+                        GalleryDetailsView.routeName,
+                        arguments: {'gallery': gallery, 'local': true})));
+          },
+          scrollDirection: Axis.horizontal,
+        ));
   }
 }

@@ -44,3 +44,4 @@ app.*.map.json
 user.db
 user.db-shm
 user.db-wal
+.metadata

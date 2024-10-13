@@ -13,6 +13,7 @@ import 'package:ayaka/src/ui/common_view.dart';
 import 'package:ayaka/src/utils/common_define.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 import 'package:hitomi/gallery/gallery.dart';
 import 'package:hitomi/gallery/label.dart';
 import 'package:hitomi/lib.dart';
@@ -236,6 +237,7 @@ class _GalleryDetailView extends State<GalleryDetailsView> {
         title: Text(AppLocalizations.of(context)!.suggest),
         onExpansionChanged: fetchSuggestData,
         children: [SugguestView(gallery, suggestGallerys)]);
+    var mediaData = MediaQuery.of(context);
     var tagInfo = GalleryTagDetailInfo(
       gallery: gallery,
       extendedInfo: translates,
@@ -276,40 +278,40 @@ class _GalleryDetailView extends State<GalleryDetailsView> {
                   },
                   tagInfo: isDeskTop ? tagInfo : null),
               if (!isDeskTop) tagInfo,
-              SliverGrid.builder(
-                  gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-                      maxCrossAxisExtent: 320),
-                  itemCount: gallery.files.length,
-                  itemBuilder: (context, index) {
-                    var image = gallery.files[index];
-                    return GestureDetector(
-                        onTap: () => _handleClick(index),
-                        onLongPress: _selected.isEmpty
-                            ? () => setState(() {
-                                  _selected.add(image);
-                                })
-                            : null,
-                        child: Card.outlined(
-                            child: Center(
-                                child: ThumbImageView(
-                          CacheImage(
-                              manager: context.getCacheManager(
-                                  local: status != GalleryStatus.notExists),
-                              image: image,
-                              refererUrl: refererUrl,
-                              id: gallery.id.toString()),
-                          label: _selected.isEmpty
-                              ? Text('${index + 1}',
-                                  style: Theme.of(context)
-                                      .textTheme
-                                      .labelLarge
-                                      ?.copyWith(color: Colors.deepOrange))
-                              : Checkbox.adaptive(
-                                  value: _selected.contains(image),
-                                  onChanged: (b) => _handleClick(index)),
-                          aspectRatio: image.width / image.height,
-                        ))));
-                  })
+              SliverFillRemaining(
+                  child: MasonryGridView.count(
+                      crossAxisCount:
+                          (mediaData.size.width * mediaData.devicePixelRatio) ~/
+                              256,
+                      itemCount: gallery.files.length,
+                      itemBuilder: (context, index) {
+                        var image = gallery.files[index];
+                        return GestureDetector(
+                            onTap: () => _handleClick(index),
+                            onLongPress: _selected.isEmpty
+                                ? () => setState(() {
+                                      _selected.add(image);
+                                    })
+                                : null,
+                            child: ThumbImageView(
+                              CacheImage(
+                                  manager: context.getCacheManager(
+                                      local: status != GalleryStatus.notExists),
+                                  image: image,
+                                  refererUrl: refererUrl,
+                                  id: gallery.id.toString()),
+                              label: _selected.isEmpty
+                                  ? Text('${index + 1}',
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .labelLarge
+                                          ?.copyWith(color: Colors.deepOrange))
+                                  : Checkbox.adaptive(
+                                      value: _selected.contains(image),
+                                      onChanged: (b) => _handleClick(index)),
+                              aspectRatio: image.width / image.height,
+                            ));
+                      }))
             ]),
             imagesToolbar()
           ])),
@@ -416,12 +418,17 @@ class GalleryDetailHead extends StatelessWidget {
         .where((element) => element['type'] == 'group')
         .take(size - artists.length)
         .toList();
-    var screenWidth = MediaQuery.of(context).size.width;
-    var width = min(screenWidth / 3, 300.0);
+    var mediaData = MediaQuery.of(context);
+    var width =
+        min(mediaData.size.width * mediaData.devicePixelRatio / 3, 300.0);
     var height = max(
-        width,
-        min(width * 1.5,
-            width * gallery.files.first.height / gallery.files.first.width));
+            width,
+            min(
+                width * 1.5,
+                width *
+                    gallery.files.first.height /
+                    gallery.files.first.width)) /
+        mediaData.devicePixelRatio;
     var totalHeight =
         height + (Theme.of(context).appBarTheme.toolbarHeight ?? 56);
     var userLanges = context.getManager().config.languages;
@@ -429,7 +436,7 @@ class GalleryDetailHead extends StatelessWidget {
         ?.where((lang) => userLanges.any((element) => element == lang.name))
         .toList();
     debugPrint(
-        '${gallery.id} screenW $screenWidth w $width h $height totalH $totalHeight $lanuages');
+        '${gallery.id} screenW $mediaData w $width h $height totalH $totalHeight $lanuages');
     return SliverAppBar(
         backgroundColor: entry.value,
         leading: AppBar(
@@ -465,7 +472,7 @@ class GalleryDetailHead extends StatelessWidget {
             Padding(
                 padding: const EdgeInsets.only(left: 8),
                 child: SizedBox(
-                    width: width,
+                    width: width / mediaData.devicePixelRatio,
                     height: height - 8,
                     child: headThumbImage(context))),
             Expanded(

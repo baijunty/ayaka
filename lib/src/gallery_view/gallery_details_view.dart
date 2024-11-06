@@ -13,7 +13,6 @@ import 'package:ayaka/src/ui/common_view.dart';
 import 'package:ayaka/src/utils/common_define.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 import 'package:hitomi/gallery/gallery.dart';
 import 'package:hitomi/gallery/label.dart';
 import 'package:hitomi/lib.dart';
@@ -73,6 +72,7 @@ class _GalleryDetailView extends State<GalleryDetailsView> {
                 }
                 return gallery;
               }))
+        .then((v) => fetchSuggestData())
         .then((value) => api.translate(gallery.labels()))
         .then((value) {
       if (mounted) {
@@ -205,27 +205,25 @@ class _GalleryDetailView extends State<GalleryDetailsView> {
                 ]))));
   }
 
-  void fetchSuggestData(bool b) {
-    if (suggestGallerys.isEmpty && b) {
-      gallery.related?.isNotEmpty == true
-          ? Future.wait(gallery.related!.map((id) => context
-              .read<SettingsController>()
-              .hitomi()
-              .fetchGallery(id, usePrefence: false))).then((resp) {
-              setState(() {
-                suggestGallerys.addAll(resp);
-              });
-            }).catchError((e) {
-              debugPrint('$e');
-            }, test: (error) => true)
-          : context.getSuggesution(gallery.id).then((resp) async {
-              setState(() {
-                suggestGallerys.addAll(resp);
-              });
-            }).catchError((e) {
-              debugPrint('$e');
-            }, test: (error) => true);
-    }
+  void fetchSuggestData() async {
+    return gallery.related?.isNotEmpty == true
+        ? Future.wait(gallery.related!.map((id) => context
+            .read<SettingsController>()
+            .hitomi()
+            .fetchGallery(id, usePrefence: false))).then((resp) {
+            setState(() {
+              suggestGallerys.addAll(resp);
+            });
+          }).catchError((e) {
+            debugPrint('$e');
+          }, test: (error) => true)
+        : context.getSuggesution(gallery.id).then((resp) async {
+            setState(() {
+              suggestGallerys.addAll(resp);
+            });
+          }).catchError((e) {
+            debugPrint('$e');
+          }, test: (error) => true);
   }
 
   @override
@@ -233,88 +231,87 @@ class _GalleryDetailView extends State<GalleryDetailsView> {
     var api = controller.hitomi(localDb: status != GalleryStatus.notExists);
     var refererUrl = 'https://hitomi.la${gallery.urlEncode()}';
     var isDeskTop = context.currentDevice() == DeviceInfo.deskTop;
-    var suggest = ExpansionTile(
-        title: Text(AppLocalizations.of(context)!.suggest),
-        onExpansionChanged: fetchSuggestData,
-        children: [SugguestView(gallery, suggestGallerys)]);
-    var mediaData = MediaQuery.of(context);
     var tagInfo = GalleryTagDetailInfo(
       gallery: gallery,
       extendedInfo: translates,
       netLoading: netLoading,
       readIndex: readedIndex,
       deskTop: isDeskTop,
+      suggest: suggestGallerys,
       buildChildren: (children) => isDeskTop
-          ? Column(children: [...children, suggest])
-          : SliverList.list(children: [...children, suggest]),
+          ? Column(children: children)
+          : SliverList.list(children: children),
     );
     return Scaffold(
         body: SafeArea(
             child: Center(
       child: MaxWidthBox(
           maxWidth: 1280,
-          child: Stack(children: [
-            CustomScrollView(key: ValueKey(gallery.id), slivers: [
-              GalleryDetailHead(
-                  key: ValueKey('head ${gallery.id}'),
-                  manager: context.getCacheManager(
-                      local: status != GalleryStatus.notExists),
-                  gallery: gallery,
-                  extendedInfo: translates,
-                  netLoading: netLoading,
-                  status: status,
-                  readIndex: readedIndex,
-                  languageChange: (id) async {
-                    await context.progressDialogAction(api
-                        .fetchGallery(id, usePrefence: false)
-                        .then((value) => setState(() {
-                              gallery = value;
-                            }))
-                        .catchError((e) {
-                      if (context.mounted) {
-                        context.showSnackBar('$e');
-                      }
-                    }, test: (error) => true));
-                  },
-                  tagInfo: isDeskTop ? tagInfo : null),
-              if (!isDeskTop) tagInfo,
-              SliverFillRemaining(
-                  child: MasonryGridView.count(
-                      crossAxisCount:
-                          (mediaData.size.width * mediaData.devicePixelRatio) ~/
-                              256,
-                      itemCount: gallery.files.length,
-                      itemBuilder: (context, index) {
-                        var image = gallery.files[index];
-                        return GestureDetector(
-                            onTap: () => _handleClick(index),
-                            onLongPress: _selected.isEmpty
-                                ? () => setState(() {
-                                      _selected.add(image);
-                                    })
-                                : null,
-                            child: ThumbImageView(
-                              CacheImage(
-                                  manager: context.getCacheManager(
-                                      local: status != GalleryStatus.notExists),
-                                  image: image,
-                                  refererUrl: refererUrl,
-                                  id: gallery.id.toString()),
-                              label: _selected.isEmpty
-                                  ? Text('${index + 1}',
-                                      style: Theme.of(context)
-                                          .textTheme
-                                          .labelLarge
-                                          ?.copyWith(color: Colors.deepOrange))
-                                  : Checkbox.adaptive(
-                                      value: _selected.contains(image),
-                                      onChanged: (b) => _handleClick(index)),
-                              aspectRatio: image.width / image.height,
-                            ));
-                      }))
-            ]),
-            imagesToolbar()
-          ])),
+          child: LayoutBuilder(builder: (con, ctx) {
+            debugPrint(
+                'maxWidth ${ctx.maxWidth} pixels ${MediaQuery.of(con).devicePixelRatio}');
+            return Stack(children: [
+              CustomScrollView(key: ValueKey(gallery.id), slivers: [
+                GalleryDetailHead(
+                    key: ValueKey('head ${gallery.id}'),
+                    manager: context.getCacheManager(
+                        local: status != GalleryStatus.notExists),
+                    gallery: gallery,
+                    extendedInfo: translates,
+                    netLoading: netLoading,
+                    status: status,
+                    readIndex: readedIndex,
+                    languageChange: (id) async {
+                      await context.progressDialogAction(api
+                          .fetchGallery(id, usePrefence: false)
+                          .then((value) => setState(() {
+                                gallery = value;
+                              }))
+                          .catchError((e) {
+                        if (context.mounted) {
+                          context.showSnackBar('$e');
+                        }
+                      }, test: (error) => true));
+                    },
+                    tagInfo: isDeskTop ? tagInfo : null),
+                if (!isDeskTop) tagInfo,
+                SliverGrid.builder(
+                    gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount: ctx.maxWidth ~/ 256),
+                    itemCount: gallery.files.length,
+                    itemBuilder: (context, index) {
+                      var image = gallery.files[index];
+                      return GestureDetector(
+                          onTap: () => _handleClick(index),
+                          onLongPress: _selected.isEmpty
+                              ? () => setState(() {
+                                    _selected.add(image);
+                                  })
+                              : null,
+                          child: Center(
+                              child: ThumbImageView(
+                            CacheImage(
+                                manager: context.getCacheManager(
+                                    local: status != GalleryStatus.notExists),
+                                image: image,
+                                refererUrl: refererUrl,
+                                id: gallery.id.toString()),
+                            label: _selected.isEmpty
+                                ? Text('${index + 1}',
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .labelLarge
+                                        ?.copyWith(color: Colors.deepOrange))
+                                : Checkbox.adaptive(
+                                    value: _selected.contains(image),
+                                    onChanged: (b) => _handleClick(index)),
+                            aspectRatio: image.width / image.height,
+                          )));
+                    })
+              ]),
+              imagesToolbar()
+            ]);
+          })),
     )));
   }
 }
@@ -552,6 +549,7 @@ class GalleryTagDetailInfo extends StatelessWidget {
   final Widget Function(List<Widget> children) buildChildren;
   final int? readIndex;
   final bool deskTop;
+  final List<Gallery> suggest;
   const GalleryTagDetailInfo(
       {super.key,
       required this.gallery,
@@ -559,6 +557,7 @@ class GalleryTagDetailInfo extends StatelessWidget {
       required this.netLoading,
       required this.buildChildren,
       required this.deskTop,
+      required this.suggest,
       this.readIndex});
 
   String findMatchLabel(Label label) {
@@ -638,6 +637,7 @@ class GalleryTagDetailInfo extends StatelessWidget {
               .any((element) => element != null))
         _otherTagInfo(context, typeList['female']?.take(20).toList(),
             typeList['male'], typeList['tag']?.take(20).toList()),
+      if (suggest.isNotEmpty) SugguestView(gallery, suggest)
     ]);
   }
 }

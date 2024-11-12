@@ -16,19 +16,19 @@ dependencies:
     sdk: flutter
   hitomi:
     path: ../hitomi
-  shared_preferences: ^2.3.0
-  path_provider: ^2.1.4
+  shared_preferences: ^2.3.3
+  path_provider: ^2.1.5
   path: ^1.9.0
   sqlite3: ^2.4.5
-  sqlite3_flutter_libs: ^0.5.24
+  sqlite3_flutter_libs: ^0.5.26
   easy_image_viewer: ^1.5.1
   provider: ^6.1.2
   collection: ^1.19.0
   intl: ^0.19.0
-  file_picker: ^8.1.2
+  file_picker: ^8.1.4
   card_loading: ^0.3.2
   flutter_staggered_grid_view: ^0.7.0
-  url_launcher: ^6.3.0
+  url_launcher: ^6.3.1
   image: ^4.2.0
   file_saver: ^0.2.13
   dio: ^5.7.0
@@ -54,3 +54,5 @@ flutter:
 dependency_overrides:
   test_api: 0.6.0
   collection: ^1.19.0
+  path: ^1.9.0
+  async: ^2.12.0

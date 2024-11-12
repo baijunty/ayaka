@@ -248,8 +248,8 @@ class _GalleryDetailView extends State<GalleryDetailsView> {
       child: MaxWidthBox(
           maxWidth: 1280,
           child: LayoutBuilder(builder: (con, ctx) {
-            debugPrint(
-                'maxWidth ${ctx.maxWidth} pixels ${MediaQuery.of(con).devicePixelRatio}');
+            var width = ctx.maxWidth * MediaQuery.of(con).devicePixelRatio;
+            debugPrint('maxWidth ${width}');
             return Stack(children: [
               CustomScrollView(key: ValueKey(gallery.id), slivers: [
                 GalleryDetailHead(
@@ -276,8 +276,9 @@ class _GalleryDetailView extends State<GalleryDetailsView> {
                     tagInfo: isDeskTop ? tagInfo : null),
                 if (!isDeskTop) tagInfo,
                 SliverGrid.builder(
-                    gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                        crossAxisCount: ctx.maxWidth ~/ 256),
+                    gridDelegate:
+                        const SliverGridDelegateWithMaxCrossAxisExtent(
+                            maxCrossAxisExtent: 256),
                     itemCount: gallery.files.length,
                     itemBuilder: (context, index) {
                       var image = gallery.files[index];

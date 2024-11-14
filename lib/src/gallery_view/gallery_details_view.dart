@@ -72,7 +72,6 @@ class _GalleryDetailView extends State<GalleryDetailsView> {
                 }
                 return gallery;
               }))
-        .then((v) => fetchSuggestData())
         .then((value) => api.translate(gallery.labels()))
         .then((value) {
       if (mounted) {
@@ -205,25 +204,27 @@ class _GalleryDetailView extends State<GalleryDetailsView> {
                 ]))));
   }
 
-  void fetchSuggestData() async {
-    return gallery.related?.isNotEmpty == true
-        ? Future.wait(gallery.related!.map((id) => context
-            .read<SettingsController>()
-            .hitomi()
-            .fetchGallery(id, usePrefence: false))).then((resp) {
-            setState(() {
-              suggestGallerys.addAll(resp);
-            });
-          }).catchError((e) {
-            debugPrint('$e');
-          }, test: (error) => true)
-        : context.getSuggesution(gallery.id).then((resp) async {
-            setState(() {
-              suggestGallerys.addAll(resp);
-            });
-          }).catchError((e) {
-            debugPrint('$e');
-          }, test: (error) => true);
+  void fetchSuggestData(bool expand) async {
+    if (expand && suggestGallerys.isEmpty) {
+      return gallery.related?.isNotEmpty == true
+          ? Future.wait(gallery.related!.map((id) => context
+              .read<SettingsController>()
+              .hitomi()
+              .fetchGallery(id, usePrefence: false))).then((resp) {
+              setState(() {
+                suggestGallerys.addAll(resp);
+              });
+            }).catchError((e) {
+              debugPrint('$e');
+            }, test: (error) => true)
+          : context.getSuggesution(gallery.id).then((resp) async {
+              setState(() {
+                suggestGallerys.addAll(resp);
+              });
+            }).catchError((e) {
+              debugPrint('$e');
+            }, test: (error) => true);
+    }
   }
 
   @override
@@ -237,9 +238,9 @@ class _GalleryDetailView extends State<GalleryDetailsView> {
       netLoading: netLoading,
       readIndex: readedIndex,
       deskTop: isDeskTop,
-      suggest: suggestGallerys,
       buildChildren: (children) => isDeskTop
-          ? Column(children: children)
+          ? Column(
+              crossAxisAlignment: CrossAxisAlignment.start, children: children)
           : SliverList.list(children: children),
     );
     return Scaffold(
@@ -248,8 +249,6 @@ class _GalleryDetailView extends State<GalleryDetailsView> {
       child: MaxWidthBox(
           maxWidth: 1280,
           child: LayoutBuilder(builder: (con, ctx) {
-            var width = ctx.maxWidth * MediaQuery.of(con).devicePixelRatio;
-            debugPrint('maxWidth ${width}');
             return Stack(children: [
               CustomScrollView(key: ValueKey(gallery.id), slivers: [
                 GalleryDetailHead(
@@ -275,6 +274,12 @@ class _GalleryDetailView extends State<GalleryDetailsView> {
                     },
                     tagInfo: isDeskTop ? tagInfo : null),
                 if (!isDeskTop) tagInfo,
+                if (context.read<SettingsController>().exntension)
+                  SliverToBoxAdapter(
+                      child: ExpansionTile(
+                          title: Text(AppLocalizations.of(context)!.suggest),
+                          onExpansionChanged: fetchSuggestData,
+                          children: [SugguestView(gallery, suggestGallerys)])),
                 SliverGrid.builder(
                     gridDelegate:
                         const SliverGridDelegateWithMaxCrossAxisExtent(
@@ -419,14 +424,15 @@ class GalleryDetailHead extends StatelessWidget {
     var mediaData = MediaQuery.of(context);
     var width =
         min(mediaData.size.width * mediaData.devicePixelRatio / 3, 300.0);
-    var height = max(
-            width,
-            min(
-                width * 1.5,
-                width *
-                    gallery.files.first.height /
-                    gallery.files.first.width)) /
+    var minHeight =
+        tagInfo != null ? width - 32 : width / mediaData.devicePixelRatio;
+    var height = width *
+        gallery.files.first.height /
+        gallery.files.first.width /
         mediaData.devicePixelRatio;
+    if (height < minHeight) {
+      height = minHeight;
+    }
     var totalHeight =
         height + (Theme.of(context).appBarTheme.toolbarHeight ?? 56);
     var userLanges = context.getManager().config.languages;
@@ -434,7 +440,7 @@ class GalleryDetailHead extends StatelessWidget {
         ?.where((lang) => userLanges.any((element) => element == lang.name))
         .toList();
     debugPrint(
-        '${gallery.id} screenW $mediaData w $width h $height totalH $totalHeight $lanuages');
+        '${gallery.id} screenW ${mediaData.size} ration ${mediaData.devicePixelRatio} w $width h $height totalH $totalHeight ${gallery.files.first.height / gallery.files.first.width}');
     return SliverAppBar(
         backgroundColor: entry.value,
         leading: AppBar(
@@ -499,7 +505,7 @@ class GalleryDetailHead extends StatelessWidget {
                                     icon: const Icon(Icons.group))
                             ])),
                   SizedBox(
-                      height: 40,
+                      height: 32,
                       child:
                           ListView(scrollDirection: Axis.horizontal, children: [
                         Row(children: [
@@ -550,7 +556,6 @@ class GalleryTagDetailInfo extends StatelessWidget {
   final Widget Function(List<Widget> children) buildChildren;
   final int? readIndex;
   final bool deskTop;
-  final List<Gallery> suggest;
   const GalleryTagDetailInfo(
       {super.key,
       required this.gallery,
@@ -558,7 +563,6 @@ class GalleryTagDetailInfo extends StatelessWidget {
       required this.netLoading,
       required this.buildChildren,
       required this.deskTop,
-      required this.suggest,
       this.readIndex});
 
   String findMatchLabel(Label label) {
@@ -569,7 +573,7 @@ class GalleryTagDetailInfo extends StatelessWidget {
   }
 
   Widget _buildIndexView(int readIndex) {
-    return Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
+    return Stack(children: [
       LinearProgressIndicator(value: (readIndex + 1) / gallery.files.length),
       Text('${(readIndex + 1)}/${gallery.files.length}')
     ]);
@@ -637,8 +641,7 @@ class GalleryTagDetailInfo extends StatelessWidget {
           [typeList['female'], typeList['male'], typeList['tag']]
               .any((element) => element != null))
         _otherTagInfo(context, typeList['female']?.take(20).toList(),
-            typeList['male'], typeList['tag']?.take(20).toList()),
-      if (suggest.isNotEmpty) SugguestView(gallery, suggest)
+            typeList['male'], typeList['tag']?.take(20).toList())
     ]);
   }
 }
@@ -685,11 +688,13 @@ class _SuggestView extends State<SugguestView> {
                                       .labelLarge
                                       ?.copyWith(color: Colors.deepOrange)),
                               aspectRatio: 1)),
-                      Text(gallery.name,
-                          maxLines: 1,
-                          style: Theme.of(context).textTheme.labelSmall,
-                          overflow: TextOverflow.ellipsis,
-                          softWrap: true),
+                      SizedBox(
+                          width: 80,
+                          child: Text(gallery.name,
+                              maxLines: 1,
+                              style: Theme.of(context).textTheme.labelSmall,
+                              overflow: TextOverflow.ellipsis,
+                              softWrap: true)),
                     ]),
                     onTap: () => Navigator.of(context).pushNamed(
                         GalleryDetailsView.routeName,

@@ -425,7 +425,7 @@ class GalleryDetailHead extends StatelessWidget {
     var width =
         min(mediaData.size.width * mediaData.devicePixelRatio / 3, 300.0);
     var minHeight =
-        tagInfo != null ? width - 32 : width / mediaData.devicePixelRatio;
+        tagInfo != null ? width - 32 : width / mediaData.devicePixelRatio + 24;
     var height = width *
         gallery.files.first.height /
         gallery.files.first.width /
@@ -505,7 +505,7 @@ class GalleryDetailHead extends StatelessWidget {
                                     icon: const Icon(Icons.group))
                             ])),
                   SizedBox(
-                      height: 32,
+                      height: 40,
                       child:
                           ListView(scrollDirection: Axis.horizontal, children: [
                         Row(children: [
@@ -538,7 +538,7 @@ class GalleryDetailHead extends StatelessWidget {
                           else
                             Text(mapLangugeType(
                                 context, gallery.language ?? '')),
-                          const SizedBox(width: 16),
+                          const SizedBox(width: 8),
                           Text(formater.formatString(gallery.date)),
                         ])
                       ])),
@@ -575,7 +575,9 @@ class GalleryTagDetailInfo extends StatelessWidget {
   Widget _buildIndexView(int readIndex) {
     return Stack(children: [
       LinearProgressIndicator(value: (readIndex + 1) / gallery.files.length),
-      Text('${(readIndex + 1)}/${gallery.files.length}')
+      Align(
+          alignment: Alignment.bottomRight,
+          child: Text('${(readIndex + 1)}/${gallery.files.length}'))
     ]);
   }
 

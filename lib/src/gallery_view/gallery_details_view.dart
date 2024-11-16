@@ -690,8 +690,8 @@ class _SuggestView extends State<SugguestView> {
                                       .labelLarge
                                       ?.copyWith(color: Colors.deepOrange)),
                               aspectRatio: 1)),
-                      SizedBox(
-                          width: 80,
+                      Center(
+                          widthFactor: 80,
                           child: Text(gallery.name,
                               maxLines: 1,
                               style: Theme.of(context).textTheme.labelSmall,

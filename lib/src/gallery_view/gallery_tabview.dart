@@ -1,3 +1,4 @@
+import 'package:ayaka/src/gallery_view/gallery_details_view.dart';
 import 'package:ayaka/src/gallery_view/gallery_search.dart';
 import 'package:ayaka/src/gallery_view/gallery_search_result.dart';
 import 'package:ayaka/src/settings/settings_controller.dart';
@@ -31,6 +32,7 @@ class _GalleryTabView extends State<GalleryTabView>
   late TabController tabController;
   late PageController pageController;
   late ScrollController scrollController;
+  late Function(Map<String, dynamic>) onSearch;
   List<Widget> children = [];
   List<Widget> tabs = [];
   List<MapEntry<int, SortEnum>> pageKey =
@@ -41,6 +43,15 @@ class _GalleryTabView extends State<GalleryTabView>
     tabController = TabController(length: kIsWeb ? 1 : 2, vsync: this);
     pageController = PageController(initialPage: 0);
     scrollController = ScrollController();
+    onSearch = (Map<String, dynamic> args) async {
+      if (args['gallery'] != null) {
+        await Navigator.of(context).pushNamed(GalleryDetailsView.routeName,
+            arguments: {'gallery': args['gallery'], 'local': args['local']});
+      } else {
+        await Navigator.of(context).pushNamed(GalleryTabView.routeName,
+            arguments: {'tags': args['tags']});
+      }
+    };
   }
 
   @override
@@ -186,7 +197,7 @@ class _GalleryTabView extends State<GalleryTabView>
                               '',
                               (acc, tag) =>
                                   '${acc + (tag['translate'] ?? tag['name'])},'))
-                          : const GallerySearch(),
+                          : GallerySearch(onSearch: onSearch),
                       bottom: TabBar(
                           tabs: tabs,
                           controller: tabController,

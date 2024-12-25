@@ -16,9 +16,9 @@ dependencies:
     sdk: flutter
   hitomi:
     path: ../hitomi
-  shared_preferences: ^2.3.3
+  shared_preferences: ^2.3.4
   path_provider: ^2.1.5
-  path: ^1.9.0
+  path: ^1.9.1
   sqlite3: ^2.4.5
   sqlite3_flutter_libs: ^0.5.26
   easy_image_viewer: ^1.5.1
@@ -33,7 +33,7 @@ dependencies:
   file_saver: ^0.2.13
   dio: ^5.7.0
   flutter_cache_manager: ^3.3.2
-  sqflite_common_ffi: ^2.3.3
+  sqflite_common_ffi: ^2.3.4+4
   web_socket_channel: ^3.0.1
 
 dev_dependencies:
@@ -54,5 +54,5 @@ flutter:
 dependency_overrides:
   test_api: 0.6.0
   collection: ^1.19.0
-  path: ^1.9.0
+  path: ^1.9.1
   async: ^2.12.0

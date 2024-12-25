@@ -32,12 +32,7 @@ class ProxyImageServer extends FileService {
         ThumbnaiSize.medium;
     final contentStream = hitomi.fetchImageData(
       Image(
-          hash: url,
-          hasavif: 0,
-          width: 0,
-          haswebp: 0,
-          name: headers!['name']!,
-          height: 0),
+          hash: url, hasavif: 0, width: 0, name: headers!['name']!, height: 0),
       id: headers['id']?.toInt() ?? 0,
       size: size,
       refererUrl: headers['refererUrl'] ?? '',

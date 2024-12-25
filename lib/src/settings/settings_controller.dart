@@ -77,7 +77,7 @@ class SettingsController with ChangeNotifier {
             .then((value) => _config)
             .catchError((e) => _config, test: (error) => true)
         : Future.value(_config).then((c) async {
-            if (remoteLib) {
+            if (remoteLib && _config.remoteHttp.isNotEmpty) {
               await _manager.dio
                   .get<Map<String, dynamic>>('${_config.remoteHttp}/test',
                       options: Options(responseType: ResponseType.json))
@@ -89,7 +89,10 @@ class SettingsController with ChangeNotifier {
                   _manager = TaskManager(_config);
                 }
                 return resp;
-              });
+              }).catchError((e) {
+                _manager.logger.e(e);
+                return <String, dynamic>{};
+              }, test: (error) => true);
             }
             return config;
           });

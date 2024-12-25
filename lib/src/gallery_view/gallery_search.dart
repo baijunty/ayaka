@@ -1,7 +1,5 @@
 import 'dart:async';
 import 'dart:math';
-import 'package:ayaka/src/gallery_view/gallery_details_view.dart';
-import 'package:ayaka/src/gallery_view/gallery_tabview.dart';
 import 'package:ayaka/src/utils/label_utils.dart';
 import 'package:collection/collection.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
@@ -15,7 +13,8 @@ import '../ui/common_view.dart';
 import '../utils/debounce.dart';
 
 class GallerySearch extends StatefulWidget {
-  const GallerySearch({super.key});
+  final Function(Map<String, dynamic>) onSearch;
+  const GallerySearch({super.key, required this.onSearch});
   @override
   State<StatefulWidget> createState() {
     return _GallerySearch();
@@ -85,6 +84,9 @@ class _GallerySearch extends State<GallerySearch> {
     if (word != null) {
       _selected
           .add({'type': '', 'name': word, 'translate': word, 'include': true});
+    }
+    if (controller.text.isEmpty) {
+      _selected.clear();
     }
   }
 
@@ -176,36 +178,32 @@ class _GallerySearch extends State<GallerySearch> {
                     EdgeInsets.symmetric(horizontal: 16.0)),
                 leading: const Icon(Icons.search),
                 onSubmitted: (value) async {
-                  if (controller.text.isNotEmpty) {
-                    if (numberExp.hasMatch(controller.text)) {
-                      await api
-                          .fetchGallery(controller.text, usePrefence: false)
-                          .then((value) async {
+                  var text = controller.text;
+                  if (text.isNotEmpty) {
+                    if (numberExp.hasMatch(text)) {
+                      await api.fetchGallery(text, usePrefence: false).then(
+                          (value) async {
                         if (context.mounted) {
-                          await Navigator.of(context).pushNamed(
-                              GalleryDetailsView.routeName,
-                              arguments: {'gallery': value, 'local': false});
+                          widget.onSearch({'gallery': value, 'local': false});
                         }
                         return debugPrint('fetch ${value.name}');
                       }).catchError(
-                              (e) => context.mounted
-                                  ? context.showSnackBar(
-                                      '${AppLocalizations.of(context)!.networkError} or ${AppLocalizations.of(context)!.wrongId}')
-                                  : false,
-                              test: (error) => true);
+                          (e) => context.mounted
+                              ? context.showSnackBar(
+                                  '${AppLocalizations.of(context)!.networkError} or ${AppLocalizations.of(context)!.wrongId}')
+                              : false,
+                          test: (error) => true);
                     } else {
-                      Navigator.of(context).restorablePushNamed(
-                          GalleryTabView.routeName,
-                          arguments: {
-                            'tags': _selected.isNotEmpty
-                                ? _selected
-                                : [
-                                    {
-                                      ...QueryText(controller.text).toMap(),
-                                      'include': true
-                                    }
-                                  ],
-                          });
+                      widget.onSearch({
+                        'tags': _selected.isNotEmpty
+                            ? _selected
+                            : [
+                                {
+                                  ...QueryText(controller.text).toMap(),
+                                  'include': true
+                                }
+                              ],
+                      });
                     }
                   }
                 });

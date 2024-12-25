@@ -192,8 +192,7 @@ class _AdImageView extends State<AdImageView> {
                                     hasavif: 0,
                                     width: 0,
                                     height: 0,
-                                    name: 'test.jpg',
-                                    haswebp: 0),
+                                    name: 'test.jpg'),
                                 refererUrl: 'https://hitomi.la',
                                 id: '1')),
                             onLongPress: () => context.showSnackBar(image),
@@ -220,12 +219,13 @@ class _UserProfileLogView extends State<UserProfileLogView> {
   late Hitomi api;
   int page = 0;
   int totalCount = 0;
+  String? query;
   late ScrollController scrollController;
   late PopupMenuButton<String> Function(Gallery gallery)? menusBuilder;
   final readIndexMap = <int, int?>{};
   void fetchDataFromDb() {
-    context
-        .getSqliteHelper()
+    var sqlite = context.getSqliteHelper();
+    sqlite
         .querySql(
             'select COUNT(1) OVER() AS total_count, id from UserLog where type=? ORDER by rowid desc limit 25 offset ?',
             [

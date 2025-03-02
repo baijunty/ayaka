@@ -1,7 +1,8 @@
 import 'package:ayaka/src/settings/settings_controller.dart';
 import 'package:ayaka/src/ui/common_view.dart';
 import 'package:ayaka/src/utils/common_define.dart';
-import 'package:easy_image_viewer/easy_image_viewer.dart';
+import 'package:easy_image_viewer/easy_image_viewer.dart'
+    show MultiImageProvider;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:hitomi/gallery/gallery.dart';
@@ -10,6 +11,7 @@ import 'package:hitomi/lib.dart';
 import 'package:provider/provider.dart';
 
 import '../utils/proxy_network_image.dart';
+import '../ui/pager_view.dart';
 
 class GalleryViewer extends StatefulWidget {
   const GalleryViewer({super.key});

@@ -241,7 +241,7 @@ class GalleryInfo extends StatelessWidget {
                                   overflow: TextOverflow.ellipsis,
                                   softWrap: true))),
                       const SizedBox(width: 8),
-                      if (gallery.artists?.first.translate != null)
+                      if (gallery.artists?.firstOrNull?.translate != null)
                         TagButton(
                             label: gallery.artists!.first.translate!,
                             style: smallText),

@@ -149,25 +149,17 @@ class _GalleryTabView extends State<GalleryTabView>
                       value: SortEnum.Default,
                       child: Text(AppLocalizations.of(context)!.dateDefault)),
                   PopupMenuItem(
-                      value: SortEnum.Date,
-                      child: Text(AppLocalizations.of(context)!.dateAsc)),
-                  PopupMenuItem(
-                      value: SortEnum.DateDesc,
-                      child: Text(AppLocalizations.of(context)!.dateDesc)),
+                      value: SortEnum.ID_ASC,
+                      child: Text(AppLocalizations.of(context)!.idAsc)),
+                  if (pageController.page == 1 || kIsWeb)
+                    PopupMenuItem(
+                        value: SortEnum.ADD_TIME,
+                        child: Text(AppLocalizations.of(context)!.addTime)),
                 ]
               : <PopupMenuEntry<SortEnum>>[
                   PopupMenuItem(
                       value: SortEnum.Default,
                       child: Text(AppLocalizations.of(context)!.dateDefault)),
-                  PopupMenuItem(
-                      value: SortEnum.week,
-                      child: Text(AppLocalizations.of(context)!.popWeek)),
-                  PopupMenuItem(
-                      value: SortEnum.month,
-                      child: Text(AppLocalizations.of(context)!.popMonth)),
-                  PopupMenuItem(
-                      value: SortEnum.year,
-                      child: Text(AppLocalizations.of(context)!.popYear)),
                 ];
         },
         onSelected: (value) => setState(() {

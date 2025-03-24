@@ -167,6 +167,7 @@ class _GalleryDetailView extends State<GalleryDetailsView> {
                                       context.showSnackBar(
                                           AppLocalizations.of(context)!
                                               .success);
+                                      _selected.clear();
                                     });
                                   }
                                 });

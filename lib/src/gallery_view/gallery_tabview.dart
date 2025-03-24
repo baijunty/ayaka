@@ -194,36 +194,32 @@ class _GalleryTabView extends State<GalleryTabView>
                           tabs: tabs,
                           controller: tabController,
                           onTap: (value) => pageController.jumpToPage(value)),
-                      actions: tags.length <= 1
-                          ? [
-                              _sortWidget(),
-                              IconButton(
-                                  onPressed: () async {
-                                    var s = await context.showDialogInput(
-                                        textField: TextField(
-                                            keyboardType: const TextInputType
-                                                .numberWithOptions(
-                                                signed: true),
-                                            controller: TextEditingController(),
-                                            inputFormatters: [
-                                              FilteringTextInputFormatter
-                                                  .digitsOnly
-                                            ]),
-                                        inputHint: AppLocalizations.of(context)!
-                                            .pageJumpHint);
-                                    if (s?.isNotEmpty == true) {
-                                      setState(() {
-                                        var preEntry = pageKey[
-                                            pageController.page!.floor()];
-                                        pageKey[pageController.page!.floor()] =
-                                            MapEntry(
-                                                int.parse(s!), preEntry.value);
-                                      });
-                                    }
-                                  },
-                                  icon: const Icon(Icons.forward_5))
-                            ]
-                          : null,
+                      actions: [
+                        _sortWidget(),
+                        IconButton(
+                            onPressed: () async {
+                              var s = await context.showDialogInput(
+                                  textField: TextField(
+                                      keyboardType:
+                                          const TextInputType.numberWithOptions(
+                                              signed: true),
+                                      controller: TextEditingController(),
+                                      inputFormatters: [
+                                        FilteringTextInputFormatter.digitsOnly
+                                      ]),
+                                  inputHint: AppLocalizations.of(context)!
+                                      .pageJumpHint);
+                              if (s?.isNotEmpty == true) {
+                                setState(() {
+                                  var preEntry =
+                                      pageKey[pageController.page!.floor()];
+                                  pageKey[pageController.page!.floor()] =
+                                      MapEntry(int.parse(s!), preEntry.value);
+                                });
+                              }
+                            },
+                            icon: const Icon(Icons.forward_5))
+                      ],
                     )
                   ],
               scrollBehavior: MouseEnabledScrollBehavior(),

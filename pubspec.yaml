@@ -19,7 +19,7 @@ dependencies:
   shared_preferences: ^2.5.2
   path_provider: ^2.1.5
   path: ^1.9.1
-  sqlite3: ^2.7.2
+  sqlite3: ^2.7.5
   sqlite3_flutter_libs: ^0.5.30
   easy_image_viewer: ^1.5.1
   provider: ^6.1.2
@@ -53,7 +53,5 @@ flutter:
     - assets/images/
 dependency_overrides:
   test_api: 0.6.0
-  collection: ^1.19.1
-  path: ^1.9.1
-  async: ^2.13.0
   intl: ^0.20.2
+  async: ^2.13.0

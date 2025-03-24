@@ -1,3 +1,4 @@
+import 'dart:convert' show json;
 import 'dart:io';
 
 import 'package:ayaka/src/ui/common_view.dart';
@@ -9,7 +10,8 @@ import 'package:flutter/services.dart';
 import 'package:hitomi/gallery/label.dart';
 import 'package:hitomi/gallery/language.dart';
 import 'package:path_provider/path_provider.dart';
-import 'package:provider/provider.dart' show WatchContext;
+import 'package:provider/provider.dart' show ReadContext, WatchContext;
+import '../model/gallery_manager.dart';
 import 'settings_controller.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:path/path.dart' show join;
@@ -56,6 +58,27 @@ class _StateSetting extends State<SettingsView> {
         .writeAsString('1', flush: true)
         .then((value) => value.delete())
         .then((value) => true);
+  }
+
+  Future<void> syncAdImage() async {
+    var adImages = <String>{};
+    if (mounted) {
+      var controller = context.read<SettingsController>();
+      controller.manager.dio
+          .get<String>('${controller.config.remoteHttp}/adList')
+          .then((data) => json.decode(data.data!) as List)
+          .then((list) => list.map((str) => str as String))
+          .then((d) => setState(() {
+                var set = d.toSet();
+                set.addAll(controller.manager.adImage);
+                adImages.addAll(set);
+                debugPrint('ad image length  ${adImages.length}');
+              }));
+    }
+    await context.read<GalleryManager>().addAdImageHash(adImages.toList());
+    if (mounted) {
+      context.showSnackBar('同步成功');
+    }
   }
 
   Widget _settingsContent() {
@@ -148,6 +171,12 @@ class _StateSetting extends State<SettingsView> {
                   }
                 },
                 icon: const Icon(Icons.edit))),
+      if (_settingsController.remoteLib)
+        ListTile(
+          leading: const Icon(Icons.sync),
+          title: Text(AppLocalizations.of(context)!.sync),
+          onTap: () => syncAdImage(),
+        ),
       ListTile(
           leading: Icon(_settingsController.runServer
               ? Icons.online_prediction

@@ -1,5 +1,3 @@
-import 'dart:convert';
-
 import 'package:ayaka/src/gallery_view/gallery_details_view.dart';
 import 'package:ayaka/src/settings/settings_controller.dart';
 import 'package:ayaka/src/utils/common_define.dart';
@@ -153,26 +151,14 @@ class _AdImageView extends State<AdImageView> {
     var controller = context.read<SettingsController>();
     api = controller.hitomi();
     if (adImages.isEmpty) {
-      controller.manager.dio
-          .get<String>('${controller.config.remoteHttp}/adList')
-          .then((data) => json.decode(data.data!) as List)
-          .then((list) => list.map((str) => str as String))
-          .then((d) => setState(() {
-                var set = d.toSet();
-                set.addAll(controller.manager.adImage);
-                adImages.addAll(set);
-                debugPrint('ad image length  ${adImages.length}');
-              }));
+      adImages.addAll(controller.manager.adImage);
     }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-        appBar: AppBar(
-          title: Text(AppLocalizations.of(context)!.adImage),
-          actions: const [],
-        ),
+        appBar: AppBar(title: Text(AppLocalizations.of(context)!.adImage)),
         body: SafeArea(
             child: Center(
                 child: MaxWidthBox(

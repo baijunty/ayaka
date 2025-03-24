@@ -34,10 +34,10 @@ packages:
     dependency: transitive
     description:
       name: args
-      sha256: bf9f5caeea8d8fe6721a9c358dd8a5c1947b27f1cfaa18b39c301273594919e6
+      sha256: d0481093c50b1da8910eb0bb301626d4d8eb7284aa739614d2b394ee09e3ea04
       url: "https://pub.dev"
     source: hosted
-    version: "2.6.0"
+    version: "2.7.0"
   async:
     dependency: "direct overridden"
     description:
@@ -262,10 +262,10 @@ packages:
     dependency: transitive
     description:
       name: freezed_annotation
-      sha256: c2e2d632dd9b8a2b7751117abcfc2b4888ecfe181bd9fca7170d9ef02e595fe2
+      sha256: c87ff004c8aa6af2d531668b46a4ea379f7191dc6dfa066acd53d506da6e044b
       url: "https://pub.dev"
     source: hosted
-    version: "2.4.4"
+    version: "3.0.0"
   frontend_server_client:
     dependency: transitive
     description:
@@ -288,7 +288,7 @@ packages:
       path: "../hitomi"
       relative: true
     source: path
-    version: "1.0.1"
+    version: "1.0.3"
   http:
     dependency: transitive
     description:
@@ -325,10 +325,10 @@ packages:
     dependency: "direct main"
     description:
       name: image
-      sha256: "13d3349ace88f12f4a0d175eb5c12dcdd39d35c4c109a8a13dfeb6d0bd9e31c3"
+      sha256: "4e973fcf4caae1a4be2fa0a13157aa38a8f9cb049db6529aa00b4d71abc4d928"
       url: "https://pub.dev"
     source: hosted
-    version: "4.5.3"
+    version: "4.5.4"
   intl:
     dependency: "direct main"
     description:
@@ -349,18 +349,18 @@ packages:
     dependency: transitive
     description:
       name: isolate_manager
-      sha256: "1e60261a5bba4bab5e1f78871c91a284d5de402d340ea33cad39ce81f833070f"
+      sha256: "0ff8401979b8101fec4019d7aedead083780fea152970799f0f3456dfe323e11"
       url: "https://pub.dev"
     source: hosted
-    version: "5.7.3"
+    version: "5.7.5"
   isolate_manager_generator:
     dependency: transitive
     description:
       name: isolate_manager_generator
-      sha256: d912df1b3131d35e016cf19f45ada2168546d1118729a13d64fc8d641a77164f
+      sha256: e7404f67152daf939809b5c63125347ca33b566fa1db213e4d46e2814d4aee35
       url: "https://pub.dev"
     source: hosted
-    version: "0.0.1"
+    version: "0.0.2"
   js:
     dependency: transitive
     description:
@@ -810,10 +810,10 @@ packages:
     dependency: "direct main"
     description:
       name: sqlite3
-      sha256: "32b632dda27d664f85520093ed6f735ae5c49b5b75345afb8b19411bc59bb53d"
+      sha256: "310af39c40dd0bb2058538333c9d9840a2725ae0b9f77e4fd09ad6696aa8f66e"
       url: "https://pub.dev"
     source: hosted
-    version: "2.7.4"
+    version: "2.7.5"
   sqlite3_flutter_libs:
     dependency: "direct main"
     description:

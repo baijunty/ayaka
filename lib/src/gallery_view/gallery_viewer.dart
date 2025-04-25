@@ -1,6 +1,5 @@
 import 'package:ayaka/src/settings/settings_controller.dart';
 import 'package:ayaka/src/ui/common_view.dart';
-import 'package:ayaka/src/utils/common_define.dart';
 import 'package:easy_image_viewer/easy_image_viewer.dart'
     show MultiImageProvider;
 import 'package:flutter/material.dart';
@@ -92,12 +91,12 @@ class _GalleryViewer extends State<GalleryViewer>
       api = settings.hitomi(localDb: args['local']);
       if (args['index'] == null) {
         context
-            .readUserDb(_gallery.id, readMask)
+            .readUserDb(_gallery.id, readHistoryMask)
             .then((value) => (value ?? 0))
             .then((value) => mounted
                 ? context.read<SettingsController>().manager.helper.delete(
                     'UserLog',
-                    {'id': _gallery.id, 'type': readMask}).then((r) => value)
+                    {'id': _gallery.id, 'type': readHistoryMask}).then((r) => value)
                 : Future.value(value))
             .then((value) => controller.jumpToPage(value));
       }
@@ -138,7 +137,7 @@ class _GalleryViewer extends State<GalleryViewer>
   void handlePageChange() async {
     if (controller.page! - controller.page!.toInt() == 0) {
       index = controller.page!.toInt();
-      await context.insertToUserDb(_gallery.id, readMask,
+      await context.insertToUserDb(_gallery.id, readHistoryMask,
           data: index, content: _gallery.name);
       if (index == _gallery.files.length - 1 && mounted) {
         await context

@@ -111,7 +111,7 @@ class _GalleryDetailView extends State<GalleryDetailsView> {
       token = CancelToken();
       _fetchTransLate();
     }
-    context.readUserDb(gallery.id, readMask).then((value) {
+    context.readUserDb(gallery.id, readHistoryMask).then((value) {
       if (value != null) {
         setState(() {
           readedIndex = value;
@@ -463,7 +463,7 @@ class GalleryDetailHead extends StatelessWidget {
               tooltip: AppLocalizations.of(context)!.readLater),
           IconButton(
               onPressed: () async {
-                await context.insertToUserDb((gallery).id, bookMask,
+                await context.insertToUserDb((gallery).id, bookMarkMask,
                     showResult: true);
               },
               icon: const Icon(Icons.bookmark),

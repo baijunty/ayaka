@@ -1,6 +1,5 @@
 import 'package:ayaka/src/gallery_view/gallery_details_view.dart';
 import 'package:ayaka/src/settings/settings_controller.dart';
-import 'package:ayaka/src/utils/common_define.dart';
 import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
@@ -33,7 +32,7 @@ class _UserProfileView extends State<UserProfileView>
     var controller = context.read<SettingsController>();
     api = controller.hitomi(localDb: true);
     if (history.length + likes.length + todoCollection.length == 0) {
-      var types = [readMask, bookMask, lateReadMark];
+      var types = [readHistoryMask, bookMarkMask, lateReadMark];
       controller.manager.helper
           .selectSqlMultiResultAsync(
               'select id from UserLog where type=? ORDER by rowid desc limit 10 ',
@@ -112,9 +111,9 @@ class _UserProfileView extends State<UserProfileView>
       mainAxisSize: MainAxisSize.min,
       children: [
         const SizedBox(height: 8),
-        _itemTitle(AppLocalizations.of(context)!.readHistory, readMask),
+        _itemTitle(AppLocalizations.of(context)!.readHistory, readHistoryMask),
         _galleryList(history),
-        _itemTitle(AppLocalizations.of(context)!.collect, bookMask),
+        _itemTitle(AppLocalizations.of(context)!.collect, bookMarkMask),
         _galleryList(likes),
         _itemTitle(AppLocalizations.of(context)!.readLater, lateReadMark),
         _galleryList(todoCollection),
@@ -228,7 +227,7 @@ class _UserProfileLogView extends State<UserProfileLogView> {
             .fold(<Gallery>[], (previous, element) => data..add(element)))
         .then((value) {
           return Future.wait(
-                  value.map((e) => context.readUserDb(e.id, readMask)))
+                  value.map((e) => context.readUserDb(e.id, readHistoryMask)))
               .then((result) => result.foldIndexed(
                   readIndexMap,
                   (index, previous, element) =>

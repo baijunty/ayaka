@@ -1,9 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
-const int readMask = 1 << 13;
-const int bookMask = 1 << 14;
-const int lateReadMark = 1 << 16;
 final formater = DateFormat('yyyy-MM-dd');
 final smallText = TextButton.styleFrom(
   fixedSize: const Size.fromHeight(28),

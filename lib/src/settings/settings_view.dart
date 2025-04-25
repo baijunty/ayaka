@@ -4,14 +4,16 @@ import 'dart:io';
 import 'package:ayaka/src/ui/common_view.dart';
 import 'package:ayaka/src/utils/label_utils.dart';
 import 'package:ayaka/src/utils/responsive_util.dart';
+import 'package:collection/collection.dart';
+import 'package:dio/dio.dart';
 import 'package:file_picker/file_picker.dart' show FilePicker;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:hitomi/gallery/label.dart';
 import 'package:hitomi/gallery/language.dart';
+import 'package:hitomi/lib.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:provider/provider.dart' show ReadContext, WatchContext;
-import '../model/gallery_manager.dart';
 import 'settings_controller.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:path/path.dart' show join;
@@ -60,24 +62,48 @@ class _StateSetting extends State<SettingsView> {
         .then((value) => true);
   }
 
-  Future<void> syncAdImage() async {
-    var adImages = <String>{};
+  Future<void> sync() async {
     if (mounted) {
       var controller = context.read<SettingsController>();
-      controller.manager.dio
-          .get<String>('${controller.config.remoteHttp}/adList')
-          .then((data) => json.decode(data.data!) as List)
-          .then((list) => list.map((str) => str as String))
-          .then((d) => setState(() {
-                var set = d.toSet();
-                set.addAll(controller.manager.adImage);
-                adImages.addAll(set);
-                debugPrint('ad image length  ${adImages.length}');
-              }));
-    }
-    await context.read<GalleryManager>().addAdImageHash(adImages.toList());
-    if (mounted) {
-      context.showSnackBar('同步成功');
+      var types = [readHistoryMask, bookMarkMask, lateReadMark];
+      var target = ['history', 'bookmark', 'lateRead'];
+      var r = await controller.manager.helper
+          .selectSqlMultiResultAsync('select id from UserLog where type=? ',
+              types.map((e) => [e]).toList())
+          .then((value) {
+            var r = value.values.map((e) => e.fold(<int>[],
+                (previousValue, element) => previousValue..add(element['id'])));
+            return r.toList();
+          })
+          .asStream()
+          .expand((ids) =>
+              ids.mapIndexed((index, id) => MapEntry(target[index], id)))
+          .asyncMap((entrys) => controller.manager.dio.post(
+                  '${controller.config.remoteHttp}/sync',
+                  options: Options(
+                      headers: {'Content-Type': 'application/json'},
+                      responseType: ResponseType.json),
+                  data: {
+                    'auth': controller.config.auth,
+                    'target': entrys.key,
+                    'content': json.encode(entrys.value)
+                  }))
+          .map((data) => json.decode(data.data!) as List)
+          .map((list) => list.map((str) => str as int))
+          .fold(<List<int>>[], (l, r) => l..add(r.toList()))
+          .then((d) {
+            return Future.wait(d.mapIndexed((index, ids) {
+              var type = types[index];
+              return controller.manager.helper.excuteSqlMultiParams(
+                  'replace into UserLog(id,type,) values (?,?)',
+                  ids.map((e) => [e, type]).toList());
+            })).then((l) => l.fold(true, (p, c) => p && c));
+          });
+      if (r && mounted) {
+        context.showSnackBar(AppLocalizations.of(context)!.success);
+      } else if (mounted) {
+        context.showSnackBar(AppLocalizations.of(context)!.failed);
+      }
     }
   }
 
@@ -175,7 +201,7 @@ class _StateSetting extends State<SettingsView> {
         ListTile(
           leading: const Icon(Icons.sync),
           title: Text(AppLocalizations.of(context)!.sync),
-          onTap: () => syncAdImage(),
+          onTap: () => sync(),
         ),
       ListTile(
           leading: Icon(_settingsController.runServer

@@ -9,8 +9,6 @@ import 'package:hitomi/gallery/gallery.dart';
 import 'package:hitomi/lib.dart';
 import 'package:provider/provider.dart';
 
-import '../utils/common_define.dart';
-
 class GallerySimilaerView extends StatefulWidget {
   const GallerySimilaerView({super.key});
   static const routeName = '/gallery_similar';
@@ -36,7 +34,7 @@ class _GallerySimilaerView extends State<GallerySimilaerView> {
           context, GalleryDetailsView.routeName,
           arguments: {'gallery': g, 'local': false});
       if (mounted) {
-        (read is int ? Future.value(read) : context.readUserDb(g.id, readMask))
+        (read is int ? Future.value(read) : context.readUserDb(g.id, readHistoryMask))
             .then((value) {
           setState(() {
             readIndexMap[g.id] = value;
@@ -58,7 +56,7 @@ class _GallerySimilaerView extends State<GallerySimilaerView> {
           .then((result) {
             var value = result.data;
             return Future.wait(
-                    value.map((e) => context.readUserDb(e.id, readMask)))
+                    value.map((e) => context.readUserDb(e.id, readHistoryMask)))
                 .then((result) => result.foldIndexed(
                     readIndexMap,
                     (index, previous, element) =>

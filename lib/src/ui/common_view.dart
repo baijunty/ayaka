@@ -536,7 +536,7 @@ extension ContextAction on BuildContext {
       bool showResult = false}) async {
     return getSqliteHelper()
         .insertUserLog(id, type,
-            mark: data, content: content, extension: extension ?? [])
+            value: data, content: content, extension: extension ?? [])
         .then((value) {
       if (mounted && showResult) {
         showSnackBar(AppLocalizations.of(this)!.success);

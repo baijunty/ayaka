@@ -29,6 +29,20 @@ class _AyakaHome extends State<AyakaHome> {
 
   Widget navigationBar(bool portrait) {
     if (portrait) {
+      if (kIsWeb) {
+        return BottomNavigationBar(
+            items: [
+              BottomNavigationBarItem(
+                  icon: const Icon(Icons.book),
+                  label: AppLocalizations.of(context)!.gallery),
+              BottomNavigationBarItem(
+                  icon: const Icon(Icons.person),
+                  label: AppLocalizations.of(context)!.profile),
+            ],
+            onTap: _handleIndexClick,
+            currentIndex: index,
+            type: BottomNavigationBarType.fixed);
+      }
       return BottomNavigationBar(
           items: [
             BottomNavigationBarItem(
@@ -48,6 +62,20 @@ class _AyakaHome extends State<AyakaHome> {
           currentIndex: index,
           type: BottomNavigationBarType.fixed);
     } else {
+      if (kIsWeb) {
+        return NavigationRail(
+            destinations: [
+              NavigationRailDestination(
+                  icon: const Icon(Icons.book),
+                  label: Text(AppLocalizations.of(context)!.gallery)),
+              NavigationRailDestination(
+                  icon: const Icon(Icons.person),
+                  label: Text(AppLocalizations.of(context)!.profile)),
+            ],
+            selectedIndex: index,
+            onDestinationSelected: _handleIndexClick,
+            labelType: NavigationRailLabelType.selected);
+      }
       return NavigationRail(
           destinations: [
             NavigationRailDestination(
@@ -69,8 +97,11 @@ class _AyakaHome extends State<AyakaHome> {
     }
   }
 
-  @override
-  Widget build(BuildContext context) {
+  Widget currentView() {
+    if (kIsWeb) {
+      return IndexedStack(
+          index: index, children: [GalleryTabView(), UserProfileView()]);
+    }
     Widget child;
     switch (index) {
       case 1:
@@ -86,6 +117,12 @@ class _AyakaHome extends State<AyakaHome> {
         child = const IndexedStack(
             index: 0, children: [GalleryTabView(), SettingsView()]);
     }
+    return child;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    var child = currentView();
     return PopScope(
         canPop: exitApp,
         onPopInvokedWithResult: (didPop, _) {
@@ -111,12 +148,12 @@ class _AyakaHome extends State<AyakaHome> {
                       child: switch (context.currentOrientation()) {
                         Orientation.portrait => child,
                         _ => Row(children: [
-                            if (!kIsWeb) navigationBar(false),
+                            navigationBar(false),
                             Expanded(child: child)
                           ])
                       }))),
           bottomNavigationBar:
-              context.currentOrientation() == Orientation.portrait && !kIsWeb
+              context.currentOrientation() == Orientation.portrait
                   ? navigationBar(true)
                   : null,
         ));

@@ -1,5 +1,4 @@
 import 'package:ayaka/src/gallery_view/gallery_details_view.dart';
-import 'package:ayaka/src/utils/common_define.dart';
 import 'package:collection/collection.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
@@ -73,7 +72,7 @@ class _GalleryListView extends State<GalleryItemListView>
         })
         .then((value) {
           return Future.wait(
-                  value.map((e) => context.readUserDb(e.id, readMask)))
+                  value.map((e) => context.readUserDb(e.id, readHistoryMask)))
               .then((result) => result.foldIndexed(
                   readIndexMap,
                   (index, previous, element) =>
@@ -102,7 +101,9 @@ class _GalleryListView extends State<GalleryItemListView>
           context, GalleryDetailsView.routeName,
           arguments: {'gallery': g, 'local': widget.local});
       if (mounted) {
-        (read is int ? Future.value(read) : context.readUserDb(g.id, readMask))
+        (read is int
+                ? Future.value(read)
+                : context.readUserDb(g.id, readHistoryMask))
             .then((value) {
           setState(() {
             readIndexMap[g.id] = value;

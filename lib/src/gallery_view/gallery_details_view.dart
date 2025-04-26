@@ -155,7 +155,7 @@ class _GalleryDetailView extends State<GalleryDetailsView> {
                         onPressed: _selected.isEmpty
                             ? null
                             : () async {
-                                await context
+                                context.progressDialogAction(context
                                     .read<GalleryManager>()
                                     .addAdImageHash(
                                         _selected.map((e) => e.hash).toList())
@@ -170,7 +170,7 @@ class _GalleryDetailView extends State<GalleryDetailsView> {
                                       _selected.clear();
                                     });
                                   }
-                                });
+                                }));
                               },
                         child: Text(AppLocalizations.of(context)!.markAdImg)),
                   const Spacer(),

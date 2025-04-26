@@ -65,19 +65,20 @@ class GalleryManager with ChangeNotifier {
   Future<bool> addAdImageHash(List<String> hashes) async {
     if (controller.remoteLib) {
       await controller.manager.dio
-          .post<String>('${controller.config.remoteHttp}/addAdMark',
-              data:
-                  json.encode({'mask': hashes, 'auth': controller.config.auth}),
-              options: Options(responseType: ResponseType.json))
+          .post('${controller.config.remoteHttp}/sync',
+              options: Options(
+                  headers: {'Content-Type': 'application/json'},
+                  responseType: ResponseType.json),
+              data: {
+                'auth': controller.config.auth,
+                'target': 'admark',
+                'content': hashes
+              })
           .then((value) => json.decode(value.data!) as Map<String, dynamic>)
-          .then((value) => value['success'] as bool)
+          .then((map) => map['success'] as bool)
           .catchError((e) => false, test: (error) => true);
     }
-    return hashes
-        .asStream()
-        .asyncMap(
-            (event) => controller.manager.parseCommandAndRun('--admark $event'))
-        .fold(true, (previous, element) => previous && element);
+    return controller.manager.addAdMark(hashes);
   }
 
   Future<Uint8List> makeAnimatedImage(List<img.Image> images, Hitomi api,

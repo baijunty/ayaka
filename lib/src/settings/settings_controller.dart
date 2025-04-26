@@ -83,11 +83,7 @@ class SettingsController with ChangeNotifier {
                       options: Options(responseType: ResponseType.json))
                   .then((d) {
                 var resp = d.data;
-                exntension = resp!['success'];
-                if (exntension && config.aiTagPath.isEmpty) {
-                  _config = config.copyWith(aiTagPath: resp['feature']);
-                  _manager = TaskManager(_config);
-                }
+                exntension = resp!['success'] && resp['feature'].isNotEmpty;
                 return resp;
               }).catchError((e) {
                 _manager.logger.e(e);

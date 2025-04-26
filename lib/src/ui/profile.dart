@@ -1,5 +1,3 @@
-import 'dart:convert';
-
 import 'package:ayaka/src/gallery_view/gallery_details_view.dart';
 import 'package:ayaka/src/settings/settings_controller.dart';
 import 'package:collection/collection.dart';
@@ -159,8 +157,9 @@ class _AdImageView extends State<AdImageView> {
   }
 
   Future<bool> syncAdImage() async {
-    if (adImages.isNotEmpty) {
-      var controller = context.read<SettingsController>();
+    var controller = context.read<SettingsController>();
+    if (adImages.isNotEmpty &&
+        controller.manager.config.remoteHttp.isNotEmpty) {
       var size = adImages.length;
       await controller.manager.dio
           .post('${controller.config.remoteHttp}/sync',
@@ -172,7 +171,7 @@ class _AdImageView extends State<AdImageView> {
                 'target': 'admark',
                 'content': adImages.toList()
               })
-          .then((data) => json.decode(data.data!) as Map<String, dynamic>)
+          .then((data) => data.data! as Map<String, dynamic>)
           .then((map) => map['result'] as List)
           .then((list) => list.map((str) => str as String))
           .then((d) => setState(() {
@@ -267,7 +266,9 @@ class _UserProfileLogView extends State<UserProfileLogView> {
             }))
         .then((value) => value
             .asStream()
-            .asyncMap((event) => api.fetchGallery(event, usePrefence: false))
+            .asyncMap((event) => api
+                .fetchGallery(event, usePrefence: false)
+                .then((g) => g.id == event ? g : g.copyWith(id: event)))
             .fold(<Gallery>[], (previous, element) => data..add(element)))
         .then((value) {
           return Future.wait(
@@ -288,6 +289,31 @@ class _UserProfileLogView extends State<UserProfileLogView> {
             }));
   }
 
+  Future<bool> syncDelete(int id) async {
+    var controller = context.read<SettingsController>();
+    if (controller.manager.config.remoteHttp.isNotEmpty) {
+      var typeMap = {
+        readHistoryMask: 'history',
+        bookMarkMask: 'bookmark',
+        lateReadMark: 'lateRead'
+      };
+      return controller.manager.dio
+          .post('${controller.config.remoteHttp}/sync',
+              options: Options(
+                  headers: {'Content-Type': 'application/json'},
+                  responseType: ResponseType.json),
+              data: {
+                'auth': controller.config.auth,
+                'target': typeMap[widget.type],
+                'content': [-id]
+              })
+          .then((data) => data.data! as Map<String, dynamic>)
+          .then((map) => map['success'] as bool)
+          .catchError((e) => false, test: (error) => true);
+    }
+    return false;
+  }
+
   @override
   void initState() {
     super.initState();
@@ -298,16 +324,15 @@ class _UserProfileLogView extends State<UserProfileLogView> {
             PopupMenuItem(
                 child: Text(AppLocalizations.of(context)!.delete),
                 onTap: () => context
-                        .read<SettingsController>()
-                        .manager
-                        .helper
-                        .delete('UserLog', {
-                      'id': gallery.id,
-                      'type': widget.type
-                    }).then((value) => setState(() {
-                              data.removeWhere(
-                                  (element) => element.id == gallery.id);
-                            })))
+                    .read<SettingsController>()
+                    .manager
+                    .helper
+                    .delete('UserLog', {'id': gallery.id, 'type': widget.type})
+                    .then((b) => syncDelete(gallery.id))
+                    .then((value) => setState(() {
+                          data.removeWhere(
+                              (element) => element.id == gallery.id);
+                        })))
           ];
         });
   }

@@ -1,4 +1,3 @@
-import 'dart:convert' show json;
 import 'dart:io';
 
 import 'package:ayaka/src/ui/common_view.dart';
@@ -92,15 +91,17 @@ class _StateSetting extends State<SettingsView> {
                     'target': entry.key,
                     'content': entry.value
                   })
-              .then((resp) => json.decode(resp.data!) as Map<String, dynamic>)
-              .then((data) => data['result'] as List)
-              .then((list) => list.map((str) => str as int))
+              .then((resp) {
+                return resp.data!;
+              })
+              .then((data) => data['content'] as List)
+              .then((list) => list.map((str) => str as int).toList())
               .catchError((err) {
                 debugPrint('err $err');
                 return <int>[];
               }, test: (error) => true);
         })
-        .fold(<List<int>>[], (l, r) => l..add(r.toList()))
+        .fold(<List<int>>[], (l, r) => l..add(r))
         .then((d) {
           return Future.wait(d.mapIndexed((index, ids) {
             var type = types[index];

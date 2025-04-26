@@ -62,49 +62,54 @@ class _StateSetting extends State<SettingsView> {
         .then((value) => true);
   }
 
-  Future<void> sync() async {
-    if (mounted) {
-      var controller = context.read<SettingsController>();
-      var types = [readHistoryMask, bookMarkMask, lateReadMark];
-      var target = ['history', 'bookmark', 'lateRead'];
-      var r = await controller.manager.helper
-          .selectSqlMultiResultAsync('select id from UserLog where type=? ',
-              types.map((e) => [e]).toList())
-          .then((value) {
-            var r = value.values.map((e) => e.fold(<int>[],
-                (previousValue, element) => previousValue..add(element['id'])));
-            return r.toList();
-          })
-          .asStream()
-          .expand((ids) =>
-              ids.mapIndexed((index, id) => MapEntry(target[index], id)))
-          .asyncMap((entrys) => controller.manager.dio.post(
-                  '${controller.config.remoteHttp}/sync',
+  Future<bool> syncData() async {
+    var controller = context.read<SettingsController>();
+    var types = [readHistoryMask, bookMarkMask, lateReadMark];
+    var target = ['history', 'bookmark', 'lateRead'];
+    return controller.manager.helper
+        .selectSqlMultiResultAsync('select id from UserLog where type=? ',
+            types.map((e) => [e]).toList())
+        .then((value) {
+          var r = value.values
+              .map((e) => e.fold(
+                  <int>[],
+                  (previousValue, element) =>
+                      previousValue..add(element['id'])))
+              .toList();
+          return r;
+        })
+        .asStream()
+        .expand((ids) =>
+            ids.mapIndexed((index, id) => MapEntry(target[index], id)).toList())
+        .asyncMap((entry) {
+          return controller.manager.dio
+              .post('${controller.config.remoteHttp}/sync',
                   options: Options(
                       headers: {'Content-Type': 'application/json'},
                       responseType: ResponseType.json),
                   data: {
                     'auth': controller.config.auth,
-                    'target': entrys.key,
-                    'content': json.encode(entrys.value)
-                  }))
-          .map((data) => json.decode(data.data!) as List)
-          .map((list) => list.map((str) => str as int))
-          .fold(<List<int>>[], (l, r) => l..add(r.toList()))
-          .then((d) {
-            return Future.wait(d.mapIndexed((index, ids) {
-              var type = types[index];
-              return controller.manager.helper.excuteSqlMultiParams(
-                  'replace into UserLog(id,type,) values (?,?)',
-                  ids.map((e) => [e, type]).toList());
-            })).then((l) => l.fold(true, (p, c) => p && c));
-          });
-      if (r && mounted) {
-        context.showSnackBar(AppLocalizations.of(context)!.success);
-      } else if (mounted) {
-        context.showSnackBar(AppLocalizations.of(context)!.failed);
-      }
-    }
+                    'target': entry.key,
+                    'content': entry.value
+                  })
+              .then((resp) => json.decode(resp.data!) as Map<String, dynamic>)
+              .then((data) => data['result'] as List)
+              .then((list) => list.map((str) => str as int))
+              .catchError((err) {
+                debugPrint('err $err');
+                return <int>[];
+              }, test: (error) => true);
+        })
+        .fold(<List<int>>[], (l, r) => l..add(r.toList()))
+        .then((d) {
+          return Future.wait(d.mapIndexed((index, ids) {
+            var type = types[index];
+            return controller.manager.helper.excuteSqlMultiParams(
+                'replace into UserLog(id,type) values (?,?)',
+                ids.map((e) => [e, type]).toList());
+          }));
+        })
+        .then((l) => l.fold<bool>(true, (p, c) => p && c));
   }
 
   Widget _settingsContent() {
@@ -199,10 +204,27 @@ class _StateSetting extends State<SettingsView> {
                 icon: const Icon(Icons.edit))),
       if (_settingsController.remoteLib)
         ListTile(
-          leading: const Icon(Icons.sync),
-          title: Text(AppLocalizations.of(context)!.sync),
-          onTap: () => sync(),
-        ),
+            leading: const Icon(Icons.sync),
+            title: Text(AppLocalizations.of(context)!.syncData),
+            trailing: IconButton(
+                onPressed: () async {
+                  context.progressDialogAction(syncData()
+                      .then((r) => setState(() {
+                            if (mounted) {
+                              if (r && mounted) {
+                                context.showSnackBar(
+                                    AppLocalizations.of(context)!.success);
+                              } else if (mounted) {
+                                context.showSnackBar(
+                                    AppLocalizations.of(context)!.failed);
+                              }
+                            }
+                          }))
+                      .catchError((e, stack) {
+                    debugPrint('Error: $e with stack trace:  $stack');
+                  }, test: (error) => false));
+                },
+                icon: const Icon(Icons.sync))),
       ListTile(
           leading: Icon(_settingsController.runServer
               ? Icons.online_prediction

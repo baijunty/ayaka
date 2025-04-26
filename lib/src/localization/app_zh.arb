@@ -101,6 +101,6 @@
   "readLater":"稍后阅读",
   "fix":"修复",
   "suggest":"推荐",
-  "sync":"同步",
+  "syncData":"同步数据",
   "tag":"标签"
 }

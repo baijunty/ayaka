@@ -1,12 +1,16 @@
+import 'dart:convert';
+
 import 'package:ayaka/src/gallery_view/gallery_details_view.dart';
 import 'package:ayaka/src/settings/settings_controller.dart';
 import 'package:collection/collection.dart';
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:hitomi/gallery/gallery.dart';
 import 'package:hitomi/lib.dart';
 import 'package:provider/provider.dart';
 import 'package:hitomi/gallery/image.dart' as img show Image;
+import '../model/gallery_manager.dart';
 import '../utils/proxy_network_image.dart';
 import 'common_view.dart';
 
@@ -154,10 +158,50 @@ class _AdImageView extends State<AdImageView> {
     }
   }
 
+  Future<bool> syncAdImage() async {
+    if (adImages.isNotEmpty) {
+      var controller = context.read<SettingsController>();
+      var size = adImages.length;
+      await controller.manager.dio
+          .post('${controller.config.remoteHttp}/sync',
+              options: Options(
+                  headers: {'Content-Type': 'application/json'},
+                  responseType: ResponseType.json),
+              data: {
+                'auth': controller.config.auth,
+                'target': 'admark',
+                'content': adImages.toList()
+              })
+          .then((data) => json.decode(data.data!) as Map<String, dynamic>)
+          .then((map) => map['result'] as List)
+          .then((list) => list.map((str) => str as String))
+          .then((d) => setState(() {
+                var set = d.toSet();
+                set.addAll(controller.manager.adImage);
+                adImages.addAll(set);
+                debugPrint('ad image length  ${adImages.length}');
+              }))
+          .catchError((e) => debugPrint('sync ad image error $e'),
+              test: (error) => true);
+      if (mounted && size != adImages.length) {
+        await context.read<GalleryManager>().addAdImageHash(adImages.toList());
+      }
+      return true;
+    }
+    return false;
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-        appBar: AppBar(title: Text(AppLocalizations.of(context)!.adImage)),
+        appBar: AppBar(
+            title: Text(AppLocalizations.of(context)!.adImage),
+            actions: [
+              IconButton(
+                  onPressed: () async =>
+                      await context.progressDialogAction(syncAdImage()),
+                  icon: const Icon(Icons.sync))
+            ]),
         body: SafeArea(
             child: Center(
                 child: MaxWidthBox(

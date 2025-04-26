@@ -38,6 +38,9 @@ class _AyakaHome extends State<AyakaHome> {
               BottomNavigationBarItem(
                   icon: const Icon(Icons.person),
                   label: AppLocalizations.of(context)!.profile),
+              BottomNavigationBarItem(
+                  icon: const Icon(Icons.settings),
+                  label: AppLocalizations.of(context)!.setting),
             ],
             onTap: _handleIndexClick,
             currentIndex: index,
@@ -71,6 +74,9 @@ class _AyakaHome extends State<AyakaHome> {
               NavigationRailDestination(
                   icon: const Icon(Icons.person),
                   label: Text(AppLocalizations.of(context)!.profile)),
+              NavigationRailDestination(
+                  icon: const Icon(Icons.settings),
+                  label: Text(AppLocalizations.of(context)!.setting))
             ],
             selectedIndex: index,
             onDestinationSelected: _handleIndexClick,
@@ -100,7 +106,8 @@ class _AyakaHome extends State<AyakaHome> {
   Widget currentView() {
     if (kIsWeb) {
       return IndexedStack(
-          index: index, children: [GalleryTabView(), UserProfileView()]);
+          index: index,
+          children: [GalleryTabView(), UserProfileView(), SettingsView()]);
     }
     Widget child;
     switch (index) {

@@ -96,7 +96,7 @@ class SettingsController with ChangeNotifier {
 
   Future<void> switchConn(bool useProxy) async {
     await _settingsService.saveConfig('useProxy', useProxy);
-    _remoteLib = useProxy;
+    _remoteLib = useProxy || kIsWeb;
     notifyListeners();
   }
 

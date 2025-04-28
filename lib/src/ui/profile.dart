@@ -168,7 +168,7 @@ class _AdImageView extends State<AdImageView> {
                   responseType: ResponseType.json),
               data: {
                 'auth': controller.config.auth,
-                'target': 'admark',
+                'mark': admarkMask,
                 'content': adImages.toList()
               })
           .then((data) => data.data! as Map<String, dynamic>)
@@ -251,7 +251,7 @@ class _UserProfileLogView extends State<UserProfileLogView> {
   late ScrollController scrollController;
   late PopupMenuButton<String> Function(Gallery gallery)? menusBuilder;
   final readIndexMap = <int, int?>{};
-  void fetchDataFromDb() {
+  Future<void> fetchDataFromDb() async {
     var sqlite = context.getSqliteHelper();
     sqlite
         .querySql(
@@ -292,11 +292,6 @@ class _UserProfileLogView extends State<UserProfileLogView> {
   Future<bool> syncDelete(int id) async {
     var controller = context.read<SettingsController>();
     if (controller.manager.config.remoteHttp.isNotEmpty) {
-      var typeMap = {
-        readHistoryMask: 'history',
-        bookMarkMask: 'bookmark',
-        lateReadMark: 'lateRead'
-      };
       return controller.manager.dio
           .post('${controller.config.remoteHttp}/sync',
               options: Options(
@@ -304,7 +299,7 @@ class _UserProfileLogView extends State<UserProfileLogView> {
                   responseType: ResponseType.json),
               data: {
                 'auth': controller.config.auth,
-                'target': typeMap[widget.type],
+                'mark': widget.type,
                 'content': [-id]
               })
           .then((data) => data.data! as Map<String, dynamic>)
@@ -356,6 +351,45 @@ class _UserProfileLogView extends State<UserProfileLogView> {
     });
   }
 
+  Future<bool> syncData() async {
+    var sqlite = context.getSqliteHelper();
+    var controller = context.read<SettingsController>();
+    return sqlite
+        .querySql('select id from UserLog where type=?', [widget.type])
+        .then((value) =>
+            value.fold(<int>[], (acc, row) => acc..add(row['id'] as int)))
+        .then((values) => controller.manager.dio
+            .post('${controller.config.remoteHttp}/sync',
+                options: Options(
+                    headers: {'Content-Type': 'application/json'},
+                    responseType: ResponseType.json),
+                data: {
+                  'auth': controller.config.auth,
+                  'mark': widget.type,
+                  'content': values
+                })
+            .then((resp) {
+              return resp.data!;
+            })
+            .then((data) => data['content'] as List)
+            .then((list) => list.map((str) => str as int).toList())
+            .then((d) {
+              return controller.manager.helper.excuteSqlMultiParams(
+                  'replace into UserLog(id,type) values (?,?)',
+                  d.map((e) => [e, widget.type]).toList());
+            })
+            .then((v) async {
+              data.clear();
+              page = 0;
+              await fetchDataFromDb();
+              return v;
+            })
+            .catchError((err) {
+              debugPrint('err $err');
+              return false;
+            }, test: (error) => true));
+  }
+
   @override
   void dispose() {
     super.dispose();
@@ -390,10 +424,31 @@ class _UserProfileLogView extends State<UserProfileLogView> {
 
   @override
   Widget build(BuildContext context) {
+    var controller = context.read<SettingsController>();
     return Scaffold(
         appBar: AppBar(
           title: Text(widget.title),
           actions: [
+            if (controller.remoteLib)
+              IconButton(
+                  onPressed: () async {
+                    context.progressDialogAction(syncData()
+                        .then((r) => setState(() {
+                              if (mounted) {
+                                if (r) {
+                                  context.showSnackBar(
+                                      AppLocalizations.of(context)!.success);
+                                } else {
+                                  context.showSnackBar(
+                                      AppLocalizations.of(context)!.failed);
+                                }
+                              }
+                            }))
+                        .catchError((e, stack) {
+                      debugPrint('Error: $e with stack trace:  $stack');
+                    }, test: (error) => false));
+                  },
+                  icon: const Icon(Icons.sync)),
             IconButton(onPressed: clearData, icon: const Icon(Icons.clear))
           ],
         ),

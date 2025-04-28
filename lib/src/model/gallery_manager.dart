@@ -71,7 +71,7 @@ class GalleryManager with ChangeNotifier {
                   responseType: ResponseType.json),
               data: {
                 'auth': controller.config.auth,
-                'target': 'admark',
+                'mark': admarkMask,
                 'content': hashes
               })
           .then((value) => json.decode(value.data!) as Map<String, dynamic>)

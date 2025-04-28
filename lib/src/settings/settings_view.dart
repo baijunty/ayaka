@@ -3,17 +3,14 @@ import 'dart:io';
 import 'package:ayaka/src/ui/common_view.dart';
 import 'package:ayaka/src/utils/label_utils.dart';
 import 'package:ayaka/src/utils/responsive_util.dart';
-import 'package:collection/collection.dart';
-import 'package:dio/dio.dart';
 import 'package:file_picker/file_picker.dart' show FilePicker;
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:hitomi/gallery/label.dart';
 import 'package:hitomi/gallery/language.dart';
-import 'package:hitomi/lib.dart';
 import 'package:path_provider/path_provider.dart';
-import 'package:provider/provider.dart' show ReadContext, WatchContext;
+import 'package:provider/provider.dart' show WatchContext;
 import 'settings_controller.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:path/path.dart' show join;
@@ -60,58 +57,6 @@ class _StateSetting extends State<SettingsView> {
         .writeAsString('1', flush: true)
         .then((value) => value.delete())
         .then((value) => true);
-  }
-
-  Future<bool> syncData() async {
-    var controller = context.read<SettingsController>();
-    var types = [readHistoryMask, bookMarkMask, lateReadMark];
-    var target = ['history', 'bookmark', 'lateRead'];
-    return controller.manager.helper
-        .selectSqlMultiResultAsync('select id from UserLog where type=? ',
-            types.map((e) => [e]).toList())
-        .then((value) {
-          var r = value.values
-              .map((e) => e.fold(
-                  <int>[],
-                  (previousValue, element) =>
-                      previousValue..add(element['id'])))
-              .toList();
-          return r;
-        })
-        .asStream()
-        .expand((ids) =>
-            ids.mapIndexed((index, id) => MapEntry(target[index], id)).toList())
-        .asyncMap((entry) {
-          return controller.manager.dio
-              .post('${controller.config.remoteHttp}/sync',
-                  options: Options(
-                      headers: {'Content-Type': 'application/json'},
-                      responseType: ResponseType.json),
-                  data: {
-                    'auth': controller.config.auth,
-                    'target': entry.key,
-                    'content': entry.value
-                  })
-              .then((resp) {
-                return resp.data!;
-              })
-              .then((data) => data['content'] as List)
-              .then((list) => list.map((str) => str as int).toList())
-              .catchError((err) {
-                debugPrint('err $err');
-                return <int>[];
-              }, test: (error) => true);
-        })
-        .fold(<List<int>>[], (l, r) => l..add(r))
-        .then((d) {
-          return Future.wait(d.mapIndexed((index, ids) {
-            var type = types[index];
-            return controller.manager.helper.excuteSqlMultiParams(
-                'replace into UserLog(id,type) values (?,?)',
-                ids.map((e) => [e, type]).toList());
-          }));
-        })
-        .then((l) => l.fold<bool>(true, (p, c) => p && c));
   }
 
   Widget _settingsContent() {
@@ -206,29 +151,6 @@ class _StateSetting extends State<SettingsView> {
                   }
                 },
                 icon: const Icon(Icons.edit))),
-      if (_settingsController.remoteLib)
-        ListTile(
-            leading: const Icon(Icons.sync),
-            title: Text(AppLocalizations.of(context)!.syncData),
-            trailing: IconButton(
-                onPressed: () async {
-                  context.progressDialogAction(syncData()
-                      .then((r) => setState(() {
-                            if (mounted) {
-                              if (r && mounted) {
-                                context.showSnackBar(
-                                    AppLocalizations.of(context)!.success);
-                              } else if (mounted) {
-                                context.showSnackBar(
-                                    AppLocalizations.of(context)!.failed);
-                              }
-                            }
-                          }))
-                      .catchError((e, stack) {
-                    debugPrint('Error: $e with stack trace:  $stack');
-                  }, test: (error) => false));
-                },
-                icon: const Icon(Icons.sync))),
       if (!kIsWeb)
         ListTile(
             leading: Icon(_settingsController.runServer

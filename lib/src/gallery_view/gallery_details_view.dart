@@ -424,9 +424,8 @@ class GalleryDetailHead extends StatelessWidget {
         .toList();
     var mediaData = MediaQuery.of(context);
     var width =
-        min(mediaData.size.width * mediaData.devicePixelRatio / 3, 300.0);
-    var minHeight =
-        tagInfo != null ? width - 32 : width / mediaData.devicePixelRatio + 24;
+        min(mediaData.size.width * mediaData.devicePixelRatio / 3, 360.0);
+    var minHeight = tagInfo != null ? width - 32 : width / 3;
     var height = width *
         gallery.files.first.height /
         gallery.files.first.width /

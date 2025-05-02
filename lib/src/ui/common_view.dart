@@ -568,7 +568,7 @@ extension ContextAction on BuildContext {
     return read<SettingsController>()
         .manager
         .helper
-        .readlData<int>('UserLog', 'mark', {'id': id, 'type': type})
+        .readlData<int>('UserLog', 'value', {'id': id, 'type': type})
         .then((value) => value ?? defaultValue)
         .catchError((e) {
           debugPrint('$e');

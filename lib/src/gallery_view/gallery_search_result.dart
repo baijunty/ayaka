@@ -147,7 +147,7 @@ class _GallerySearchResultView extends State<GallerySearchResultView>
           .then((value) {
         totalCount = value.totalCount;
         debugPrint(
-            'search found items $totalCount sample ${value.data.take(5).toList()}');
+            'search found items $totalCount ');
         _ids.addAll(value.data);
         return _ids;
       });

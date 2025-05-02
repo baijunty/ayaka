@@ -49,7 +49,6 @@ class _GalleryTaskView extends State<GalleryTaskView> {
     if (controller.controller.remoteLib) {
       var uri = Uri.parse(controller.controller.config.remoteHttp);
       var socketUri = 'ws://${uri.host}:${uri.port}';
-      debugPrint('socketUri:$socketUri');
       _channel = WebSocketChannel.connect(Uri.parse(socketUri));
       _channel!.sink.add(json
           .encode({'auth': controller.controller.config.auth, 'type': 'list'}));
@@ -73,7 +72,6 @@ class _GalleryTaskView extends State<GalleryTaskView> {
   }
 
   void setTaskResult(Map<String, dynamic> result) {
-    debugPrint('get $result');
     setState(() {
       switch (result['type']) {
         case 'list':

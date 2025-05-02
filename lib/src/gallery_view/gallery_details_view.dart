@@ -61,8 +61,6 @@ class _GalleryDetailView extends State<GalleryDetailsView> {
                       .fetchGallery(value.first,
                           token: token, usePrefence: false)
                       .catchError((e) => gallery, test: (error) => true);
-                  debugPrint(
-                      'gallery id: ${gallery.id} compare to id ${value.first} before ${before.files.length} now len ${gallery.files.length}');
                   if (before.id != value.first ||
                       gallery.files.length > before.files.length) {
                     status = GalleryStatus.upgrade;

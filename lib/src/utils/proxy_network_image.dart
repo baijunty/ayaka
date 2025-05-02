@@ -76,7 +76,6 @@ class CacheImage extends ImageProvider<CacheImage> {
               element.file.readAsBytesSync()));
         }
       }
-      debugPrint('return null');
       return Future.error('empty date');
     } catch (e) {
       debugPrint('$e');

@@ -68,7 +68,6 @@ class SettingsController with ChangeNotifier {
     runServer = !kIsWeb &&
         (await _settingsService.readConfig<bool>('runServer') ?? runServer);
     _manager = TaskManager(_config);
-    debugPrint('load config $_config $remoteLib $runServer');
     _cacheManager = HitomiImageCacheManager(hitomi());
     _localCacheManager = HitomiImageCacheManager(hitomi(localDb: true));
     return !kIsWeb && runServer
@@ -117,7 +116,6 @@ class SettingsController with ChangeNotifier {
   Future<void> updateConfig(UserConfig config) async {
     if (config == _config) return;
     _config = config;
-    debugPrint('update config $_config');
     await _settingsService.saveConfig('config', json.encode(config.toJson()));
     _manager = TaskManager(_config);
     _cacheManager = HitomiImageCacheManager(hitomi());

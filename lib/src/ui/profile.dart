@@ -37,7 +37,7 @@ class _UserProfileView extends State<UserProfileView>
       var types = [readHistoryMask, bookMarkMask, lateReadMark];
       controller.manager.helper
           .selectSqlMultiResultAsync(
-              'select id from UserLog where type=? ORDER by rowid desc limit 10 ',
+              'select id from UserLog where type=? ORDER by date desc limit 10 ',
               types.map((e) => [e]).toList())
           .then((value) {
             var r = value.values.map((e) => e.fold(<int>[],
@@ -169,10 +169,11 @@ class _AdImageView extends State<AdImageView> {
               data: {
                 'auth': controller.config.auth,
                 'mark': admarkMask,
+                'returnValue': true,
                 'content': adImages.toList()
               })
           .then((data) => data.data! as Map<String, dynamic>)
-          .then((map) => map['result'] as List)
+          .then((map) => map['content'] as List)
           .then((list) => list.map((str) => str as String))
           .then((d) => setState(() {
                 var set = d.toSet();
@@ -255,7 +256,7 @@ class _UserProfileLogView extends State<UserProfileLogView> {
     var sqlite = context.getSqliteHelper();
     sqlite
         .querySql(
-            'select COUNT(1) OVER() AS total_count, id from UserLog where type=? ORDER by rowid desc limit 25 offset ?',
+            'select COUNT(1) OVER() AS total_count, id from UserLog where type=? ORDER by date desc limit 25 offset ?',
             [
               widget.type,
               page * 25
@@ -300,7 +301,7 @@ class _UserProfileLogView extends State<UserProfileLogView> {
               data: {
                 'auth': controller.config.auth,
                 'mark': widget.type,
-                'content': [-id]
+                'content': [{'id': -id}]
               })
           .then((data) => data.data! as Map<String, dynamic>)
           .then((map) => map['success'] as bool)
@@ -335,13 +336,11 @@ class _UserProfileLogView extends State<UserProfileLogView> {
   void clearData() async {
     await context
         .showConfirmDialog(AppLocalizations.of(context)!.clearDataWarn)
-        .then((value) {
-      if (mounted) {
-        context.getSqliteHelper().delete('UserLog', {'type': widget.type});
-      }
-    }).then((value) {
-      if (mounted) {
-        context.showSnackBar(AppLocalizations.of(context)!.success);
+        .then((value) async {
+      if (mounted && value == true) {
+        await context
+            .getSqliteHelper()
+            .delete('UserLog', {'type': widget.type});
         setState(() {
           data.clear();
           page = 0;
@@ -355,9 +354,10 @@ class _UserProfileLogView extends State<UserProfileLogView> {
     var sqlite = context.getSqliteHelper();
     var controller = context.read<SettingsController>();
     return sqlite
-        .querySql('select id from UserLog where type=?', [widget.type])
+        .querySql('select id,value,type,content,date from UserLog where type=?',
+            [widget.type])
         .then((value) =>
-            value.fold(<int>[], (acc, row) => acc..add(row['id'] as int)))
+            value.fold(<Map<String, dynamic>>[], (acc, row) => acc..add(row)))
         .then((values) => controller.manager.dio
             .post('${controller.config.remoteHttp}/sync',
                 options: Options(
@@ -366,21 +366,32 @@ class _UserProfileLogView extends State<UserProfileLogView> {
                 data: {
                   'auth': controller.config.auth,
                   'mark': widget.type,
+                  'returnValue': true,
                   'content': values
                 })
             .then((resp) {
               return resp.data!;
             })
             .then((data) => data['content'] as List)
-            .then((list) => list.map((str) => str as int).toList())
+            .then((list) =>
+                list.map((str) => str as Map<String, dynamic>).toList())
             .then((d) {
               return controller.manager.helper.excuteSqlMultiParams(
-                  'replace into UserLog(id,type) values (?,?)',
-                  d.map((e) => [e, widget.type]).toList());
+                  'replace into UserLog(id,value,type,content,date) values (?,?,?,?,?)',
+                  d
+                      .map((e) => [
+                            e['id'],
+                            e['value'],
+                            e['type'],
+                            e['content'],
+                            e['date']
+                          ])
+                      .toList());
             })
             .then((v) async {
               data.clear();
               page = 0;
+              readIndexMap.clear();
               await fetchDataFromDb();
               return v;
             })

@@ -7,6 +7,18 @@
 
 int APIENTRY wWinMain(_In_ HINSTANCE instance, _In_opt_ HINSTANCE prev,
                       _In_ wchar_t *command_line, _In_ int show_command) {
+  HANDLE hMutex = CreateMutex(NULL, FALSE, L"Global\\ayaka");
+  if (hMutex == NULL) {
+      MessageBox(NULL, L"Failed to create mutex.", L"Error", MB_OK | MB_ICONERROR);
+      return EXIT_FAILURE;
+   }
+                    
+   DWORD last_error = GetLastError();
+   if (last_error == ERROR_ALREADY_EXISTS) {
+       MessageBox(NULL, L"应用已启动！", L"Error", MB_OK | MB_ICONERROR);
+       CloseHandle(hMutex);
+       return EXIT_FAILURE;
+   }
   // Attach to console when present (e.g., 'flutter run') or create a
   // new console when running with a debugger.
   if (!::AttachConsole(ATTACH_PARENT_PROCESS) && ::IsDebuggerPresent()) {

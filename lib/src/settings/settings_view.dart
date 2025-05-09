@@ -182,6 +182,16 @@ class _StateSetting extends State<SettingsView> {
                     const ImageIcon(AssetImage('assets/images/refresh.png')))),
       if (!kIsWeb)
         ListTile(
+            leading: Icon(Icons.auto_fix_high),
+            title: Text(AppLocalizations.of(context)!.updateDatabase),
+            trailing: IconButton(
+                onPressed: () async {
+                  await context.progressDialogAction(
+                      _settingsController.manager.parseCommandAndRun('--fix'));
+                },
+                icon: Icon(Icons.auto_fix_high))),
+      if (!kIsWeb)
+        ListTile(
             leading:
                 const ImageIcon(AssetImage('assets/images/open-folder.png')),
             title: Text(AppLocalizations.of(context)!.savePath),

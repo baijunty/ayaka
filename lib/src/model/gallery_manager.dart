@@ -49,17 +49,17 @@ class GalleryManager with ChangeNotifier {
         : await controller.manager.parseCommandAndRun('-d $id');
   }
 
-  Future<Map<String, dynamic>> checkExist(int id) async {
+  Future<Map<String, dynamic>> checkExist(List<dynamic> ids) async {
     return controller.remoteLib
         ? controller.manager.dio
             .post<String>('${controller.config.remoteHttp}/checkId',
-                data: json.encode({'auth': controller.config.auth, 'id': id}),
+                data: json.encode({'auth': controller.config.auth, 'ids': ids}),
                 options: Options(responseType: ResponseType.json))
             .then((value) => json.decode(value.data!) as Map<String, dynamic>)
             .catchError((e) => <String, dynamic>{}, test: (error) => true)
         : controller.manager
-            .checkExistsId(id)
-            .then((value) => {'id': id, 'value': value});
+            .checkExistsId(ids)
+            .then((value) => {'success': true, 'value': value});
   }
 
   Future<bool> addAdImageHash(List<String> hashes) async {

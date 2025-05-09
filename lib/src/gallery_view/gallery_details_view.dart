@@ -4,7 +4,6 @@ import 'package:ayaka/src/gallery_view/gallery_viewer.dart';
 import 'package:ayaka/src/model/gallery_manager.dart';
 import 'package:ayaka/src/settings/settings_controller.dart';
 import 'package:ayaka/src/ui/animation_view.dart';
-import 'package:card_loading/card_loading.dart';
 import 'package:collection/collection.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_cache_manager/flutter_cache_manager.dart';
@@ -39,7 +38,6 @@ class _GalleryDetailView extends State<GalleryDetailsView> {
   late SettingsController controller = context.read<SettingsController>();
   late Gallery gallery;
   GalleryStatus status = GalleryStatus.notExists;
-  bool netLoading = true;
   int? readedIndex;
   CancelToken? token;
   final List<img.Image> _selected = [];
@@ -47,41 +45,45 @@ class _GalleryDetailView extends State<GalleryDetailsView> {
   List<Map<String, dynamic>> translates = [];
   Future<void> _fetchTransLate() async {
     var api = controller.hitomi(localDb: true);
+    var manager = context.read<GalleryManager>();
+    await api.translate(gallery.labels()).then((value) => setState(() {
+          translates = value;
+        }));
     await (status == GalleryStatus.exists
             ? Future.value(gallery)
-            : context
-                .read<GalleryManager>()
-                .checkExist(gallery.id)
+            : manager
+                .checkExist([
+                  gallery.id,
+                  ...gallery.languages?.map((e) => e.galleryid ?? 0).toList() ??
+                      []
+                ])
                 .then((value) => value['value'] as List<dynamic>?)
                 .then((value) async {
-                if (value?.firstOrNull != null) {
-                  gallery = await api.fetchGallery(value!.first, token: token);
-                  var before = await controller
-                      .hitomi()
-                      .fetchGallery(value.first,
-                          token: token, usePrefence: false)
-                      .catchError((e) => gallery, test: (error) => true);
-                  if (before.id != value.first ||
-                      gallery.files.length > before.files.length) {
-                    status = GalleryStatus.upgrade;
-                  } else {
-                    status = GalleryStatus.exists;
+                  if (value?.firstOrNull != null) {
+                    gallery =
+                        await api.fetchGallery(value!.first, token: token);
+                    var before = await controller
+                        .hitomi()
+                        .fetchGallery(value.first,
+                            token: token, usePrefence: false)
+                        .catchError((e) => gallery, test: (error) => true);
+                    if (before.id != value.first ||
+                        gallery.files.length > before.files.length) {
+                      status = GalleryStatus.upgrade;
+                      translates = await api.translate(gallery.labels());
+                    } else {
+                      status = GalleryStatus.exists;
+                    }
                   }
-                }
-                return gallery;
-              }))
-        .then((value) => api.translate(gallery.labels()))
+                  return gallery;
+                }))
         .then((value) {
       if (mounted) {
-        setState(() {
-          translates = value;
-          netLoading = false;
-        });
+        setState(() {});
       }
     }).catchError((e) {
       if (mounted) {
         setState(() {
-          netLoading = false;
           context.showSnackBar('$e');
         });
       }
@@ -234,7 +236,6 @@ class _GalleryDetailView extends State<GalleryDetailsView> {
     var tagInfo = GalleryTagDetailInfo(
       gallery: gallery,
       extendedInfo: translates,
-      netLoading: netLoading,
       readIndex: readedIndex,
       deskTop: isDeskTop,
       buildChildren: (children) => isDeskTop
@@ -256,7 +257,6 @@ class _GalleryDetailView extends State<GalleryDetailsView> {
                         local: status != GalleryStatus.notExists),
                     gallery: gallery,
                     extendedInfo: translates,
-                    netLoading: netLoading,
                     status: status,
                     readIndex: readedIndex,
                     languageChange: (id) async {
@@ -324,7 +324,6 @@ class _GalleryDetailView extends State<GalleryDetailsView> {
 class GalleryDetailHead extends StatelessWidget {
   final Gallery gallery;
   final List<Map<String, dynamic>> extendedInfo;
-  final bool netLoading;
   final GalleryStatus status;
   final CacheManager manager;
   final GalleryTagDetailInfo? tagInfo;
@@ -335,7 +334,6 @@ class GalleryDetailHead extends StatelessWidget {
       required this.manager,
       required this.gallery,
       required this.extendedInfo,
-      required this.netLoading,
       required this.status,
       required this.languageChange,
       required this.readIndex,
@@ -367,26 +365,17 @@ class GalleryDetailHead extends StatelessWidget {
         Expanded(
             child: Padding(
                 padding: const EdgeInsets.only(right: 8),
-                child: netLoading
-                    ? null
-                    : switch (status) {
-                        GalleryStatus.notExists => OutlinedButton(
-                            onPressed: () async {
-                              await context.addTask(gallery.id);
-                            },
-                            child:
-                                Text(AppLocalizations.of(context)!.download)),
-                        GalleryStatus.exists => OutlinedButton(
-                            onPressed: () async {
-                              await context.addTask(gallery.id);
-                            },
-                            child: Text(AppLocalizations.of(context)!.fix)),
-                        GalleryStatus.upgrade => OutlinedButton(
-                            onPressed: () async {
-                              await context.addTask(gallery.id);
-                            },
-                            child: Text(AppLocalizations.of(context)!.update)),
-                      })),
+                child: OutlinedButton(
+                    onPressed: () async {
+                      await context.addTask(gallery.id);
+                    },
+                    child: Text(switch (status) {
+                      GalleryStatus.notExists =>
+                        AppLocalizations.of(context)!.download,
+                      GalleryStatus.exists => AppLocalizations.of(context)!.fix,
+                      GalleryStatus.upgrade =>
+                        AppLocalizations.of(context)!.update,
+                    })))),
       Expanded(
         child: FilledButton(
             onPressed: () => Navigator.of(context)
@@ -550,7 +539,6 @@ class GalleryDetailHead extends StatelessWidget {
 class GalleryTagDetailInfo extends StatelessWidget {
   final Gallery gallery;
   final List<Map<String, dynamic>> extendedInfo;
-  final bool netLoading;
   final Widget Function(List<Widget> children) buildChildren;
   final int? readIndex;
   final bool deskTop;
@@ -558,7 +546,6 @@ class GalleryTagDetailInfo extends StatelessWidget {
       {super.key,
       required this.gallery,
       required this.extendedInfo,
-      required this.netLoading,
       required this.buildChildren,
       required this.deskTop,
       this.readIndex});
@@ -631,15 +618,12 @@ class GalleryTagDetailInfo extends StatelessWidget {
         extendedInfo.groupListsBy((element) => element['type'] as String);
     return buildChildren([
       if (readIndex != null) _buildIndexView(readIndex!),
-      if (netLoading) const CardLoading(height: 40),
-      if (!netLoading &&
-          [typeList['series'], typeList['character']]
-              .every((element) => element != null))
+      if ([typeList['series'], typeList['character']]
+          .every((element) => element != null))
         _serialInfo(context, typeList['series']!.take(10).toList(),
             typeList['character']!.take(20).toList()),
-      if (!netLoading &&
-          [typeList['female'], typeList['male'], typeList['tag']]
-              .any((element) => element != null))
+      if ([typeList['female'], typeList['male'], typeList['tag']]
+          .any((element) => element != null))
         _otherTagInfo(context, typeList['female']?.take(20).toList(),
             typeList['male'], typeList['tag']?.take(20).toList())
     ]);

@@ -39,6 +39,7 @@ class _GalleryDetailView extends State<GalleryDetailsView> {
   late Gallery gallery;
   GalleryStatus status = GalleryStatus.notExists;
   int? readedIndex;
+  bool isLoading = false;
   CancelToken? token;
   final List<img.Image> _selected = [];
   final List<Gallery> suggestGallerys = [];
@@ -49,6 +50,7 @@ class _GalleryDetailView extends State<GalleryDetailsView> {
     await api.translate(gallery.labels()).then((value) => setState(() {
           translates = value;
         }));
+    isLoading = true;
     await (status == GalleryStatus.exists
             ? Future.value(gallery)
             : manager
@@ -79,7 +81,9 @@ class _GalleryDetailView extends State<GalleryDetailsView> {
                 }))
         .then((value) {
       if (mounted) {
-        setState(() {});
+        setState(() {
+          isLoading = false;
+        });
       }
     }).catchError((e) {
       if (mounted) {
@@ -87,6 +91,7 @@ class _GalleryDetailView extends State<GalleryDetailsView> {
           context.showSnackBar('$e');
         });
       }
+      isLoading = false;
     }, test: (error) => true);
   }
 
@@ -259,6 +264,7 @@ class _GalleryDetailView extends State<GalleryDetailsView> {
                     extendedInfo: translates,
                     status: status,
                     readIndex: readedIndex,
+                    isLoading: isLoading,
                     languageChange: (id) async {
                       await context.progressDialogAction(api
                           .fetchGallery(id, usePrefence: false)
@@ -328,6 +334,7 @@ class GalleryDetailHead extends StatelessWidget {
   final CacheManager manager;
   final GalleryTagDetailInfo? tagInfo;
   final int? readIndex;
+  final bool isLoading;
   final Function(int id) languageChange;
   const GalleryDetailHead(
       {super.key,
@@ -335,6 +342,7 @@ class GalleryDetailHead extends StatelessWidget {
       required this.gallery,
       required this.extendedInfo,
       required this.status,
+      required this.isLoading,
       required this.languageChange,
       required this.readIndex,
       this.tagInfo});
@@ -366,16 +374,24 @@ class GalleryDetailHead extends StatelessWidget {
             child: Padding(
                 padding: const EdgeInsets.only(right: 8),
                 child: OutlinedButton(
-                    onPressed: () async {
-                      await context.addTask(gallery.id);
-                    },
-                    child: Text(switch (status) {
-                      GalleryStatus.notExists =>
-                        AppLocalizations.of(context)!.download,
-                      GalleryStatus.exists => AppLocalizations.of(context)!.fix,
-                      GalleryStatus.upgrade =>
-                        AppLocalizations.of(context)!.update,
-                    })))),
+                    onPressed: isLoading
+                        ? null
+                        : () async {
+                            await context.addTask(gallery.id);
+                          },
+                    child: isLoading
+                        ? const SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: Center(child: CircularProgressIndicator()))
+                        : Text(switch (status) {
+                            GalleryStatus.notExists =>
+                              AppLocalizations.of(context)!.download,
+                            GalleryStatus.exists =>
+                              AppLocalizations.of(context)!.fix,
+                            GalleryStatus.upgrade =>
+                              AppLocalizations.of(context)!.update,
+                          })))),
       Expanded(
         child: FilledButton(
             onPressed: () => Navigator.of(context)

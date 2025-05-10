@@ -182,8 +182,8 @@ class _StateSetting extends State<SettingsView> {
                     const ImageIcon(AssetImage('assets/images/refresh.png')))),
       if (!kIsWeb)
         ListTile(
-            leading: Icon(Icons.auto_fix_high),
-            title: Text(AppLocalizations.of(context)!.updateDatabase),
+            leading: Icon(Icons.broken_image),
+            title: Text(AppLocalizations.of(context)!.fixDb),
             trailing: IconButton(
                 onPressed: () async {
                   await context.progressDialogAction(

@@ -7,7 +7,7 @@ import 'package:ayaka/src/utils/responsive_util.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:ayaka/src/localization/app_localizations.dart';
 
 class AyakaHome extends StatefulWidget {
   const AyakaHome({super.key});

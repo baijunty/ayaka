@@ -12,7 +12,7 @@ import 'package:hitomi/gallery/language.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:provider/provider.dart' show WatchContext;
 import 'settings_controller.dart';
-import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:ayaka/src/localization/app_localizations.dart';
 import 'package:path/path.dart' show join;
 
 /// Displays the various settings that can be customized by the user.

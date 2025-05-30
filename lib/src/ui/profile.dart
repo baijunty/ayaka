@@ -1,9 +1,9 @@
 import 'package:ayaka/src/gallery_view/gallery_details_view.dart';
+import 'package:ayaka/src/localization/app_localizations.dart';
 import 'package:ayaka/src/settings/settings_controller.dart';
 import 'package:collection/collection.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:hitomi/gallery/gallery.dart';
 import 'package:hitomi/lib.dart';
 import 'package:provider/provider.dart';
@@ -301,7 +301,9 @@ class _UserProfileLogView extends State<UserProfileLogView> {
               data: {
                 'auth': controller.config.auth,
                 'mark': widget.type,
-                'content': [{'id': -id}]
+                'content': [
+                  {'id': -id}
+                ]
               })
           .then((data) => data.data! as Map<String, dynamic>)
           .then((map) => map['success'] as bool)

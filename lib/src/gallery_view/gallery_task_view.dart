@@ -5,7 +5,7 @@ import 'package:ayaka/src/gallery_view/gallery_details_view.dart';
 import 'package:ayaka/src/model/gallery_manager.dart';
 import 'package:ayaka/src/utils/debounce.dart';
 import 'package:collection/collection.dart';
-import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:ayaka/src/localization/app_localizations.dart';
 import 'package:ayaka/src/ui/common_view.dart';
 import 'package:flutter/material.dart';
 import 'package:hitomi/gallery/gallery.dart';
@@ -100,7 +100,8 @@ class _GalleryTaskView extends State<GalleryTaskView> {
             var target = result['target'];
             if (target == 'pending') {
               pendingTask.add(gallery);
-            } else  if(runningTask.every((g)=>g['gallery'].id != gallery.id)){
+            } else if (runningTask
+                .every((g) => g['gallery'].id != gallery.id)) {
               result['gallery'] = gallery;
               runningTask.add(result);
             }

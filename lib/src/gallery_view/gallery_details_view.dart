@@ -7,7 +7,7 @@ import 'package:ayaka/src/ui/animation_view.dart';
 import 'package:collection/collection.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_cache_manager/flutter_cache_manager.dart';
-import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:ayaka/src/localization/app_localizations.dart';
 import 'package:ayaka/src/ui/common_view.dart';
 import 'package:ayaka/src/utils/common_define.dart';
 import 'package:dio/dio.dart';

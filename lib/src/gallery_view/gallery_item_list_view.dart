@@ -1,8 +1,8 @@
 import 'package:ayaka/src/gallery_view/gallery_details_view.dart';
+import 'package:ayaka/src/localization/app_localizations.dart';
 import 'package:collection/collection.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
-import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:ayaka/src/ui/common_view.dart';
 import 'package:flutter/material.dart';
 import 'package:hitomi/gallery/gallery.dart';

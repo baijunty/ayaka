@@ -2,7 +2,7 @@ import 'package:ayaka/src/gallery_view/gallery_details_view.dart';
 import 'package:ayaka/src/settings/settings_controller.dart';
 import 'package:collection/collection.dart';
 import 'package:dio/dio.dart';
-import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:ayaka/src/localization/app_localizations.dart';
 import 'package:ayaka/src/ui/common_view.dart';
 import 'package:flutter/material.dart';
 import 'package:hitomi/gallery/gallery.dart';
@@ -34,7 +34,9 @@ class _GallerySimilaerView extends State<GallerySimilaerView> {
           context, GalleryDetailsView.routeName,
           arguments: {'gallery': g, 'local': false});
       if (mounted) {
-        (read is int ? Future.value(read) : context.readUserDb(g.id, readHistoryMask))
+        (read is int
+                ? Future.value(read)
+                : context.readUserDb(g.id, readHistoryMask))
             .then((value) {
           setState(() {
             readIndexMap[g.id] = value;

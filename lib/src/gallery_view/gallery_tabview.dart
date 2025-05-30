@@ -6,7 +6,7 @@ import 'package:ayaka/src/ui/common_view.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:ayaka/src/localization/app_localizations.dart';
 import 'package:flutter/material.dart';
 import 'package:hitomi/gallery/label.dart';
 import 'package:hitomi/lib.dart';

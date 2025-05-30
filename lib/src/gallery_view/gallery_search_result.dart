@@ -9,7 +9,7 @@ import 'package:hitomi/gallery/label.dart';
 import 'package:hitomi/gallery/language.dart';
 import 'package:hitomi/lib.dart';
 import 'package:provider/provider.dart';
-import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:ayaka/src/localization/app_localizations.dart';
 import '../settings/settings_controller.dart';
 import '../ui/common_view.dart';
 import 'gallery_details_view.dart';
@@ -54,7 +54,9 @@ class _GallerySearchResultView extends State<GallerySearchResultView>
           context, GalleryDetailsView.routeName,
           arguments: {'gallery': g, 'local': widget.local});
       if (mounted) {
-        (read is int ? Future.value(read) : context.readUserDb(g.id, readHistoryMask))
+        (read is int
+                ? Future.value(read)
+                : context.readUserDb(g.id, readHistoryMask))
             .then((value) {
           setState(() {
             readIndexMap[g.id] = value;
@@ -146,8 +148,7 @@ class _GallerySearchResultView extends State<GallerySearchResultView>
               token: token)
           .then((value) {
         totalCount = value.totalCount;
-        debugPrint(
-            'search found items $totalCount ');
+        debugPrint('search found items $totalCount ');
         _ids.addAll(value.data);
         return _ids;
       });
@@ -171,7 +172,8 @@ class _GallerySearchResultView extends State<GallerySearchResultView>
         return value;
       });
     }).then((value) {
-      return Future.wait(value.map((e) => context.readUserDb(e.id, readHistoryMask)))
+      return Future.wait(
+              value.map((e) => context.readUserDb(e.id, readHistoryMask)))
           .then((result) => result.foldIndexed(
               readIndexMap,
               (index, previous, element) =>

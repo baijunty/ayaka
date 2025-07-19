@@ -157,8 +157,7 @@ class _GallerySearchResultView extends State<GallerySearchResultView>
     }
     idsFuture
         .then((value) => value.sublist(
-            min((_page - widget.startPage) * 25, value.length),
-            min(value.length, (_page - widget.startPage + 1) * 25)))
+            min((_page - 1) * 25, value.length), min(value.length, _page * 25)))
         .then((value) => Future.wait(value.map((e) =>
             widget.api.fetchGallery(e, usePrefence: false, token: token))))
         .then((value) {

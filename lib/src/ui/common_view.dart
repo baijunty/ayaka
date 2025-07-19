@@ -41,7 +41,8 @@ class ThumbImageView extends StatelessWidget {
                     : null));
   }
 
-  Widget errorBuilder(context, error, stackTrace) {
+  Widget errorBuilder(
+      BuildContext context, Object? error, StackTrace? stackTrace) {
     return const Icon(Icons.error);
   }
 

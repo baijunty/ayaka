@@ -98,7 +98,7 @@ class _GalleryTabView extends State<GalleryTabView>
                   selected: tags,
                   local: true,
                   dateDesc: pageKey[1].value,
-                  startPage: pageKey[0].key)
+                  startPage: pageKey[1].key)
             ];
     } else {
       children = kIsWeb

@@ -54,31 +54,29 @@ class _GalleryDetailView extends State<GalleryDetailsView> {
     await (status == GalleryStatus.exists
             ? Future.value(gallery)
             : manager
-                .checkExist([
-                  gallery.id,
-                  ...gallery.languages?.map((e) => e.galleryid ?? 0).toList() ??
-                      []
-                ])
+                .checkExist(
+                    (gallery.languages?.map((e) => e.galleryid ?? 0).toList() ??
+                        [])
+                      ..add(gallery.id))
                 .then((value) => value['value'] as List<dynamic>?)
                 .then((value) async {
-                  if (value?.firstOrNull != null) {
-                    gallery =
-                        await api.fetchGallery(value!.first, token: token);
-                    var before = await controller
-                        .hitomi()
-                        .fetchGallery(value.first,
-                            token: token, usePrefence: false)
-                        .catchError((e) => gallery, test: (error) => true);
-                    if (before.id != value.first ||
-                        gallery.files.length > before.files.length) {
-                      status = GalleryStatus.upgrade;
-                      translates = await api.translate(gallery.labels());
-                    } else {
-                      status = GalleryStatus.exists;
-                    }
+                if (value?.firstOrNull != null) {
+                  gallery = await api.fetchGallery(value!.first, token: token);
+                  var before = await controller
+                      .hitomi()
+                      .fetchGallery(value.first,
+                          token: token, usePrefence: false)
+                      .catchError((e) => gallery, test: (error) => true);
+                  if (before.id != value.first ||
+                      gallery.files.length > before.files.length) {
+                    status = GalleryStatus.upgrade;
+                    translates = await api.translate(gallery.labels());
+                  } else {
+                    status = GalleryStatus.exists;
                   }
-                  return gallery;
-                }))
+                }
+                return gallery;
+              }))
         .then((value) {
       if (mounted) {
         setState(() {

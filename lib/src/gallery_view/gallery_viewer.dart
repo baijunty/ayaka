@@ -37,7 +37,8 @@ class LoadingMultiImageProvider extends MultiImageProvider {
                     : null));
   }
 
-  Widget errorBuilder(context, error, stackTrace) {
+  Widget errorBuilder(
+      BuildContext context, Object? error, StackTrace? stackTrace) {
     return const Icon(Icons.error);
   }
 
@@ -95,8 +96,10 @@ class _GalleryViewer extends State<GalleryViewer>
             .then((value) => (value ?? 0))
             .then((value) => mounted
                 ? context.read<SettingsController>().manager.helper.delete(
-                    'UserLog',
-                    {'id': _gallery.id, 'type': readHistoryMask}).then((r) => value)
+                    'UserLog', {
+                    'id': _gallery.id,
+                    'type': readHistoryMask
+                  }).then((r) => value)
                 : Future.value(value))
             .then((value) => controller.jumpToPage(value));
       }

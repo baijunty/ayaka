@@ -48,7 +48,8 @@ class _GalleryTaskView extends State<GalleryTaskView> {
   Future<void> _fetchTasks() async {
     if (controller.controller.remoteLib) {
       var uri = Uri.parse(controller.controller.config.remoteHttp);
-      var socketUri = 'ws://${uri.host}:${uri.port}';
+      var socketUri =
+          '${uri.scheme == 'https' ? 'wss' : 'ws'}://${uri.hasPort ? '${uri.host}:${uri.port}' : uri.authority}';
       _channel = WebSocketChannel.connect(Uri.parse(socketUri));
       _channel!.sink.add(json
           .encode({'auth': controller.controller.config.auth, 'type': 'list'}));

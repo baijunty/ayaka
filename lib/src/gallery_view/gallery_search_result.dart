@@ -143,7 +143,6 @@ class _GallerySearchResultView extends State<GallerySearchResultView>
                   .excludes
                   .map((e) => fromString(e.type, e.name))
                   .toList(),
-              page: _page,
               sort: widget.dateDesc,
               token: token)
           .then((value) {

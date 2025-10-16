@@ -86,26 +86,21 @@ class _AnimatedSaverDialogView extends State<AnimatedSaverDialog> {
               child: size == img.ThumbnaiSize.medium
                   ? Center(child: imageView())
                   : imageView()),
-          Row(mainAxisAlignment: MainAxisAlignment.spaceEvenly, children: [
-            Row(children: [
-              Text(AppLocalizations.of(context)!.thumb),
-              Radio.adaptive(
-                  value: img.ThumbnaiSize.medium,
-                  groupValue: size,
-                  onChanged: (m) => setState(() {
-                        size = m ?? size;
-                      }))
-            ]),
-            Row(children: [
-              Text(AppLocalizations.of(context)!.origin),
-              Radio.adaptive(
-                  value: img.ThumbnaiSize.origin,
-                  groupValue: size,
-                  onChanged: (m) => setState(() {
-                        size = m ?? size;
-                      })),
-            ])
-          ]),
+          RadioGroup<String>(
+              onChanged: (v) => setState(() {
+                    size = img.ThumbnaiSize.fromStr(v ?? 'medium');
+                  }),
+              groupValue: size.name,
+              child:
+                  Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+                Text(AppLocalizations.of(context)!.thumb),
+                const SizedBox(
+                    width: 40, height: 40, child: Radio(value: 'medium')),
+                const SizedBox(width: 20),
+                Text(AppLocalizations.of(context)!.origin),
+                const SizedBox(
+                    width: 40, height: 40, child: Radio(value: 'origin')),
+              ])),
         ])));
   }
 }

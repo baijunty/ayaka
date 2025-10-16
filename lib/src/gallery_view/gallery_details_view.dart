@@ -47,11 +47,9 @@ class _GalleryDetailView extends State<GalleryDetailsView> {
   List<Map<String, dynamic>> translates = [];
   Future<void> _fetchTransLate() async {
     var api = controller.hitomi(
-        type: local
-            ? HitomiType.Local
-            : controller.remoteLib
-                ? HitomiType.PROXY
-                : HitomiType.Remote);
+        type: status == GalleryStatus.notExists
+            ? HitomiType.Remote
+            : HitomiType.Local);
     var manager = context.read<GalleryManager>();
     await api.translate(gallery.labels()).then((value) => setState(() {
           translates = value;
@@ -149,12 +147,6 @@ class _GalleryDetailView extends State<GalleryDetailsView> {
   }
 
   Widget imagesToolbar() {
-    var api = controller.hitomi(
-        type: status != GalleryStatus.notExists
-            ? HitomiType.Local
-            : controller.remoteLib
-                ? HitomiType.PROXY
-                : HitomiType.Remote);
     return Align(
         alignment: Alignment.bottomCenter,
         child: AnimatedOpacity(
@@ -212,7 +204,11 @@ class _GalleryDetailView extends State<GalleryDetailsView> {
                               Navigator.of(context).push(MaterialPageRoute(
                                   builder: ((context) => AnimatedSaverDialog(
                                       selected: _selected,
-                                      api: api,
+                                      api: controller.hitomi(
+                                          type:
+                                              status == GalleryStatus.notExists
+                                                  ? HitomiType.Remote
+                                                  : HitomiType.Local),
                                       gallery: gallery))));
                             },
                       child: Text(AppLocalizations.of(context)!.makeGif)),
@@ -244,12 +240,6 @@ class _GalleryDetailView extends State<GalleryDetailsView> {
 
   @override
   Widget build(BuildContext context) {
-    var api = controller.hitomi(
-        type: status != GalleryStatus.notExists
-            ? HitomiType.Local
-            : controller.remoteLib
-                ? HitomiType.PROXY
-                : HitomiType.Remote);
     var refererUrl = 'https://hitomi.la${gallery.urlEncode()}';
     var isDeskTop = context.currentDevice() == DeviceInfo.deskTop;
     var tagInfo = GalleryTagDetailInfo(
@@ -280,7 +270,11 @@ class _GalleryDetailView extends State<GalleryDetailsView> {
                     readIndex: readedIndex,
                     isLoading: isLoading,
                     languageChange: (id) async {
-                      await context.progressDialogAction(api
+                      await context.progressDialogAction(controller
+                          .hitomi(
+                              type: status == GalleryStatus.notExists
+                                  ? HitomiType.Remote
+                                  : HitomiType.Local)
                           .fetchGallery(id, usePrefence: false)
                           .then((value) => setState(() {
                                 gallery = value;

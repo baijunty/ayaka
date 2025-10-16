@@ -35,9 +35,8 @@ class SettingsController with ChangeNotifier {
   bool _remoteLib = kIsWeb;
   bool get remoteLib => _remoteLib;
   bool runServer = false;
-  Hitomi hitomi({bool localDb = false}) => localDb && remoteLib
-      ? _manager.getApiFromProxy(_config.auth, _config.remoteHttp)
-      : _manager.getApiDirect(local: localDb);
+  Hitomi hitomi({HitomiType type = HitomiType.Remote}) =>
+      _manager.getApiDirect(type);
 
   Future<void> updateThemeMode(ThemeMode? newThemeMode) async {
     if (newThemeMode == null) return;
@@ -69,7 +68,8 @@ class SettingsController with ChangeNotifier {
         (await _settingsService.readConfig<bool>('runServer') ?? runServer);
     _manager = TaskManager(_config);
     _cacheManager = HitomiImageCacheManager(hitomi());
-    _localCacheManager = HitomiImageCacheManager(hitomi(localDb: true));
+    _localCacheManager = HitomiImageCacheManager(
+        hitomi(type: remoteLib ? HitomiType.PROXY : HitomiType.Remote));
     return !kIsWeb && runServer
         ? run_server(_manager)
             .then((v) => _manager.parseCommandAndRun('-c'))
@@ -119,7 +119,8 @@ class SettingsController with ChangeNotifier {
     await _settingsService.saveConfig('config', json.encode(config.toJson()));
     _manager = TaskManager(_config);
     _cacheManager = HitomiImageCacheManager(hitomi());
-    _localCacheManager = HitomiImageCacheManager(hitomi(localDb: true));
+    _localCacheManager =
+        HitomiImageCacheManager(hitomi(type: HitomiType.Local));
     if (runServer) {
       _server?.close(force: true);
       _server = await run_server(_manager);

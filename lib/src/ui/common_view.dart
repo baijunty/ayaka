@@ -482,8 +482,10 @@ extension ContextAction on BuildContext {
             .then((resp) => resp.data!)
             .then((list) => list.cast<int>())
         : controller.manager.findSugguestGallery(id);
-    return requests.then((list) => Future.wait(
-        list.map((id) => controller.hitomi(localDb: true).fetchGallery(id))));
+    return requests.then((list) => Future.wait(list.map((id) => controller
+        .hitomi(
+            type: controller.remoteLib ? HitomiType.PROXY : HitomiType.Local)
+        .fetchGallery(id))));
   }
 
   Future<void> progressDialogAction(Future action) async {

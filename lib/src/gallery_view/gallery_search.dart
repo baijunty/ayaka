@@ -93,7 +93,9 @@ class _GallerySearch extends State<GallerySearch> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    api = context.read<SettingsController>().hitomi(localDb: true);
+    var controller = Provider.of<SettingsController>(context);
+    api = context.read<SettingsController>().hitomi(
+        type: controller.remoteLib ? HitomiType.PROXY : HitomiType.Local);
     focusNode.unfocus();
   }
 

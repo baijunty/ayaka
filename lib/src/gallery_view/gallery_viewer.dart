@@ -89,7 +89,12 @@ class _GalleryViewer extends State<GalleryViewer>
       var settings = context.read<SettingsController>();
       extension = settings.exntension &&
           !settings.config.languages.contains(_gallery.language);
-      api = settings.hitomi(localDb: args['local']);
+      api = settings.hitomi(
+          type: args['local'] == false
+              ? HitomiType.Remote
+              : settings.remoteLib
+                  ? HitomiType.PROXY
+                  : HitomiType.Local);
       if (args['index'] == null) {
         context
             .readUserDb(_gallery.id, readHistoryMask)

@@ -32,7 +32,8 @@ class _UserProfileView extends State<UserProfileView>
   void didChangeDependencies() {
     super.didChangeDependencies();
     var controller = context.read<SettingsController>();
-    api = controller.hitomi(localDb: true);
+    api = controller.hitomi(
+        type: controller.remoteLib ? HitomiType.PROXY : HitomiType.Local);
     if (history.length + likes.length + todoCollection.length == 0) {
       var types = [readHistoryMask, bookMarkMask, lateReadMark];
       controller.manager.helper
@@ -421,7 +422,9 @@ class _UserProfileLogView extends State<UserProfileLogView> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    api = context.read<SettingsController>().hitomi(localDb: true);
+    var controller = context.read<SettingsController>();
+    api = controller.hitomi(
+        type: controller.remoteLib ? HitomiType.PROXY : HitomiType.Local);
     click = (g) async {
       var read = await Navigator.pushNamed(
           context, GalleryDetailsView.routeName,

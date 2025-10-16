@@ -52,10 +52,13 @@ class _GalleryListView extends State<GalleryItemListView>
             page: _page, sort: widget.sortEnum, token: token)
         .then((value) {
           var labels = value.data.fold(
-              <Label>[],
-              (previousValue, element) =>
-                  previousValue..addAll(element.labels()));
-          return widget.api.translate(labels).then((trans) {
+              <Label>{},
+              (previousValue, element) => previousValue
+                ..addAll(element.labels().where((l) => l.type == 'artist')));
+          return settingsController
+              .hitomi(type: HitomiType.Local)
+              .translate(labels.toList())
+              .then((trans) {
             for (var g in labels) {
               g.translate = trans.firstWhereOrNull(
                   (l) => g.type == l['type'] && g.name == l['name']);

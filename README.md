@@ -1,6 +1,17 @@
 # ayaka
 工口漫画网站[hitomi](https://hitomi.la/)应用前端,集成[后端](https://github.com/baijunty/hitomi.git) 
 
+## 功能特性
+
+- **多平台支持**：支持Android、iOS、Web和桌面平台
+- **网络与本地双模式**：可选择从网络获取数据或使用本地数据库
+- **多语言支持**：支持中文界面
+- **个性化设置**：支持深色/浅色主题切换
+- **搜索功能**：支持标签和关键词搜索
+- **分类浏览**：按标签、类型等分类浏览漫画
+- **离线缓存**：支持图片缓存，提升访问速度
+- **多设备同步**：支持跨平台数据同步
+
 [MIT](https://choosealicense.com/licenses/mit/)
 
 Copyright (c) 

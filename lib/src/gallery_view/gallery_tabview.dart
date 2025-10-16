@@ -78,7 +78,7 @@ class _GalleryTabView extends State<GalleryTabView>
           ? [
               GallerySearchResultView(
                   key: ValueKey(pageKey[0]),
-                  api: controller.hitomi(localDb: true),
+                  api: controller.hitomi(type: HitomiType.PROXY),
                   selected: tags,
                   local: true,
                   dateDesc: pageKey[0].value,
@@ -94,7 +94,10 @@ class _GalleryTabView extends State<GalleryTabView>
                   startPage: pageKey[0].key),
               GallerySearchResultView(
                   key: ValueKey(pageKey[1]),
-                  api: controller.hitomi(localDb: true),
+                  api: controller.hitomi(
+                      type: controller.remoteLib
+                          ? HitomiType.PROXY
+                          : HitomiType.Local),
                   selected: tags,
                   local: true,
                   dateDesc: pageKey[1].value,
@@ -105,7 +108,7 @@ class _GalleryTabView extends State<GalleryTabView>
           ? [
               GalleryItemListView(
                   key: ValueKey(pageKey[0]),
-                  api: controller.hitomi(localDb: true),
+                  api: controller.hitomi(type: HitomiType.PROXY),
                   label: tags.first,
                   local: true,
                   sortEnum: pageKey[0].value,
@@ -121,7 +124,10 @@ class _GalleryTabView extends State<GalleryTabView>
                   startPage: pageKey[0].key),
               GalleryItemListView(
                   key: ValueKey(pageKey[1]),
-                  api: controller.hitomi(localDb: true),
+                  api: controller.hitomi(
+                      type: controller.remoteLib
+                          ? HitomiType.PROXY
+                          : HitomiType.Local),
                   label: tags.first,
                   sortEnum: pageKey[1].value,
                   startPage: pageKey[1].key,

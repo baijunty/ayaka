@@ -9,6 +9,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:hitomi/gallery/label.dart';
 import 'package:hitomi/gallery/language.dart';
+import 'package:hitomi/lib.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:provider/provider.dart' show WatchContext;
 import 'settings_controller.dart';
@@ -230,7 +231,7 @@ class _StateSetting extends State<SettingsView> {
           trailing: const Icon(Icons.arrow_forward_ios),
           onTap: () async {
             var languages = await _settingsController
-                .hitomi(localDb: true)
+                .hitomi(type: HitomiType.Local)
                 .translate(
                     [Language.chinese, Language.japanese, Language.english]);
             for (var item in languages) {
@@ -261,7 +262,7 @@ class _StateSetting extends State<SettingsView> {
           trailing: const Icon(Icons.arrow_forward_ios),
           onTap: () async {
             var items = await _settingsController
-                .hitomi(localDb: true)
+                .hitomi(type: HitomiType.Local)
                 .translate(_settingsController.config.excludes);
             for (var item in items) {
               item['selected'] = true;

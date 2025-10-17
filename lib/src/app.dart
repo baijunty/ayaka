@@ -44,6 +44,7 @@ class MyApp extends StatelessWidget {
                   theme: ThemeData(
                       useMaterial3: true,
                       colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue),
+                      pageTransitionsTheme: const PageTransitionsTheme(),
                       elevatedButtonTheme: const ElevatedButtonThemeData()),
                   darkTheme: ThemeData.dark(useMaterial3: true),
                   themeMode: settingsController.themeMode,

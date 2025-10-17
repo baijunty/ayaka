@@ -2,41 +2,39 @@ import 'package:flutter/material.dart';
 import 'package:ayaka/src/localization/app_localizations.dart';
 
 MapEntry<String, Color> mapGalleryType(BuildContext context, String type) {
-  String showType = '';
-  Color color = Colors.transparent;
   switch (type) {
     case 'doujinshi':
       {
-        showType = AppLocalizations.of(context)!.doujinshi;
-        color = Colors.pinkAccent;
+        return MapEntry(
+            AppLocalizations.of(context)!.doujinshi, Colors.pinkAccent);
       }
     case 'manga':
       {
-        showType = AppLocalizations.of(context)!.manga;
-        color = Colors.deepPurpleAccent;
+        return MapEntry(AppLocalizations.of(context)!.manga, Colors.blueAccent);
       }
     case 'artistcg':
       {
-        showType = AppLocalizations.of(context)!.artistcg;
-        color = Colors.blueAccent;
+        return MapEntry(
+            AppLocalizations.of(context)!.artistcg, Colors.deepPurple);
       }
     case 'gamecg':
       {
-        showType = AppLocalizations.of(context)!.gamecg;
-        color = Colors.teal;
+        return MapEntry(
+            AppLocalizations.of(context)!.gamecg, Colors.purpleAccent);
       }
     case 'imageset':
       {
-        showType = AppLocalizations.of(context)!.imageset;
-        color = Colors.orangeAccent;
+        return MapEntry(
+            AppLocalizations.of(context)!.imageset, Colors.orangeAccent);
       }
     case 'anime':
       {
-        showType = AppLocalizations.of(context)!.anime;
-        color = Colors.purpleAccent;
+        return MapEntry(
+            AppLocalizations.of(context)!.anime, Colors.greenAccent);
       }
+    default:
+      return MapEntry('', Colors.transparent);
   }
-  return MapEntry(showType, color);
 }
 
 String mapLangugeType(BuildContext context, String type) {

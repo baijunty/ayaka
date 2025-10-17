@@ -47,9 +47,7 @@ class _GalleryDetailView extends State<GalleryDetailsView> {
   List<Map<String, dynamic>> translates = [];
   Future<void> _fetchTransLate() async {
     var api = controller.hitomi(
-        type: status == GalleryStatus.notExists
-            ? HitomiType.Remote
-            : HitomiType.Local);
+        type: controller.remoteLib ? HitomiType.PROXY : HitomiType.Local);
     var manager = context.read<GalleryManager>();
     await api.translate(gallery.labels()).then((value) => setState(() {
           translates = value;

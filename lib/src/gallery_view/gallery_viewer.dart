@@ -165,6 +165,7 @@ class _GalleryViewer extends State<GalleryViewer>
 
   @override
   Widget build(BuildContext context) {
+    focusNode.requestFocus();
     return KeyboardListener(
         focusNode: focusNode,
         onKeyEvent: (value) {
@@ -181,6 +182,9 @@ class _GalleryViewer extends State<GalleryViewer>
                   duration: const Duration(milliseconds: 250),
                   curve: Curves.easeInOut);
             });
+          } else if (value.physicalKey == PhysicalKeyboardKey.escape &&
+              value is KeyUpEvent) {
+            Navigator.of(context).pop();
           }
         },
         child: Scaffold(

@@ -12,6 +12,7 @@ import 'package:ayaka/src/ui/common_view.dart';
 import 'package:ayaka/src/utils/common_define.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:hitomi/gallery/gallery.dart';
 import 'package:hitomi/gallery/label.dart';
 import 'package:hitomi/lib.dart';
@@ -37,6 +38,7 @@ class GalleryDetailsView extends StatefulWidget {
 class _GalleryDetailView extends State<GalleryDetailsView> {
   late SettingsController controller = context.read<SettingsController>();
   late Gallery gallery;
+  final FocusNode _focusNode = FocusNode();
   GalleryStatus status = GalleryStatus.notExists;
   int? readedIndex;
   bool isLoading = false;
@@ -99,6 +101,7 @@ class _GalleryDetailView extends State<GalleryDetailsView> {
   void dispose() {
     super.dispose();
     token?.cancel('dispose');
+    _focusNode.dispose();
   }
 
   @override
@@ -236,8 +239,7 @@ class _GalleryDetailView extends State<GalleryDetailsView> {
     }
   }
 
-  @override
-  Widget build(BuildContext context) {
+  Widget content() {
     var refererUrl = 'https://hitomi.la${gallery.urlEncode()}';
     var isDeskTop = context.currentDevice() == DeviceInfo.deskTop;
     var tagInfo = GalleryTagDetailInfo(
@@ -250,85 +252,100 @@ class _GalleryDetailView extends State<GalleryDetailsView> {
               crossAxisAlignment: CrossAxisAlignment.start, children: children)
           : SliverList.list(children: children),
     );
+    return MaxWidthBox(
+        maxWidth: 1280,
+        child: LayoutBuilder(builder: (con, ctx) {
+          return Stack(children: [
+            CustomScrollView(key: ValueKey(gallery.id), slivers: [
+              GalleryDetailHead(
+                  key: ValueKey('head ${gallery.id}'),
+                  manager: context.getCacheManager(
+                      local: status != GalleryStatus.notExists),
+                  gallery: gallery,
+                  extendedInfo: translates,
+                  status: status,
+                  readIndex: readedIndex,
+                  isLoading: isLoading,
+                  languageChange: (id) async {
+                    await context.progressDialogAction(controller
+                        .hitomi(
+                            type: status == GalleryStatus.notExists
+                                ? HitomiType.Remote
+                                : HitomiType.Local)
+                        .fetchGallery(id, usePrefence: false)
+                        .then((value) => setState(() {
+                              gallery = value;
+                            }))
+                        .catchError((e) {
+                      if (context.mounted) {
+                        context.showSnackBar('$e');
+                      }
+                    }, test: (error) => true));
+                  },
+                  tagInfo: isDeskTop ? tagInfo : null),
+              if (!isDeskTop) tagInfo,
+              if (context.read<SettingsController>().exntension)
+                SliverToBoxAdapter(
+                    child: ExpansionTile(
+                        title: Text(AppLocalizations.of(context)!.suggest),
+                        onExpansionChanged: fetchSuggestData,
+                        children: [SugguestView(gallery, suggestGallerys)])),
+              SliverGrid.builder(
+                  gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
+                      maxCrossAxisExtent: 256),
+                  itemCount: gallery.files.length,
+                  itemBuilder: (context, index) {
+                    var image = gallery.files[index];
+                    return GestureDetector(
+                        onTap: () => _handleClick(index),
+                        onLongPress: _selected.isEmpty
+                            ? () => setState(() {
+                                  _selected.add(image);
+                                })
+                            : null,
+                        child: Center(
+                            child: ThumbImageView(
+                          CacheImage(
+                              manager: context.getCacheManager(
+                                  local: status != GalleryStatus.notExists),
+                              image: image,
+                              refererUrl: refererUrl,
+                              id: gallery.id.toString()),
+                          label: _selected.isEmpty
+                              ? Text('${index + 1}',
+                                  style: Theme.of(context)
+                                      .textTheme
+                                      .labelLarge
+                                      ?.copyWith(color: Colors.deepOrange))
+                              : Checkbox.adaptive(
+                                  value: _selected.contains(image),
+                                  onChanged: (b) => _handleClick(index)),
+                          aspectRatio: image.width / image.height,
+                        )));
+                  })
+            ]),
+            imagesToolbar()
+          ]);
+        }));
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    _focusNode.requestFocus();
     return Scaffold(
         body: SafeArea(
             child: Center(
-      child: MaxWidthBox(
-          maxWidth: 1280,
-          child: LayoutBuilder(builder: (con, ctx) {
-            return Stack(children: [
-              CustomScrollView(key: ValueKey(gallery.id), slivers: [
-                GalleryDetailHead(
-                    key: ValueKey('head ${gallery.id}'),
-                    manager: context.getCacheManager(
-                        local: status != GalleryStatus.notExists),
-                    gallery: gallery,
-                    extendedInfo: translates,
-                    status: status,
-                    readIndex: readedIndex,
-                    isLoading: isLoading,
-                    languageChange: (id) async {
-                      await context.progressDialogAction(controller
-                          .hitomi(
-                              type: status == GalleryStatus.notExists
-                                  ? HitomiType.Remote
-                                  : HitomiType.Local)
-                          .fetchGallery(id, usePrefence: false)
-                          .then((value) => setState(() {
-                                gallery = value;
-                              }))
-                          .catchError((e) {
-                        if (context.mounted) {
-                          context.showSnackBar('$e');
-                        }
-                      }, test: (error) => true));
-                    },
-                    tagInfo: isDeskTop ? tagInfo : null),
-                if (!isDeskTop) tagInfo,
-                if (context.read<SettingsController>().exntension)
-                  SliverToBoxAdapter(
-                      child: ExpansionTile(
-                          title: Text(AppLocalizations.of(context)!.suggest),
-                          onExpansionChanged: fetchSuggestData,
-                          children: [SugguestView(gallery, suggestGallerys)])),
-                SliverGrid.builder(
-                    gridDelegate:
-                        const SliverGridDelegateWithMaxCrossAxisExtent(
-                            maxCrossAxisExtent: 256),
-                    itemCount: gallery.files.length,
-                    itemBuilder: (context, index) {
-                      var image = gallery.files[index];
-                      return GestureDetector(
-                          onTap: () => _handleClick(index),
-                          onLongPress: _selected.isEmpty
-                              ? () => setState(() {
-                                    _selected.add(image);
-                                  })
-                              : null,
-                          child: Center(
-                              child: ThumbImageView(
-                            CacheImage(
-                                manager: context.getCacheManager(
-                                    local: status != GalleryStatus.notExists),
-                                image: image,
-                                refererUrl: refererUrl,
-                                id: gallery.id.toString()),
-                            label: _selected.isEmpty
-                                ? Text('${index + 1}',
-                                    style: Theme.of(context)
-                                        .textTheme
-                                        .labelLarge
-                                        ?.copyWith(color: Colors.deepOrange))
-                                : Checkbox.adaptive(
-                                    value: _selected.contains(image),
-                                    onChanged: (b) => _handleClick(index)),
-                            aspectRatio: image.width / image.height,
-                          )));
-                    })
-              ]),
-              imagesToolbar()
-            ]);
-          })),
+      child: Focus(
+          focusNode: _focusNode,
+          onKeyEvent: (focus, value) {
+            debugPrint('key ${value.logicalKey}');
+            if (backKeys.contains(value.logicalKey) && focus.hasPrimaryFocus && value is KeyUpEvent) {
+              Navigator.of(context).pop();
+              return KeyEventResult.handled;
+            }
+            return KeyEventResult.ignored;
+          },
+          child: content()),
     )));
   }
 }

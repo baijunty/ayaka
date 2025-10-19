@@ -3,6 +3,7 @@ import 'package:ayaka/src/gallery_view/gallery_search.dart';
 import 'package:ayaka/src/gallery_view/gallery_search_result.dart';
 import 'package:ayaka/src/settings/settings_controller.dart';
 import 'package:ayaka/src/ui/common_view.dart';
+import 'package:ayaka/src/utils/common_define.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/services.dart';
@@ -33,6 +34,7 @@ class _GalleryTabView extends State<GalleryTabView>
   late PageController pageController;
   late ScrollController scrollController;
   late Function(Map<String, dynamic>) onSearch;
+  final FocusNode _focusNode = FocusNode();
   List<Widget> children = [];
   List<Widget> tabs = [];
   List<MapEntry<int, SortEnum>> pageKey =
@@ -60,6 +62,7 @@ class _GalleryTabView extends State<GalleryTabView>
     tabController.dispose();
     pageController.dispose();
     scrollController.dispose();
+    _focusNode.dispose();
   }
 
   @override
@@ -176,78 +179,95 @@ class _GalleryTabView extends State<GalleryTabView>
         icon: const Icon(Icons.sort));
   }
 
+  Widget content() {
+    return MaxWidthBox(
+        maxWidth: 1280,
+        child: NestedScrollView(
+            controller: scrollController,
+            headerSliverBuilder: (context, innerBoxIsScrolled) => [
+                  SliverAppBar(
+                    forceElevated: innerBoxIsScrolled,
+                    pinned: true,
+                    floating: true,
+                    snap: true,
+                    title: children[0] is GallerySearchResultView
+                        ? Text(tags.fold(
+                            '',
+                            (acc, tag) =>
+                                '${acc + (tag['translate'] ?? tag['name'])},'))
+                        : GallerySearch(onSearch: onSearch),
+                    bottom: TabBar(
+                        tabs: tabs,
+                        controller: tabController,
+                        onTap: (value) => pageController.jumpToPage(value)),
+                    actions: [
+                      _sortWidget(),
+                      IconButton(
+                          onPressed: () async {
+                            var s = await context.showDialogInput(
+                                textField: TextField(
+                                    keyboardType:
+                                        const TextInputType.numberWithOptions(
+                                            signed: true),
+                                    controller: TextEditingController(),
+                                    inputFormatters: [
+                                      FilteringTextInputFormatter.digitsOnly
+                                    ]),
+                                inputHint:
+                                    AppLocalizations.of(context)!.pageJumpHint);
+                            if (s?.isNotEmpty == true) {
+                              setState(() {
+                                var preEntry =
+                                    pageKey[pageController.page!.floor()];
+                                pageKey[pageController.page!.floor()] =
+                                    MapEntry(int.parse(s!), preEntry.value);
+                              });
+                            }
+                          },
+                          icon: const Icon(Icons.forward_5))
+                    ],
+                  )
+                ],
+            scrollBehavior: MouseEnabledScrollBehavior(),
+            body: NotificationListener(
+                child: PageView.builder(
+                    itemBuilder: (context, index) => children[index],
+                    controller: pageController,
+                    itemCount: children.length,
+                    scrollBehavior: MouseEnabledScrollBehavior(),
+                    onPageChanged: (value) => tabController.animateTo(value)),
+                onNotification: (notification) {
+                  if (notification is ScrollUpdateNotification &&
+                      notification.metrics.runtimeType == FixedScrollMetrics) {
+                    var dy = notification.scrollDelta ?? 0;
+                    if (dy != 0) {
+                      scrollController.position
+                          .jumpTo(scrollController.position.pixels + dy);
+                    }
+                  }
+                  return true;
+                })));
+  }
+
   @override
   Widget build(BuildContext context) {
+    _focusNode.requestFocus();
+    final backAble = children[0] is GallerySearchResultView;
     return Scaffold(
         body: Center(
-      child: MaxWidthBox(
-          maxWidth: 1280,
-          child: NestedScrollView(
-              controller: scrollController,
-              headerSliverBuilder: (context, innerBoxIsScrolled) => [
-                    SliverAppBar(
-                      forceElevated: innerBoxIsScrolled,
-                      pinned: true,
-                      floating: true,
-                      snap: true,
-                      title: children[0] is GallerySearchResultView
-                          ? Text(tags.fold(
-                              '',
-                              (acc, tag) =>
-                                  '${acc + (tag['translate'] ?? tag['name'])},'))
-                          : GallerySearch(onSearch: onSearch),
-                      bottom: TabBar(
-                          tabs: tabs,
-                          controller: tabController,
-                          onTap: (value) => pageController.jumpToPage(value)),
-                      actions: [
-                        _sortWidget(),
-                        IconButton(
-                            onPressed: () async {
-                              var s = await context.showDialogInput(
-                                  textField: TextField(
-                                      keyboardType:
-                                          const TextInputType.numberWithOptions(
-                                              signed: true),
-                                      controller: TextEditingController(),
-                                      inputFormatters: [
-                                        FilteringTextInputFormatter.digitsOnly
-                                      ]),
-                                  inputHint: AppLocalizations.of(context)!
-                                      .pageJumpHint);
-                              if (s?.isNotEmpty == true) {
-                                setState(() {
-                                  var preEntry =
-                                      pageKey[pageController.page!.floor()];
-                                  pageKey[pageController.page!.floor()] =
-                                      MapEntry(int.parse(s!), preEntry.value);
-                                });
-                              }
-                            },
-                            icon: const Icon(Icons.forward_5))
-                      ],
-                    )
-                  ],
-              scrollBehavior: MouseEnabledScrollBehavior(),
-              body: NotificationListener(
-                  child: PageView.builder(
-                      itemBuilder: (context, index) => children[index],
-                      controller: pageController,
-                      itemCount: children.length,
-                      scrollBehavior: MouseEnabledScrollBehavior(),
-                      onPageChanged: (value) => tabController.animateTo(value)),
-                  onNotification: (notification) {
-                    if (notification is ScrollUpdateNotification &&
-                        notification.metrics.runtimeType ==
-                            FixedScrollMetrics) {
-                      var dy = notification.scrollDelta ?? 0;
-                      if (dy != 0) {
-                        scrollController.position
-                            .jumpTo(scrollController.position.pixels + dy);
-                      }
-                    }
-                    return true;
-                  }))),
+      child: Focus(
+          focusNode: _focusNode,
+          onKeyEvent: (focus, value) {
+            if (backAble &&
+                backKeys.contains(value.logicalKey) &&
+                focus.hasPrimaryFocus &&
+                value is KeyUpEvent) {
+              Navigator.of(context).pop();
+              return KeyEventResult.handled;
+            }
+            return KeyEventResult.ignored;
+          },
+          child: content()),
     ));
   }
 }

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 
 final formater = DateFormat('yyyy-MM-dd');
@@ -7,6 +8,10 @@ final smallText = TextButton.styleFrom(
   padding: const EdgeInsets.all(4),
   minimumSize: const Size(40, 28),
 );
+final backKeys = const [
+  LogicalKeyboardKey.escape,
+  LogicalKeyboardKey.backspace
+];
 
 extension FlagHelper on int {
   bool isFlagSet(int flag) {

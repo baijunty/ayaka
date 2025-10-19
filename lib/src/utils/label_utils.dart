@@ -10,17 +10,16 @@ MapEntry<String, Color> mapGalleryType(BuildContext context, String type) {
       }
     case 'manga':
       {
-        return MapEntry(AppLocalizations.of(context)!.manga, Colors.blueAccent);
+        return MapEntry(AppLocalizations.of(context)!.manga, Colors.deepPurple);
       }
     case 'artistcg':
       {
         return MapEntry(
-            AppLocalizations.of(context)!.artistcg, Colors.deepPurple);
+            AppLocalizations.of(context)!.artistcg, Colors.blueAccent);
       }
     case 'gamecg':
       {
-        return MapEntry(
-            AppLocalizations.of(context)!.gamecg, Colors.purpleAccent);
+        return MapEntry(AppLocalizations.of(context)!.gamecg, Colors.blueGrey);
       }
     case 'imageset':
       {

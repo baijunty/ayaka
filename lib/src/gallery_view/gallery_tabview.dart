@@ -145,6 +145,16 @@ class _GalleryTabView extends State<GalleryTabView>
             ),
             Tab(text: AppLocalizations.of(context)!.local)
           ];
+
+    // Request focus after the first frame if needed
+    final backAble = children.isNotEmpty && children[0] is GallerySearchResultView;
+    if (backAble) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          _focusNode.requestFocus();
+        }
+      });
+    }
   }
 
   Widget _sortWidget() {
@@ -251,7 +261,6 @@ class _GalleryTabView extends State<GalleryTabView>
 
   @override
   Widget build(BuildContext context) {
-    _focusNode.requestFocus();
     final backAble = children[0] is GallerySearchResultView;
     return Scaffold(
         body: Center(

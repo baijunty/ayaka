@@ -126,6 +126,11 @@ class _GalleryDetailView extends State<GalleryDetailsView> {
         });
       }
     });
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        _focusNode.requestFocus();
+      }
+    });
   }
 
   void _handleClick(int index) async {
@@ -331,7 +336,6 @@ class _GalleryDetailView extends State<GalleryDetailsView> {
 
   @override
   Widget build(BuildContext context) {
-    _focusNode.requestFocus();
     return Scaffold(
         body: SafeArea(
             child: Center(
@@ -339,7 +343,9 @@ class _GalleryDetailView extends State<GalleryDetailsView> {
           focusNode: _focusNode,
           onKeyEvent: (focus, value) {
             debugPrint('key ${value.logicalKey}');
-            if (backKeys.contains(value.logicalKey) && focus.hasPrimaryFocus && value is KeyUpEvent) {
+            if (backKeys.contains(value.logicalKey) &&
+                focus.hasPrimaryFocus &&
+                value is KeyUpEvent) {
               Navigator.of(context).pop();
               return KeyEventResult.handled;
             }

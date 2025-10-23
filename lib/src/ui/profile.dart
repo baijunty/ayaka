@@ -1,6 +1,7 @@
 import 'package:ayaka/src/gallery_view/gallery_details_view.dart';
 import 'package:ayaka/src/localization/app_localizations.dart';
 import 'package:ayaka/src/settings/settings_controller.dart';
+import 'package:ayaka/src/utils/responsive_util.dart';
 import 'package:collection/collection.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
@@ -164,9 +165,10 @@ class _AdImageView extends State<AdImageView> {
       var size = adImages.length;
       await controller.manager.dio
           .post('${controller.config.remoteHttp}/sync',
-              options: Options(
-                  headers: {'Content-Type': 'application/json'},
-                  responseType: ResponseType.json),
+              options: Options(headers: {
+                'Content-Type': 'application/json',
+                'x-real-ip': await localIp()
+              }, responseType: ResponseType.json),
               data: {
                 'auth': controller.config.auth,
                 'mark': admarkMask,
@@ -296,9 +298,10 @@ class _UserProfileLogView extends State<UserProfileLogView> {
     if (controller.manager.config.remoteHttp.isNotEmpty) {
       return controller.manager.dio
           .post('${controller.config.remoteHttp}/sync',
-              options: Options(
-                  headers: {'Content-Type': 'application/json'},
-                  responseType: ResponseType.json),
+              options: Options(headers: {
+                'Content-Type': 'application/json',
+                'x-real-ip': await localIp()
+              }, responseType: ResponseType.json),
               data: {
                 'auth': controller.config.auth,
                 'mark': widget.type,
@@ -356,6 +359,7 @@ class _UserProfileLogView extends State<UserProfileLogView> {
   Future<bool> syncData() async {
     var sqlite = context.getSqliteHelper();
     var controller = context.read<SettingsController>();
+    var ip = await localIp();
     return sqlite
         .querySql('select id,value,type,content,date from UserLog where type=?',
             [widget.type])
@@ -363,9 +367,10 @@ class _UserProfileLogView extends State<UserProfileLogView> {
             value.fold(<Map<String, dynamic>>[], (acc, row) => acc..add(row)))
         .then((values) => controller.manager.dio
             .post('${controller.config.remoteHttp}/sync',
-                options: Options(
-                    headers: {'Content-Type': 'application/json'},
-                    responseType: ResponseType.json),
+                options: Options(headers: {
+                  'Content-Type': 'application/json',
+                  'x-real-ip': ip
+                }, responseType: ResponseType.json),
                 data: {
                   'auth': controller.config.auth,
                   'mark': widget.type,

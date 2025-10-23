@@ -66,9 +66,10 @@ class GalleryManager with ChangeNotifier {
     if (controller.remoteLib) {
       await controller.manager.dio
           .post('${controller.config.remoteHttp}/sync',
-              options: Options(
-                  headers: {'Content-Type': 'application/json'},
-                  responseType: ResponseType.json),
+              options: Options(headers: {
+                'Content-Type': 'application/json',
+                'x-real-ip': await localIp()
+              }, responseType: ResponseType.json),
               data: {
                 'auth': controller.config.auth,
                 'mark': admarkMask,

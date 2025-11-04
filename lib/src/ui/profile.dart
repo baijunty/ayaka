@@ -357,56 +357,19 @@ class _UserProfileLogView extends State<UserProfileLogView> {
   }
 
   Future<bool> syncData() async {
-    var sqlite = context.getSqliteHelper();
-    var controller = context.read<SettingsController>();
-    var ip = await localIp();
-    return sqlite
-        .querySql('select id,value,type,content,date from UserLog where type=?',
-            [widget.type])
-        .then((value) =>
-            value.fold(<Map<String, dynamic>>[], (acc, row) => acc..add(row)))
-        .then((values) => controller.manager.dio
-            .post('${controller.config.remoteHttp}/sync',
-                options: Options(headers: {
-                  'Content-Type': 'application/json',
-                  'x-real-ip': ip
-                }, responseType: ResponseType.json),
-                data: {
-                  'auth': controller.config.auth,
-                  'mark': widget.type,
-                  'returnValue': true,
-                  'content': values
-                })
-            .then((resp) {
-              return resp.data!;
-            })
-            .then((data) => data['content'] as List)
-            .then((list) =>
-                list.map((str) => str as Map<String, dynamic>).toList())
-            .then((d) {
-              return controller.manager.helper.excuteSqlMultiParams(
-                  'replace into UserLog(id,value,type,content,date) values (?,?,?,?,?)',
-                  d
-                      .map((e) => [
-                            e['id'],
-                            e['value'],
-                            e['type'],
-                            e['content'],
-                            e['date']
-                          ])
-                      .toList());
-            })
-            .then((v) async {
-              data.clear();
-              page = 0;
-              readIndexMap.clear();
-              await fetchDataFromDb();
-              return v;
-            })
-            .catchError((err) {
-              debugPrint('err $err');
-              return false;
-            }, test: (error) => true));
+    return context
+        .read<SettingsController>()
+        .syncUserDb(widget.type)
+        .then((v) async {
+      data.clear();
+      page = 0;
+      readIndexMap.clear();
+      await fetchDataFromDb();
+      return v;
+    }).catchError((err) {
+      debugPrint('err $err');
+      return false;
+    }, test: (error) => true);
   }
 
   @override

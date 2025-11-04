@@ -21,6 +21,7 @@ import '../model/gallery_manager.dart';
 import '../settings/settings_controller.dart';
 import '../utils/common_define.dart';
 import '../utils/label_utils.dart';
+import '../utils/responsive_util.dart';
 
 class ThumbImageView extends StatelessWidget {
   final ImageProvider provider;
@@ -540,7 +541,28 @@ extension ContextAction on BuildContext {
     return getSqliteHelper()
         .insertUserLog(id, type,
             value: data, content: content, extension: extension ?? [])
-        .then((value) {
+        .then((value) async {
+      var controller = read<SettingsController>();
+      if (controller.remoteLib) {
+        await getManager().dio.post('${controller.config.remoteHttp}/sync',
+            options: Options(headers: {
+              'Content-Type': 'application/json',
+              'x-real-ip': await localIp()
+            }, responseType: ResponseType.json),
+            data: {
+              'auth': controller.config.auth,
+              'mark': type,
+              'content': [
+                {
+                  'id': id,
+                  'type': type,
+                  'value': data,
+                  'content': content,
+                  'extension': extension ?? []
+                }
+              ]
+            }).then((resp) => true);
+      }
       if (mounted && showResult) {
         showSnackBar(AppLocalizations.of(this)!.success);
       }

@@ -81,16 +81,61 @@ class SettingsController with ChangeNotifier {
                   .get<Map<String, dynamic>>('${_config.remoteHttp}/test',
                       options: Options(responseType: ResponseType.json))
                   .then((d) {
-                var resp = d.data;
-                exntension = resp!['success'] && resp['feature'].isNotEmpty;
-                return resp;
-              }).catchError((e) {
-                _manager.logger.e(e);
-                return <String, dynamic>{};
-              }, test: (error) => true);
+                    var resp = d.data;
+                    exntension = resp!['success'] && resp['feature'].isNotEmpty;
+                    return resp;
+                  })
+                  .then((v) => syncUserDb(readHistoryMask))
+                  .then((value) => syncUserDb(bookMarkMask))
+                  .then((value) => syncUserDb(lateReadMark))
+                  .catchError((e) {
+                    _manager.logger.e(e);
+                    return false;
+                  }, test: (error) => true);
             }
             return config;
           });
+  }
+
+  Future<bool> syncUserDb(int type) async {
+    var sqlite = manager.helper;
+    var ip = await localIp();
+    return sqlite
+        .querySql('select id,value,type,content,date from UserLog where type=?',
+            [type])
+        .then((value) =>
+            value.fold(<Map<String, dynamic>>[], (acc, row) => acc..add(row)))
+        .then((values) => manager.dio
+            .post('${config.remoteHttp}/sync',
+                options: Options(headers: {
+                  'Content-Type': 'application/json',
+                  'x-real-ip': ip
+                }, responseType: ResponseType.json),
+                data: {
+                  'auth': config.auth,
+                  'mark': type,
+                  'returnValue': true,
+                  'content': values
+                })
+            .then((resp) {
+              return resp.data!;
+            })
+            .then((data) => data['content'] as List)
+            .then((list) =>
+                list.map((str) => str as Map<String, dynamic>).toList())
+            .then((d) {
+              return manager.helper.excuteSqlMultiParams(
+                  'replace into UserLog(id,value,type,content,date) values (?,?,?,?,?)',
+                  d
+                      .map((e) => [
+                            e['id'],
+                            e['value'],
+                            e['type'],
+                            e['content'],
+                            e['date']
+                          ])
+                      .toList());
+            }));
   }
 
   Future<void> switchConn(bool useProxy) async {

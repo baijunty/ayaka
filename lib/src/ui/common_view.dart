@@ -347,10 +347,10 @@ class TagButton extends StatelessWidget {
                           var config = settings.config;
                           settings.updateConfig(config.copyWith(
                               excludes: config.excludes.toList()
-                                ..add(FilterLabel(
-                                    type: label['type'],
-                                    name: label['name'],
-                                    weight: 1.0))));
+                                ..add([
+                                  FilterLabel(
+                                      type: label['type'], name: label['name'])
+                                ])));
                           context.showSnackBar(
                               AppLocalizations.of(context)!.success);
                           Navigator.of(context).pop();

@@ -244,7 +244,7 @@ class _GalleryDetailView extends State<GalleryDetailsView> {
     }
   }
 
-  Widget content() {
+  Widget content(BuildContext context) {
     var refererUrl = 'https://hitomi.la${gallery.urlEncode()}';
     var isDeskTop = context.currentDevice() == DeviceInfo.deskTop;
     var tagInfo = GalleryTagDetailInfo(
@@ -272,20 +272,21 @@ class _GalleryDetailView extends State<GalleryDetailsView> {
                   readIndex: readedIndex,
                   isLoading: isLoading,
                   languageChange: (id) async {
-                    await context.progressDialogAction(controller
-                        .hitomi(
-                            type: status == GalleryStatus.notExists
-                                ? HitomiType.Remote
-                                : HitomiType.Local)
-                        .fetchGallery(id, usePrefence: false)
-                        .then((value) => setState(() {
-                              gallery = value;
-                            }))
+                    await context
+                        .progressDialogAction(controller
+                            .hitomi(
+                                type: status == GalleryStatus.notExists
+                                    ? HitomiType.Remote
+                                    : HitomiType.Local)
+                            .fetchGallery(id, usePrefence: false)
+                            .then((value) => setState(() {
+                                  gallery = value;
+                                })))
                         .catchError((e) {
                       if (context.mounted) {
                         context.showSnackBar('$e');
                       }
-                    }, test: (error) => true));
+                    }, test: (error) => true);
                   },
                   tagInfo: isDeskTop ? tagInfo : null),
               if (!isDeskTop) tagInfo,
@@ -351,7 +352,7 @@ class _GalleryDetailView extends State<GalleryDetailsView> {
             }
             return KeyEventResult.ignored;
           },
-          child: content()),
+          child: content(context)),
     )));
   }
 }

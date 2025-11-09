@@ -263,7 +263,10 @@ class _StateSetting extends State<SettingsView> {
           onTap: () async {
             var items = await _settingsController
                 .hitomi(type: HitomiType.Local)
-                .translate(_settingsController.config.excludes);
+                .translate(_settingsController.config.excludes.fold(
+                    <Label>[],
+                    (acc, l) =>
+                        acc..addAll(l.map((e) => fromString(e.type, e.name)))));
             for (var item in items) {
               item['selected'] = true;
             }
@@ -277,11 +280,11 @@ class _StateSetting extends State<SettingsView> {
                   _settingsController.updateConfig(_settingsController.config
                       .copyWith(
                           excludes: data
-                              .map((e) => FilterLabel(
-                                  type: e['type'],
-                                  name: e['name'],
-                                  weight: 1.0))
-                              .toList(growable: false)));
+                              .map((e) => [
+                                    FilterLabel(
+                                        type: e['type'], name: e['name'])
+                                  ])
+                              .toList()));
                 });
               }
             }

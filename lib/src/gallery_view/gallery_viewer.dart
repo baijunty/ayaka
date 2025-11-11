@@ -166,26 +166,33 @@ class _GalleryViewer extends State<GalleryViewer>
   @override
   Widget build(BuildContext context) {
     focusNode.requestFocus();
-    return KeyboardListener(
+    return Focus(
         focusNode: focusNode,
-        onKeyEvent: (value) {
-          if (value.physicalKey == PhysicalKeyboardKey.arrowLeft && index > 0) {
+        onKeyEvent: (f, value) {
+          if (value.physicalKey == PhysicalKeyboardKey.arrowLeft &&
+              value is KeyUpEvent &&
+              index > 0) {
             setState(() {
               controller.previousPage(
                   duration: const Duration(milliseconds: 250),
                   curve: Curves.easeInOut);
             });
+            return KeyEventResult.handled;
           } else if (value.physicalKey == PhysicalKeyboardKey.arrowRight &&
+              value is KeyUpEvent &&
               index < _gallery.files.length - 1) {
             setState(() {
               controller.nextPage(
                   duration: const Duration(milliseconds: 250),
                   curve: Curves.easeInOut);
-            });
+            }); 
+            return KeyEventResult.handled;
           } else if (value.physicalKey == PhysicalKeyboardKey.escape &&
               value is KeyUpEvent) {
             Navigator.of(context).pop();
+            return KeyEventResult.handled;
           }
+          return KeyEventResult.ignored;
         },
         child: Scaffold(
             body: SafeArea(

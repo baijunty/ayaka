@@ -49,52 +49,65 @@ class _GalleryDetailView extends State<GalleryDetailsView> {
   List<Map<String, dynamic>> translates = [];
   Future<void> _fetchTransLate() async {
     var api = controller.hitomi(
-        type: controller.remoteLib ? HitomiType.PROXY : HitomiType.Local);
+      type: controller.remoteLib ? HitomiType.PROXY : HitomiType.Local,
+    );
     var manager = context.read<GalleryManager>();
-    await api.translate(gallery.labels()).then((value) => setState(() {
-          translates = value;
-        }));
+    await api
+        .translate(gallery.labels())
+        .then(
+          (value) => setState(() {
+            translates = value;
+          }),
+        );
     isLoading = true;
     await (status == GalleryStatus.exists
             ? Future.value(gallery)
             : manager
-                .checkExist(
+                  .checkExist(
                     (gallery.languages?.map((e) => e.galleryid ?? 0).toList() ??
-                        [])
-                      ..add(gallery.id))
-                .then((value) => value['value'] as List<dynamic>?)
-                .then((value) async {
-                if (value?.firstOrNull != null) {
-                  gallery = await api.fetchGallery(value!.first, token: token);
-                  var before = await controller
-                      .hitomi()
-                      .fetchGallery(value.first,
-                          token: token, usePrefence: false)
-                      .catchError((e) => gallery, test: (error) => true);
-                  if (before.id != value.first ||
-                      gallery.files.length > before.files.length) {
-                    status = GalleryStatus.upgrade;
-                    translates = await api.translate(gallery.labels());
-                  } else {
-                    status = GalleryStatus.exists;
-                  }
-                }
-                return gallery;
-              }))
+                          [])
+                      ..add(gallery.id),
+                  )
+                  .then((value) => value['value'] as List<dynamic>?)
+                  .then((value) async {
+                    if (value?.firstOrNull != null) {
+                      gallery = await api.fetchGallery(
+                        value!.first,
+                        token: token,
+                      );
+                      var before = await controller
+                          .hitomi()
+                          .fetchGallery(
+                            value.first,
+                            token: token,
+                            usePrefence: false,
+                          )
+                          .catchError((e) => gallery, test: (error) => true);
+                      if (before.id != value.first ||
+                          gallery.files.length > before.files.length) {
+                        status = GalleryStatus.upgrade;
+                        translates = await api.translate(gallery.labels());
+                      } else {
+                        status = GalleryStatus.exists;
+                      }
+                    }
+                    return gallery;
+                  }))
         .then((value) {
-      if (mounted) {
-        setState(() {
+          if (mounted) {
+            setState(() {
+              isLoading = false;
+            });
+          }
+        })
+        .catchError((e) {
+          if (mounted) {
+            setState(() {
+              context.showSnackBar('$e');
+            });
+          }
           isLoading = false;
-        });
-      }
-    }).catchError((e) {
-      if (mounted) {
-        setState(() {
-          context.showSnackBar('$e');
-        });
-      }
-      isLoading = false;
-    }, test: (error) => true);
+        }, test: (error) => true);
   }
 
   @override
@@ -135,11 +148,15 @@ class _GalleryDetailView extends State<GalleryDetailsView> {
 
   void _handleClick(int index) async {
     if (_selected.isEmpty) {
-      await Navigator.pushNamed(context, GalleryViewer.routeName, arguments: {
-        'gallery': gallery,
-        'index': index,
-        'local': status != GalleryStatus.notExists,
-      });
+      await Navigator.pushNamed(
+        context,
+        GalleryViewer.routeName,
+        arguments: {
+          'gallery': gallery,
+          'index': index,
+          'local': status != GalleryStatus.notExists,
+        },
+      );
     } else {
       setState(() {
         var img = gallery.files[index];
@@ -154,93 +171,122 @@ class _GalleryDetailView extends State<GalleryDetailsView> {
 
   Widget imagesToolbar() {
     return Align(
-        alignment: Alignment.bottomCenter,
-        child: AnimatedOpacity(
-            opacity: _selected.isEmpty ? 0 : 1,
-            duration: const Duration(milliseconds: 300),
-            child: Container(
-                color: Theme.of(context).colorScheme.surface,
-                padding: const EdgeInsets.all(4),
-                child: Row(mainAxisAlignment: MainAxisAlignment.end, children: [
-                  if (!kIsWeb)
-                    TextButton(
-                        onPressed: _selected.isEmpty
-                            ? null
-                            : () async {
-                                context.progressDialogAction(context
-                                    .read<GalleryManager>()
-                                    .addAdImageHash(
-                                        _selected.map((e) => e.hash).toList())
-                                    .then((value) {
+      alignment: Alignment.bottomCenter,
+      child: AnimatedOpacity(
+        opacity: _selected.isEmpty ? 0 : 1,
+        duration: const Duration(milliseconds: 300),
+        child: Container(
+          color: Theme.of(context).colorScheme.surface,
+          padding: const EdgeInsets.all(4),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: [
+              if (!kIsWeb)
+                TextButton(
+                  onPressed: _selected.isEmpty
+                      ? null
+                      : () async {
+                          context.progressDialogAction(
+                            context
+                                .read<GalleryManager>()
+                                .addAdImageHash(
+                                  _selected.map((e) => e.hash).toList(),
+                                )
+                                .then((value) {
                                   if (mounted) {
-                                    gallery.files.removeWhere((element) =>
-                                        _selected.contains(element));
+                                    gallery.files.removeWhere(
+                                      (element) => _selected.contains(element),
+                                    );
                                     setState(() {
                                       context.showSnackBar(
-                                          AppLocalizations.of(context)!
-                                              .success);
+                                        AppLocalizations.of(context)!.success,
+                                      );
                                       _selected.clear();
                                     });
                                   }
-                                }));
-                              },
-                        child: Text(AppLocalizations.of(context)!.markAdImg)),
-                  const Spacer(),
-                  TextButton(
-                      onPressed: _selected.isEmpty
-                          ? null
-                          : () => setState(() {
-                                _selected.clear();
-                              }),
-                      child: Text(AppLocalizations.of(context)!.cancel)),
-                  const SizedBox(width: 8),
-                  TextButton(
-                      onPressed: _selected.isEmpty
-                          ? null
-                          : () => setState(() {
-                                _selected.clear();
-                                _selected.addAll(gallery.files);
-                              }),
-                      child: Text(AppLocalizations.of(context)!.selectAll)),
-                  const SizedBox(width: 8),
-                  TextButton(
-                      onPressed: _selected.isEmpty
-                          ? null
-                          : () {
-                              Navigator.of(context).push(MaterialPageRoute(
-                                  builder: ((context) => AnimatedSaverDialog(
-                                      selected: _selected,
-                                      api: controller.hitomi(
-                                          type:
-                                              status == GalleryStatus.notExists
-                                                  ? HitomiType.Remote
-                                                  : HitomiType.Local),
-                                      gallery: gallery))));
-                            },
-                      child: Text(AppLocalizations.of(context)!.makeGif)),
-                ]))));
+                                }),
+                          );
+                        },
+                  child: Text(AppLocalizations.of(context)!.markAdImg),
+                ),
+              const Spacer(),
+              TextButton(
+                onPressed: _selected.isEmpty
+                    ? null
+                    : () => setState(() {
+                        _selected.clear();
+                      }),
+                child: Text(AppLocalizations.of(context)!.cancel),
+              ),
+              const SizedBox(width: 8),
+              TextButton(
+                onPressed: _selected.isEmpty
+                    ? null
+                    : () => setState(() {
+                        _selected.clear();
+                        _selected.addAll(gallery.files);
+                      }),
+                child: Text(AppLocalizations.of(context)!.selectAll),
+              ),
+              const SizedBox(width: 8),
+              TextButton(
+                onPressed: _selected.isEmpty
+                    ? null
+                    : () {
+                        Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: ((context) => AnimatedSaverDialog(
+                              selected: _selected,
+                              api: controller.hitomi(
+                                type: status == GalleryStatus.notExists
+                                    ? HitomiType.Remote
+                                    : controller.config.remoteHttp.isNotEmpty
+                                    ? HitomiType.PROXY
+                                    : HitomiType.Local,
+                              ),
+                              gallery: gallery,
+                            )),
+                          ),
+                        );
+                      },
+                child: Text(AppLocalizations.of(context)!.makeGif),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 
   void fetchSuggestData(bool expand) async {
     if (expand && suggestGallerys.isEmpty) {
       return gallery.related?.isNotEmpty == true
-          ? Future.wait(gallery.related!.map((id) => context
-              .read<SettingsController>()
-              .hitomi()
-              .fetchGallery(id, usePrefence: false))).then((resp) {
-              setState(() {
-                suggestGallerys.addAll(resp);
-              });
-            }).catchError((e) {
-              debugPrint('$e');
-            }, test: (error) => true)
-          : context.getSuggesution(gallery.id).then((resp) async {
-              setState(() {
-                suggestGallerys.addAll(resp);
-              });
-            }).catchError((e) {
-              debugPrint('$e');
-            }, test: (error) => true);
+          ? Future.wait(
+                  gallery.related!.map(
+                    (id) => context
+                        .read<SettingsController>()
+                        .hitomi()
+                        .fetchGallery(id, usePrefence: false),
+                  ),
+                )
+                .then((resp) {
+                  setState(() {
+                    suggestGallerys.addAll(resp);
+                  });
+                })
+                .catchError((e) {
+                  debugPrint('$e');
+                }, test: (error) => true)
+          : context
+                .getSuggesution(gallery.id)
+                .then((resp) async {
+                  setState(() {
+                    suggestGallerys.addAll(resp);
+                  });
+                })
+                .catchError((e) {
+                  debugPrint('$e');
+                }, test: (error) => true);
     }
   }
 
@@ -254,106 +300,138 @@ class _GalleryDetailView extends State<GalleryDetailsView> {
       deskTop: isDeskTop,
       buildChildren: (children) => isDeskTop
           ? Column(
-              crossAxisAlignment: CrossAxisAlignment.start, children: children)
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: children,
+            )
           : SliverList.list(children: children),
     );
     return MaxWidthBox(
-        maxWidth: 1280,
-        child: LayoutBuilder(builder: (con, ctx) {
-          return Stack(children: [
-            CustomScrollView(key: ValueKey(gallery.id), slivers: [
-              GalleryDetailHead(
-                  key: ValueKey('head ${gallery.id}'),
-                  manager: context.getCacheManager(
-                      local: status != GalleryStatus.notExists),
-                  gallery: gallery,
-                  extendedInfo: translates,
-                  status: status,
-                  readIndex: readedIndex,
-                  isLoading: isLoading,
-                  languageChange: (id) async {
-                    await context
-                        .progressDialogAction(controller
-                            .hitomi(
-                                type: status == GalleryStatus.notExists
-                                    ? HitomiType.Remote
-                                    : HitomiType.Local)
-                            .fetchGallery(id, usePrefence: false)
-                            .then((value) => setState(() {
-                                  gallery = value;
-                                })))
-                        .catchError((e) {
-                      if (context.mounted) {
-                        context.showSnackBar('$e');
-                      }
-                    }, test: (error) => true);
-                  },
-                  tagInfo: isDeskTop ? tagInfo : null),
-              if (!isDeskTop) tagInfo,
-              if (context.read<SettingsController>().exntension)
-                SliverToBoxAdapter(
-                    child: ExpansionTile(
+      maxWidth: 1280,
+      child: LayoutBuilder(
+        builder: (con, ctx) {
+          return Stack(
+            children: [
+              CustomScrollView(
+                key: ValueKey(gallery.id),
+                slivers: [
+                  GalleryDetailHead(
+                    key: ValueKey('head ${gallery.id}'),
+                    manager: context.getCacheManager(
+                      local: status != GalleryStatus.notExists,
+                    ),
+                    gallery: gallery,
+                    extendedInfo: translates,
+                    status: status,
+                    readIndex: readedIndex,
+                    isLoading: isLoading,
+                    languageChange: (id) async {
+                      await context
+                          .progressDialogAction(
+                            controller
+                                .hitomi(
+                                  type: status == GalleryStatus.notExists
+                                      ? HitomiType.Remote
+                                      : HitomiType.Local,
+                                )
+                                .fetchGallery(id, usePrefence: false)
+                                .then(
+                                  (value) => setState(() {
+                                    gallery = value;
+                                  }),
+                                ),
+                          )
+                          .catchError((e) {
+                            if (context.mounted) {
+                              context.showSnackBar('$e');
+                            }
+                          }, test: (error) => true);
+                    },
+                    tagInfo: isDeskTop ? tagInfo : null,
+                  ),
+                  if (!isDeskTop) tagInfo,
+                  if (context.read<SettingsController>().exntension)
+                    SliverToBoxAdapter(
+                      child: ExpansionTile(
                         title: Text(AppLocalizations.of(context)!.suggest),
                         onExpansionChanged: fetchSuggestData,
-                        children: [SugguestView(gallery, suggestGallerys)])),
-              SliverGrid.builder(
-                  gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-                      maxCrossAxisExtent: 256),
-                  itemCount: gallery.files.length,
-                  itemBuilder: (context, index) {
-                    var image = gallery.files[index];
-                    return GestureDetector(
+                        children: [SugguestView(gallery, suggestGallerys)],
+                      ),
+                    ),
+                  SliverGrid.builder(
+                    gridDelegate:
+                        const SliverGridDelegateWithMaxCrossAxisExtent(
+                          maxCrossAxisExtent: 256,
+                        ),
+                    itemCount: gallery.files.length,
+                    itemBuilder: (context, index) {
+                      var image = gallery.files[index];
+                      return GestureDetector(
                         onTap: () => _handleClick(index),
                         onLongPress: _selected.isEmpty
                             ? () => setState(() {
-                                  _selected.add(image);
-                                })
+                                _selected.add(image);
+                              })
                             : null,
                         child: Center(
-                            child: ThumbImageView(
-                          CacheImage(
+                          child: ThumbImageView(
+                            CacheImage(
                               manager: context.getCacheManager(
-                                  local: status != GalleryStatus.notExists),
+                                local: status != GalleryStatus.notExists,
+                              ),
                               image: image,
                               refererUrl: refererUrl,
-                              id: gallery.id.toString()),
-                          label: _selected.isEmpty
-                              ? Text('${index + 1}',
-                                  style: Theme.of(context)
-                                      .textTheme
-                                      .labelLarge
-                                      ?.copyWith(color: Colors.deepOrange))
-                              : Checkbox.adaptive(
-                                  value: _selected.contains(image),
-                                  onChanged: (b) => _handleClick(index)),
-                          aspectRatio: image.width / image.height,
-                        )));
-                  })
-            ]),
-            imagesToolbar()
-          ]);
-        }));
+                              id: gallery.id.toString(),
+                            ),
+                            label: _selected.isEmpty
+                                ? Text(
+                                    '${index + 1}',
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .labelLarge
+                                        ?.copyWith(color: Colors.deepOrange),
+                                  )
+                                : Checkbox.adaptive(
+                                    value: _selected.contains(image),
+                                    onChanged: (b) => _handleClick(index),
+                                  ),
+                            aspectRatio: image.width / image.height,
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                ],
+              ),
+              imagesToolbar(),
+            ],
+          );
+        },
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-        body: SafeArea(
-            child: Center(
-      child: Focus(
-          focusNode: _focusNode,
-          onKeyEvent: (focus, value) {
-            debugPrint('key ${value.logicalKey}');
-            if (backKeys.contains(value.logicalKey) &&
-                focus.hasPrimaryFocus &&
-                value is KeyUpEvent) {
-              Navigator.of(context).pop();
-              return KeyEventResult.handled;
-            }
-            return KeyEventResult.ignored;
-          },
-          child: content(context)),
-    )));
+      body: SafeArea(
+        child: Center(
+          child: Focus(
+            focusNode: _focusNode,
+            onKeyEvent: (focus, value) {
+              debugPrint('key ${value.logicalKey}');
+              if (backKeys.contains(value.logicalKey) &&
+                  focus.hasPrimaryFocus &&
+                  value is KeyUpEvent) {
+                Navigator.of(context).pop();
+                return KeyEventResult.handled;
+              }
+              return KeyEventResult.ignored;
+            },
+            child: content(context),
+          ),
+        ),
+      ),
+    );
   }
 }
 
@@ -366,73 +444,90 @@ class GalleryDetailHead extends StatelessWidget {
   final int? readIndex;
   final bool isLoading;
   final Function(int id) languageChange;
-  const GalleryDetailHead(
-      {super.key,
-      required this.manager,
-      required this.gallery,
-      required this.extendedInfo,
-      required this.status,
-      required this.isLoading,
-      required this.languageChange,
-      required this.readIndex,
-      this.tagInfo});
+  const GalleryDetailHead({
+    super.key,
+    required this.manager,
+    required this.gallery,
+    required this.extendedInfo,
+    required this.status,
+    required this.isLoading,
+    required this.languageChange,
+    required this.readIndex,
+    this.tagInfo,
+  });
 
   Widget headThumbImage(BuildContext context) {
     return Hero(
-        tag: 'gallery-thumb ${gallery.id}',
-        child: ThumbImageView(
-          CacheImage(
-              manager: manager,
-              image: gallery.files.first,
-              refererUrl: 'https://hitomi.la${gallery.urlEncode()}',
-              id: gallery.id.toString(),
-              size: img.ThumbnaiSize.medium),
-          label: Text(gallery.files.length.toString(),
-              style: Theme.of(context)
-                  .textTheme
-                  .labelLarge
-                  ?.copyWith(color: Colors.deepOrange)),
-          aspectRatio: gallery.files.first.width / gallery.files.first.height,
-        ));
+      tag: 'gallery-thumb ${gallery.id}',
+      child: ThumbImageView(
+        CacheImage(
+          manager: manager,
+          image: gallery.files.first,
+          refererUrl: 'https://hitomi.la${gallery.urlEncode()}',
+          id: gallery.id.toString(),
+          size: img.ThumbnaiSize.medium,
+        ),
+        label: Text(
+          gallery.files.length.toString(),
+          style: Theme.of(
+            context,
+          ).textTheme.labelLarge?.copyWith(color: Colors.deepOrange),
+        ),
+        aspectRatio: gallery.files.first.width / gallery.files.first.height,
+      ),
+    );
   }
 
   Widget actionButton(BuildContext context) {
-    return Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-      const SizedBox(width: 8),
-      if (!kIsWeb)
-        Expanded(
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        const SizedBox(width: 8),
+        if (!kIsWeb)
+          Expanded(
             child: Padding(
-                padding: const EdgeInsets.only(right: 8),
-                child: OutlinedButton(
-                    onPressed: isLoading
-                        ? null
-                        : () async {
-                            await context.addTask(gallery.id);
-                          },
-                    child: isLoading
-                        ? const SizedBox(
-                            width: 20,
-                            height: 20,
-                            child: Center(child: CircularProgressIndicator()))
-                        : Text(switch (status) {
-                            GalleryStatus.notExists =>
-                              AppLocalizations.of(context)!.download,
-                            GalleryStatus.exists =>
-                              AppLocalizations.of(context)!.fix,
-                            GalleryStatus.upgrade =>
-                              AppLocalizations.of(context)!.update,
-                          })))),
-      Expanded(
-        child: FilledButton(
-            onPressed: () => Navigator.of(context)
-                    .pushNamed(GalleryViewer.routeName, arguments: {
-                  'gallery': gallery,
-                  'local': status != GalleryStatus.notExists,
-                }),
-            child: Text(AppLocalizations.of(context)!.read)),
-      ),
-      const SizedBox(width: 8),
-    ]);
+              padding: const EdgeInsets.only(right: 8),
+              child: OutlinedButton(
+                onPressed: isLoading
+                    ? null
+                    : () async {
+                        await context.addTask(gallery.id);
+                      },
+                child: isLoading
+                    ? const SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: Center(child: CircularProgressIndicator()),
+                      )
+                    : Text(switch (status) {
+                        GalleryStatus.notExists => AppLocalizations.of(
+                          context,
+                        )!.download,
+                        GalleryStatus.exists => AppLocalizations.of(
+                          context,
+                        )!.fix,
+                        GalleryStatus.upgrade => AppLocalizations.of(
+                          context,
+                        )!.update,
+                      }),
+              ),
+            ),
+          ),
+        Expanded(
+          child: FilledButton(
+            onPressed: () => Navigator.of(context).pushNamed(
+              GalleryViewer.routeName,
+              arguments: {
+                'gallery': gallery,
+                'local': status != GalleryStatus.notExists,
+              },
+            ),
+            child: Text(AppLocalizations.of(context)!.read),
+          ),
+        ),
+        const SizedBox(width: 8),
+      ],
+    );
   }
 
   @override
@@ -456,10 +551,13 @@ class GalleryDetailHead extends StatelessWidget {
         .take(size - artists.length)
         .toList();
     var mediaData = MediaQuery.of(context);
-    var width =
-        min(mediaData.size.width * mediaData.devicePixelRatio / 3, 360.0);
+    var width = min(
+      mediaData.size.width * mediaData.devicePixelRatio / 3,
+      360.0,
+    );
     var minHeight = tagInfo != null ? width - 32 : width / 3;
-    var height = width *
+    var height =
+        width *
         gallery.files.first.height /
         gallery.files.first.width /
         mediaData.devicePixelRatio;
@@ -473,112 +571,164 @@ class GalleryDetailHead extends StatelessWidget {
         ?.where((lang) => userLanges.any((element) => element == lang.name))
         .toList();
     debugPrint(
-        '${gallery.id} screenW ${mediaData.size} ration ${mediaData.devicePixelRatio} w $width h $height totalH $totalHeight ${gallery.files.first.height / gallery.files.first.width}');
+      '${gallery.id} screenW ${mediaData.size} ration ${mediaData.devicePixelRatio} w $width h $height totalH $totalHeight ${gallery.files.first.height / gallery.files.first.width}',
+    );
     return SliverAppBar(
-        backgroundColor: entry.value,
-        leading: AppBar(
-            backgroundColor: Colors.transparent,
-            leading: BackButton(
-              onPressed: () => Navigator.of(context).pop(readIndex),
-            )),
-        title:
-            Hero(tag: 'gallery_${gallery.id}_name', child: Text(gallery.name)),
-        pinned: true,
-        expandedHeight: totalHeight,
-        actions: [
-          IconButton(
-              onPressed: () async {
-                await context.insertToUserDb((gallery).id, lateReadMark,
-                    showResult: true);
-              },
-              icon: const Icon(Icons.playlist_add_circle),
-              tooltip: AppLocalizations.of(context)!.readLater),
-          IconButton(
-              onPressed: () async {
-                await context.insertToUserDb((gallery).id, bookMarkMask,
-                    showResult: true);
-              },
-              icon: const Icon(Icons.bookmark),
-              tooltip: AppLocalizations.of(context)!.collect)
-        ],
-        flexibleSpace: FlexibleSpaceBar(
-            background: SafeArea(
-                child: Column(children: [
-          SizedBox(height: Theme.of(context).appBarTheme.toolbarHeight ?? 56),
-          Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Padding(
-                padding: const EdgeInsets.only(left: 8),
-                child: SizedBox(
-                    width: width / mediaData.devicePixelRatio,
-                    height: height - 8,
-                    child: headThumbImage(context))),
-            Expanded(
-                child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                  actionButton(context),
-                  if (artists.isNotEmpty || groupes.isNotEmpty)
-                    SizedBox(
-                        height: 28,
-                        child: ListView(
-                            scrollDirection: Axis.horizontal,
-                            children: [
-                              for (var artist in artists)
-                                TagButton(
+      backgroundColor: entry.value,
+      leading: AppBar(
+        backgroundColor: Colors.transparent,
+        leading: BackButton(
+          onPressed: () => Navigator.of(context).pop(readIndex),
+        ),
+      ),
+      title: Hero(tag: 'gallery_${gallery.id}_name', child: Text(gallery.name)),
+      pinned: true,
+      expandedHeight: totalHeight,
+      actions: [
+        IconButton(
+          onPressed: () async {
+            await context.insertToUserDb(
+              (gallery).id,
+              lateReadMark,
+              showResult: true,
+            );
+          },
+          icon: const Icon(Icons.playlist_add_circle),
+          tooltip: AppLocalizations.of(context)!.readLater,
+        ),
+        IconButton(
+          onPressed: () async {
+            await context.insertToUserDb(
+              (gallery).id,
+              bookMarkMask,
+              showResult: true,
+            );
+          },
+          icon: const Icon(Icons.bookmark),
+          tooltip: AppLocalizations.of(context)!.collect,
+        ),
+      ],
+      flexibleSpace: FlexibleSpaceBar(
+        background: SafeArea(
+          child: Column(
+            children: [
+              SizedBox(
+                height: Theme.of(context).appBarTheme.toolbarHeight ?? 56,
+              ),
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.only(left: 8),
+                    child: SizedBox(
+                      width: width / mediaData.devicePixelRatio,
+                      height: height - 8,
+                      child: headThumbImage(context),
+                    ),
+                  ),
+                  Expanded(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        actionButton(context),
+                        if (artists.isNotEmpty || groupes.isNotEmpty)
+                          SizedBox(
+                            height: 28,
+                            child: ListView(
+                              scrollDirection: Axis.horizontal,
+                              children: [
+                                for (var artist in artists)
+                                  TagButton(
                                     label: artist,
                                     style: smallText,
                                     commondPrefix: '--${artist['type']}',
-                                    icon: const Icon(Icons.person)),
-                              for (var group in groupes)
-                                TagButton(
+                                    icon: const Icon(Icons.person),
+                                  ),
+                                for (var group in groupes)
+                                  TagButton(
                                     label: group,
                                     style: smallText,
                                     commondPrefix: '--${group['type']}',
-                                    icon: const Icon(Icons.group))
-                            ])),
-                  SizedBox(
-                      height: 40,
-                      child:
-                          ListView(scrollDirection: Axis.horizontal, children: [
-                        Row(children: [
-                          TagButton(label: {
-                            ...TypeLabel(gallery.type).toMap(),
-                            'translate': entry.key
-                          }),
-                          const SizedBox(width: 16),
-                          if (lanuages?.isNotEmpty == true)
-                            DropdownButton<int>(
-                                items: [
-                                  if (lanuages!.every((element) =>
-                                      element.galleryid!.toInt() != gallery.id))
-                                    DropdownMenuItem(
-                                        value: gallery.id,
-                                        child: Text(mapLangugeType(
-                                            context, gallery.language ?? ''))),
-                                  for (var language in lanuages)
-                                    DropdownMenuItem(
-                                        value: language.galleryid!.toInt(),
-                                        child: Text(mapLangugeType(
-                                            context, language.name))),
+                                    icon: const Icon(Icons.group),
+                                  ),
+                              ],
+                            ),
+                          ),
+                        SizedBox(
+                          height: 40,
+                          child: ListView(
+                            scrollDirection: Axis.horizontal,
+                            children: [
+                              Row(
+                                children: [
+                                  TagButton(
+                                    label: {
+                                      ...TypeLabel(gallery.type).toMap(),
+                                      'translate': entry.key,
+                                    },
+                                  ),
+                                  const SizedBox(width: 16),
+                                  if (lanuages?.isNotEmpty == true)
+                                    DropdownButton<int>(
+                                      items: [
+                                        if (lanuages!.every(
+                                          (element) =>
+                                              element.galleryid!.toInt() !=
+                                              gallery.id,
+                                        ))
+                                          DropdownMenuItem(
+                                            value: gallery.id,
+                                            child: Text(
+                                              mapLangugeType(
+                                                context,
+                                                gallery.language ?? '',
+                                              ),
+                                            ),
+                                          ),
+                                        for (var language in lanuages)
+                                          DropdownMenuItem(
+                                            value: language.galleryid!.toInt(),
+                                            child: Text(
+                                              mapLangugeType(
+                                                context,
+                                                language.name,
+                                              ),
+                                            ),
+                                          ),
+                                      ],
+                                      value: gallery.id,
+                                      onChanged: (id) {
+                                        if (id != null) {
+                                          languageChange(id);
+                                        }
+                                      },
+                                    )
+                                  else
+                                    Text(
+                                      mapLangugeType(
+                                        context,
+                                        gallery.language ?? '',
+                                      ),
+                                    ),
+                                  const SizedBox(width: 8),
+                                  Text(formater.formatString(gallery.date)),
                                 ],
-                                value: gallery.id,
-                                onChanged: (id) {
-                                  if (id != null) {
-                                    languageChange(id);
-                                  }
-                                })
-                          else
-                            Text(mapLangugeType(
-                                context, gallery.language ?? '')),
-                          const SizedBox(width: 8),
-                          Text(formater.formatString(gallery.date)),
-                        ])
-                      ])),
-                  if (tagInfo != null) tagInfo!,
-                ])),
-          ])
-        ]))));
+                              ),
+                            ],
+                          ),
+                        ),
+                        if (tagInfo != null) tagInfo!,
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 }
 
@@ -588,90 +738,116 @@ class GalleryTagDetailInfo extends StatelessWidget {
   final Widget Function(List<Widget> children) buildChildren;
   final int? readIndex;
   final bool deskTop;
-  const GalleryTagDetailInfo(
-      {super.key,
-      required this.gallery,
-      required this.extendedInfo,
-      required this.buildChildren,
-      required this.deskTop,
-      this.readIndex});
+  const GalleryTagDetailInfo({
+    super.key,
+    required this.gallery,
+    required this.extendedInfo,
+    required this.buildChildren,
+    required this.deskTop,
+    this.readIndex,
+  });
 
   String findMatchLabel(Label label) {
-    var translate = extendedInfo.firstWhereOrNull((element) =>
-        element['type'] == label.type &&
-        element['name'] == label.name)?['translate'];
+    var translate = extendedInfo.firstWhereOrNull(
+      (element) =>
+          element['type'] == label.type && element['name'] == label.name,
+    )?['translate'];
     return translate ?? label.name;
   }
 
   Widget _buildIndexView(int readIndex) {
-    return Stack(children: [
-      LinearProgressIndicator(value: (readIndex + 1) / gallery.files.length),
-      Align(
+    return Stack(
+      children: [
+        LinearProgressIndicator(value: (readIndex + 1) / gallery.files.length),
+        Align(
           alignment: Alignment.bottomRight,
-          child: Text('${(readIndex + 1)}/${gallery.files.length}'))
-    ]);
+          child: Text('${(readIndex + 1)}/${gallery.files.length}'),
+        ),
+      ],
+    );
   }
 
-  Widget _serialInfo(BuildContext context, List<Map<String, dynamic>> series,
-      List<Map<String, dynamic>> characters) {
-    var child = Wrap(children: [
-      for (var serial in series) TagButton(label: serial),
-      for (var character in characters) TagButton(label: character),
-    ]);
+  Widget _serialInfo(
+    BuildContext context,
+    List<Map<String, dynamic>> series,
+    List<Map<String, dynamic>> characters,
+  ) {
+    var child = Wrap(
+      children: [
+        for (var serial in series) TagButton(label: serial),
+        for (var character in characters) TagButton(label: character),
+      ],
+    );
 
     var title = Text(
-        '${AppLocalizations.of(context)!.series} & ${AppLocalizations.of(context)!.character}');
+      '${AppLocalizations.of(context)!.series} & ${AppLocalizations.of(context)!.character}',
+    );
     return deskTop
         ? Column(
             crossAxisAlignment: CrossAxisAlignment.start,
-            children: [ListTile(title: title), child])
+            children: [
+              ListTile(title: title),
+              child,
+            ],
+          )
         : ExpansionTile(title: title, children: [child]);
   }
 
   Widget _otherTagInfo(
-      BuildContext context,
-      List<Map<String, dynamic>>? females,
-      List<Map<String, dynamic>>? males,
-      List<Map<String, dynamic>>? tags) {
+    BuildContext context,
+    List<Map<String, dynamic>>? females,
+    List<Map<String, dynamic>>? males,
+    List<Map<String, dynamic>>? tags,
+  ) {
     var title = Text(AppLocalizations.of(context)!.tag);
-    var child = Wrap(children: [
-      if (females != null)
-        for (var female in females)
-          TagButton(
-            label: female,
-          ),
-      if (males != null)
-        for (var male in males)
-          TagButton(
-            label: male,
-          ),
-      if (tags != null)
-        for (var tag in tags)
-          TagButton(
-            label: tag,
-          ),
-    ]);
+    var child = Wrap(
+      children: [
+        if (females != null)
+          for (var female in females) TagButton(label: female),
+        if (males != null)
+          for (var male in males) TagButton(label: male),
+        if (tags != null)
+          for (var tag in tags) TagButton(label: tag),
+      ],
+    );
     return deskTop
         ? Column(
             crossAxisAlignment: CrossAxisAlignment.start,
-            children: [ListTile(title: title), child])
+            children: [
+              ListTile(title: title),
+              child,
+            ],
+          )
         : ExpansionTile(title: title, children: [child]);
   }
 
   @override
   Widget build(BuildContext context) {
-    var typeList =
-        extendedInfo.groupListsBy((element) => element['type'] as String);
+    var typeList = extendedInfo.groupListsBy(
+      (element) => element['type'] as String,
+    );
     return buildChildren([
       if (readIndex != null) _buildIndexView(readIndex!),
-      if ([typeList['series'], typeList['character']]
-          .every((element) => element != null))
-        _serialInfo(context, typeList['series']!.take(10).toList(),
-            typeList['character']!.take(20).toList()),
-      if ([typeList['female'], typeList['male'], typeList['tag']]
-          .any((element) => element != null))
-        _otherTagInfo(context, typeList['female']?.take(20).toList(),
-            typeList['male'], typeList['tag']?.take(20).toList())
+      if ([
+        typeList['series'],
+        typeList['character'],
+      ].every((element) => element != null))
+        _serialInfo(
+          context,
+          typeList['series']!.take(10).toList(),
+          typeList['character']!.take(20).toList(),
+        ),
+      if ([
+        typeList['female'],
+        typeList['male'],
+        typeList['tag'],
+      ].any((element) => element != null))
+        _otherTagInfo(
+          context,
+          typeList['female']?.take(20).toList(),
+          typeList['male'],
+          typeList['tag']?.take(20).toList(),
+        ),
     ]);
   }
 }
@@ -690,47 +866,59 @@ class _SuggestView extends State<SugguestView> {
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-        height: widget.suggestGallerys.isEmpty ? 0 : 120,
-        child: ListView.separated(
-          itemCount: widget.suggestGallerys.length,
-          separatorBuilder: (BuildContext context, int index) =>
-              const Divider(),
-          itemBuilder: (context, index) {
-            var gallery = widget.suggestGallerys[index];
-            return SizedBox(
-                width: 120,
-                child: InkWell(
-                    child: Column(children: [
-                      SizedBox(
-                          height: 100,
-                          child: ThumbImageView(
-                              CacheImage(
-                                  manager: context.getCacheManager(
-                                      local: widget.gallery.related == null),
-                                  image: gallery.files.first,
-                                  refererUrl:
-                                      'https://hitomi.la${gallery.urlEncode()}',
-                                  id: gallery.id.toString(),
-                                  size: img.ThumbnaiSize.smaill),
-                              label: Text(gallery.files.length.toString(),
-                                  style: Theme.of(context)
-                                      .textTheme
-                                      .labelLarge
-                                      ?.copyWith(color: Colors.deepOrange)),
-                              aspectRatio: 1)),
-                      Center(
-                          widthFactor: 80,
-                          child: Text(gallery.name,
-                              maxLines: 1,
-                              style: Theme.of(context).textTheme.labelSmall,
-                              overflow: TextOverflow.ellipsis,
-                              softWrap: true)),
-                    ]),
-                    onTap: () => Navigator.of(context).pushNamed(
-                        GalleryDetailsView.routeName,
-                        arguments: {'gallery': gallery, 'local': true})));
-          },
-          scrollDirection: Axis.horizontal,
-        ));
+      height: widget.suggestGallerys.isEmpty ? 0 : 120,
+      child: ListView.separated(
+        itemCount: widget.suggestGallerys.length,
+        separatorBuilder: (BuildContext context, int index) => const Divider(),
+        itemBuilder: (context, index) {
+          var gallery = widget.suggestGallerys[index];
+          return SizedBox(
+            width: 120,
+            child: InkWell(
+              child: Column(
+                children: [
+                  SizedBox(
+                    height: 100,
+                    child: ThumbImageView(
+                      CacheImage(
+                        manager: context.getCacheManager(
+                          local: widget.gallery.related == null,
+                        ),
+                        image: gallery.files.first,
+                        refererUrl: 'https://hitomi.la${gallery.urlEncode()}',
+                        id: gallery.id.toString(),
+                        size: img.ThumbnaiSize.smaill,
+                      ),
+                      label: Text(
+                        gallery.files.length.toString(),
+                        style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                          color: Colors.deepOrange,
+                        ),
+                      ),
+                      aspectRatio: 1,
+                    ),
+                  ),
+                  Center(
+                    widthFactor: 80,
+                    child: Text(
+                      gallery.name,
+                      maxLines: 1,
+                      style: Theme.of(context).textTheme.labelSmall,
+                      overflow: TextOverflow.ellipsis,
+                      softWrap: true,
+                    ),
+                  ),
+                ],
+              ),
+              onTap: () => Navigator.of(context).pushNamed(
+                GalleryDetailsView.routeName,
+                arguments: {'gallery': gallery, 'local': true},
+              ),
+            ),
+          );
+        },
+        scrollDirection: Axis.horizontal,
+      ),
+    );
   }
 }

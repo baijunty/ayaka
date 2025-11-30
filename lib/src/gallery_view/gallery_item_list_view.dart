@@ -19,13 +19,14 @@ class GalleryItemListView extends StatefulWidget {
   final bool local;
   final int startPage;
   final SortEnum? sortEnum;
-  const GalleryItemListView(
-      {super.key,
-      required this.api,
-      required this.label,
-      required this.local,
-      this.startPage = 1,
-      this.sortEnum});
+  const GalleryItemListView({
+    super.key,
+    required this.api,
+    required this.label,
+    required this.local,
+    this.startPage = 1,
+    this.sortEnum,
+  });
 
   @override
   State<StatefulWidget> createState() => _GalleryListView();
@@ -48,23 +49,30 @@ class _GalleryListView extends State<GalleryItemListView>
     token = CancelToken();
     netLoading = true;
     widget.api
-        .viewByTag(fromString(widget.label['type'], widget.label['name']),
-            page: _page, sort: widget.sortEnum, token: token)
+        .viewByTag(
+          fromString(widget.label['type'], widget.label['name']),
+          page: _page,
+          sort: widget.sortEnum,
+          token: token,
+        )
         .then((value) {
           var labels = value.data.fold(
-              <Label>{},
-              (previousValue, element) => previousValue
-                ..addAll(element.labels().where((l) => l.type == 'artist')));
+            <Label>{},
+            (previousValue, element) =>
+                previousValue
+                  ..addAll(element.labels().where((l) => l.type == 'artist')),
+          );
           return settingsController
               .hitomi(type: HitomiType.Local)
               .translate(labels.toList())
               .then((trans) {
-            for (var g in labels) {
-              g.translate = trans.firstWhereOrNull(
-                  (l) => g.type == l['type'] && g.name == l['name']);
-            }
-            return value;
-          });
+                for (var g in labels) {
+                  g.translate = trans.firstWhereOrNull(
+                    (l) => g.type == l['type'] && g.name == l['name'],
+                  );
+                }
+                return value;
+              });
         })
         .then((value) {
           totalCount = value.totalCount;
@@ -75,18 +83,24 @@ class _GalleryListView extends State<GalleryItemListView>
         })
         .then((value) {
           return Future.wait(
-                  value.map((e) => context.readUserDb(e.id, readHistoryMask)))
-              .then((result) => result.foldIndexed(
+                value.map((e) => context.readUserDb(e.id, readHistoryMask)),
+              )
+              .then(
+                (result) => result.foldIndexed(
                   readIndexMap,
                   (index, previous, element) =>
-                      previous..[value[index].id] = element))
+                      previous..[value[index].id] = element,
+                ),
+              )
               .then((map) => value);
         })
-        .then((value) => setState(() {
-              refresh ? data.insertAll(0, value) : data.addAll(value);
-              _page++;
-              netLoading = false;
-            }))
+        .then(
+          (value) => setState(() {
+            refresh ? data.insertAll(0, value) : data.addAll(value);
+            _page++;
+            netLoading = false;
+          }),
+        )
         .catchError((e) {
           debugPrint('$e');
           netLoading = false;
@@ -101,17 +115,19 @@ class _GalleryListView extends State<GalleryItemListView>
     super.initState();
     click = (g) async {
       var read = await Navigator.pushNamed(
-          context, GalleryDetailsView.routeName,
-          arguments: {'gallery': g, 'local': widget.local});
+        context,
+        GalleryDetailsView.routeName,
+        arguments: {'gallery': g, 'local': widget.local},
+      );
       if (mounted) {
         (read is int
                 ? Future.value(read)
                 : context.readUserDb(g.id, readHistoryMask))
             .then((value) {
-          setState(() {
-            readIndexMap[g.id] = value;
-          });
-        });
+              setState(() {
+                readIndexMap[g.id] = value;
+              });
+            });
       }
     };
     _page = widget.startPage;
@@ -119,37 +135,48 @@ class _GalleryListView extends State<GalleryItemListView>
     scrollController.addListener(handleScroll);
     menuBuilder = kIsWeb
         ? null
-        : (g) => PopupMenuButton<String>(itemBuilder: (context) {
+        : (g) => PopupMenuButton<String>(
+            itemBuilder: (context) {
               var userLangs = context.getConfig().languages;
-              var langs = g.languages?.where((element) =>
-                  userLangs.any((lang) => lang == element.name) &&
-                  element.galleryid != g.id.toString());
+              var langs = g.languages?.where(
+                (element) =>
+                    userLangs.any((lang) => lang == element.name) &&
+                    element.galleryid != g.id.toString(),
+              );
               return [
                 PopupMenuItem(
-                    child: Text(AppLocalizations.of(context)!.download),
-                    onTap: () => context.addTask(g.id)),
+                  child: Text(AppLocalizations.of(context)!.download),
+                  onTap: () => context.addTask(g.id),
+                ),
                 if (langs?.isNotEmpty == true)
                   for (var lang in langs!)
                     PopupMenuItem(
-                        child: Text(
-                            '${AppLocalizations.of(context)!.download}${lang.languageLocalname}'),
-                        onTap: () => context.addTask(lang.galleryid!.toInt())),
+                      child: Text(
+                        '${AppLocalizations.of(context)!.download}${lang.languageLocalname}',
+                      ),
+                      onTap: () => context.addTask(lang.galleryid!.toInt()),
+                    ),
                 PopupMenuItem(
-                    child: Text(AppLocalizations.of(context)!.findSimiler),
-                    onTap: () => Navigator.of(context).pushNamed(
-                        GallerySimilaerView.routeName,
-                        arguments: g)),
+                  child: Text(AppLocalizations.of(context)!.findSimiler),
+                  onTap: () => Navigator.of(
+                    context,
+                  ).pushNamed(GallerySimilaerView.routeName, arguments: g),
+                ),
                 if (widget.local)
                   PopupMenuItem(
-                      child: Text(AppLocalizations.of(context)!.delete),
-                      onTap: () =>
-                          context.deleteTask(g.id).then((value) => setState(() {
-                                totalCount -= 1;
-                                data.removeWhere(
-                                    (element) => element.id == g.id);
-                              })))
+                    child: Text(AppLocalizations.of(context)!.delete),
+                    onTap: () => context
+                        .deleteTask(g.id)
+                        .then(
+                          (value) => setState(() {
+                            totalCount -= 1;
+                            data.removeWhere((element) => element.id == g.id);
+                          }),
+                        ),
+                  ),
               ];
-            });
+            },
+          );
   }
 
   @override
@@ -166,7 +193,8 @@ class _GalleryListView extends State<GalleryItemListView>
         data.length < totalCount &&
         !netLoading) {
       context.showSnackBar(
-          '$_page/$totalPage ${AppLocalizations.of(context)!.loading}');
+        '$_page/$totalPage ${AppLocalizations.of(context)!.loading}',
+      );
       await context.progressDialogAction(_fetchData());
     }
   }
@@ -182,27 +210,30 @@ class _GalleryListView extends State<GalleryItemListView>
 
   Widget _bodyContentList() {
     return GalleryListView(
-        data: data,
-        onRefresh: () async {
-          var before = _page;
-          _page = 1;
-          await context.progressDialogAction(_fetchData(refresh: true));
-          _page = before;
-        },
-        click: click,
-        manager: context.getCacheManager(local: widget.local),
-        scrollController: scrollController,
-        readIndexMap: readIndexMap,
-        menusBuilder: menuBuilder);
+      data: data,
+      onRefresh: () async {
+        var before = _page;
+        _page = 1;
+        await context.progressDialogAction(_fetchData(refresh: true));
+        _page = before;
+      },
+      click: click,
+      manager: context.getCacheManager(local: widget.local),
+      scrollController: scrollController,
+      readIndexMap: readIndexMap,
+      menusBuilder: menuBuilder,
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     super.build(context);
-    return Stack(children: [
-      _bodyContentList(),
-      if (netLoading) const Center(child: CircularProgressIndicator())
-    ]);
+    return Stack(
+      children: [
+        _bodyContentList(),
+        if (netLoading) const Center(child: CircularProgressIndicator()),
+      ],
+    );
   }
 
   @override

@@ -10,7 +10,7 @@ final smallText = TextButton.styleFrom(
 );
 final backKeys = const [
   LogicalKeyboardKey.escape,
-  LogicalKeyboardKey.backspace
+  LogicalKeyboardKey.backspace,
 ];
 
 extension FlagHelper on int {

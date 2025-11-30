@@ -8,8 +8,8 @@ import 'package:flutter/foundation.dart';
 
 import 'package:flutter/widgets.dart';
 
-typedef _SimpleDecoderCallback = Future<ui.Codec> Function(
-    ui.ImmutableBuffer buffer);
+typedef _SimpleDecoderCallback =
+    Future<ui.Codec> Function(ui.ImmutableBuffer buffer);
 
 class CacheImage extends ImageProvider<CacheImage> {
   final CacheManager manager;
@@ -18,13 +18,14 @@ class CacheImage extends ImageProvider<CacheImage> {
   final img.ThumbnaiSize size;
   final String refererUrl;
   final double scale;
-  CacheImage(
-      {required this.manager,
-      required this.image,
-      this.id = '',
-      this.size = img.ThumbnaiSize.medium,
-      this.refererUrl = 'https://hitomi.la/doujinshi/test.html',
-      this.scale = 1.0});
+  CacheImage({
+    required this.manager,
+    required this.image,
+    this.id = '',
+    this.size = img.ThumbnaiSize.medium,
+    this.refererUrl = 'https://hitomi.la/doujinshi/test.html',
+    this.scale = 1.0,
+  });
 
   @override
   bool operator ==(Object other) {
@@ -58,22 +59,30 @@ class CacheImage extends ImageProvider<CacheImage> {
   }) async {
     try {
       assert(key == this);
-      await for (var element in manager.getFileStream(image.hash,
-          headers: {
-            'refererUrl': refererUrl,
-            'size': size.name,
-            'id': id,
-            'name': image.name
-          },
-          key: image.hash,
-          withProgress: true)) {
+      await for (var element in manager.getFileStream(
+        image.hash,
+        headers: {
+          'refererUrl': refererUrl,
+          'size': size.name,
+          'id': id,
+          'name': image.name,
+        },
+        key: image.hash,
+        withProgress: true,
+      )) {
         if (element is DownloadProgress) {
-          chunkEvents.add(ImageChunkEvent(
+          chunkEvents.add(
+            ImageChunkEvent(
               cumulativeBytesLoaded: element.downloaded,
-              expectedTotalBytes: element.totalSize));
+              expectedTotalBytes: element.totalSize,
+            ),
+          );
         } else if (element is FileInfo) {
-          return decode(await ui.ImmutableBuffer.fromUint8List(
-              element.file.readAsBytesSync()));
+          return decode(
+            await ui.ImmutableBuffer.fromUint8List(
+              element.file.readAsBytesSync(),
+            ),
+          );
         }
       }
       return Future.error('empty date');
@@ -106,7 +115,9 @@ class CacheImage extends ImageProvider<CacheImage> {
 
   @override
   ImageStreamCompleter loadBuffer(
-      CacheImage key, DecoderBufferCallback decode) {
+    CacheImage key,
+    DecoderBufferCallback decode,
+  ) {
     // Ownership of this controller is handed off to [_loadAsync]; it is that
     // method's responsibility to close the controller's stream when the image
     // has been loaded or an error is thrown.
@@ -129,7 +140,9 @@ class ProxyNetworkImage extends ImageProvider<ProxyNetworkImage> {
   final double scale;
 
   final Future<List<int>> Function(
-      StreamController<ImageChunkEvent> chunkEvents) dataStream;
+    StreamController<ImageChunkEvent> chunkEvents,
+  )
+  dataStream;
   final dynamic key;
   ProxyNetworkImage({
     required this.dataStream,
@@ -168,8 +181,10 @@ class ProxyNetworkImage extends ImageProvider<ProxyNetworkImage> {
       assert(key == this);
 
       return await dataStream(chunkEvents)
-          .then((value) =>
-              ui.ImmutableBuffer.fromUint8List(Uint8List.fromList(value)))
+          .then(
+            (value) =>
+                ui.ImmutableBuffer.fromUint8List(Uint8List.fromList(value)),
+          )
           .then((value) => decode(value));
     } catch (e) {
       debugPrint('$e');
@@ -184,7 +199,9 @@ class ProxyNetworkImage extends ImageProvider<ProxyNetworkImage> {
 
   @override
   ImageStreamCompleter loadImage(
-      ProxyNetworkImage key, ImageDecoderCallback decode) {
+    ProxyNetworkImage key,
+    ImageDecoderCallback decode,
+  ) {
     final StreamController<ImageChunkEvent> chunkEvents =
         StreamController<ImageChunkEvent>();
 
@@ -201,7 +218,9 @@ class ProxyNetworkImage extends ImageProvider<ProxyNetworkImage> {
 
   @override
   ImageStreamCompleter loadBuffer(
-      ProxyNetworkImage key, DecoderBufferCallback decode) {
+    ProxyNetworkImage key,
+    DecoderBufferCallback decode,
+  ) {
     // Ownership of this controller is handed off to [_loadAsync]; it is that
     // method's responsibility to close the controller's stream when the image
     // has been loaded or an error is thrown.

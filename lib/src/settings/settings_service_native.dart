@@ -17,9 +17,11 @@ Future<String> platformSavePath() async {
 }
 
 Future<String?> localIpAddress() async {
-  return NetworkInterface.list().then((value) => value.firstOrNull?.addresses
-      .firstWhereOrNull((element) => element.type == InternetAddressType.IPv4)
-      ?.address);
+  return NetworkInterface.list().then(
+    (value) => value.firstOrNull?.addresses
+        .firstWhereOrNull((element) => element.type == InternetAddressType.IPv4)
+        ?.address,
+  );
 }
 
 CacheInfoRepository initCacheInfoRepository() {

@@ -51,22 +51,28 @@ class _GalleryTaskView extends State<GalleryTaskView> {
       var socketUri =
           '${uri.scheme == 'https' ? 'wss' : 'ws'}://${uri.hasPort ? '${uri.host}:${uri.port}' : uri.authority}';
       _channel = WebSocketChannel.connect(Uri.parse(socketUri));
-      _channel!.sink.add(json
-          .encode({'auth': controller.controller.config.auth, 'type': 'list'}));
-      _channel!.stream.listen((d) => setTaskResult(json.decoder.convert(d)),
-          onError: (e) {
-        _channel!.sink.close();
-        debugPrint('connect err $e');
-        if (mounted) {
-          _fetchTasks();
-        }
-      });
+      _channel!.sink.add(
+        json.encode({
+          'auth': controller.controller.config.auth,
+          'type': 'list',
+        }),
+      );
+      _channel!.stream.listen(
+        (d) => setTaskResult(json.decoder.convert(d)),
+        onError: (e) {
+          _channel!.sink.close();
+          debugPrint('connect err $e');
+          if (mounted) {
+            _fetchTasks();
+          }
+        },
+      );
     } else {
       var manager = controller.controller.manager;
       setTaskResult({
         'type': 'list',
         "queryTask": manager.queryTask,
-        ...manager.down.allTask
+        ...manager.down.allTask,
       });
       manager.addTaskObserver(setTaskResult);
     }
@@ -80,18 +86,20 @@ class _GalleryTaskView extends State<GalleryTaskView> {
             pendingTask = (result['pendingTask'] as List<dynamic>)
                 .map((e) => e as Map<String, dynamic>)
                 .map((e) {
-              return e['gallery'] is Gallery
-                  ? e['gallery'] as Gallery
-                  : Gallery.fromJson(e['gallery'] as String);
-            }).toList();
+                  return e['gallery'] is Gallery
+                      ? e['gallery'] as Gallery
+                      : Gallery.fromJson(e['gallery'] as String);
+                })
+                .toList();
             runningTask = (result['runningTask'] as List<dynamic>)
                 .map((e) => e as Map<String, dynamic>)
                 .map((e) {
-              e['gallery'] = e['gallery'] is Gallery
-                  ? e['gallery'] as Gallery
-                  : Gallery.fromJson(e['gallery'] as String);
-              return e;
-            }).toList();
+                  e['gallery'] = e['gallery'] is Gallery
+                      ? e['gallery'] as Gallery
+                      : Gallery.fromJson(e['gallery'] as String);
+                  return e;
+                })
+                .toList();
           }
         case 'add':
           {
@@ -101,8 +109,9 @@ class _GalleryTaskView extends State<GalleryTaskView> {
             var target = result['target'];
             if (target == 'pending') {
               pendingTask.add(gallery);
-            } else if (runningTask
-                .every((g) => g['gallery'].id != gallery.id)) {
+            } else if (runningTask.every(
+              (g) => g['gallery'].id != gallery.id,
+            )) {
               result['gallery'] = gallery;
               runningTask.add(result);
             }
@@ -114,23 +123,27 @@ class _GalleryTaskView extends State<GalleryTaskView> {
             if (target == 'pending') {
               pendingTask.removeWhere((g) => g.id == id);
             } else {
-              runningTask.removeWhere((e) =>
-                  id ==
-                  (e['gallery'] is Gallery
-                          ? e['gallery'] as Gallery
-                          : Gallery.fromJson(e['gallery'] as String))
-                      .id);
+              runningTask.removeWhere(
+                (e) =>
+                    id ==
+                    (e['gallery'] is Gallery
+                            ? e['gallery'] as Gallery
+                            : Gallery.fromJson(e['gallery'] as String))
+                        .id,
+              );
             }
           }
         case 'update':
           {
             var id = result['id'];
-            var g = runningTask.map((e) {
-              e['gallery'] = e['gallery'] is Gallery
-                  ? e['gallery'] as Gallery
-                  : Gallery.fromJson(e['gallery'] as String);
-              return e;
-            }).firstWhereOrNull((g) => id == g['gallery'].id);
+            var g = runningTask
+                .map((e) {
+                  e['gallery'] = e['gallery'] is Gallery
+                      ? e['gallery'] as Gallery
+                      : Gallery.fromJson(e['gallery'] as String);
+                  return e;
+                })
+                .firstWhereOrNull((g) => id == g['gallery'].id);
             g?.addAll(result);
           }
       }
@@ -142,111 +155,152 @@ class _GalleryTaskView extends State<GalleryTaskView> {
         ? item['gallery'] as Gallery
         : Gallery.fromJson(item['gallery'] as String);
     return InkWell(
-        child: Row(
-          key: ValueKey(gallery.id),
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            SizedBox(
-                width: 120,
-                child: ThumbImageView(
-                    CacheImage(
-                        manager: context.getCacheManager(local: true),
-                        image: gallery.files.first,
-                        refererUrl: 'https://hitomi.la${gallery.urlEncode()}',
-                        id: gallery.id.toString()),
-                    aspectRatio: 1)),
-            Expanded(
-                child: Column(children: [
-              Text(gallery.dirName,
-                  maxLines: 2, overflow: TextOverflow.ellipsis),
-              LinearProgressIndicator(value: item['now'] / item['length']),
-              Row(mainAxisAlignment: MainAxisAlignment.end, children: [
-                Text('${(item['speed'] as double).toStringAsFixed(2)}KB'),
-                const SizedBox(width: 8),
-                Text('${item['current'] + 1}/${gallery.files.length}'),
-                PopupMenuButton<String>(itemBuilder: (context) {
-                  return [
-                    PopupMenuItem(
-                        child: Text(AppLocalizations.of(context)!.cancel),
-                        onTap: () {
-                          controller.cancelTask(gallery.id);
-                        }),
-                    PopupMenuItem(
-                        child: Text(AppLocalizations.of(context)!.delete),
-                        onTap: () {
-                          controller.deleteTask(gallery.id);
-                        }),
-                  ];
-                })
-              ])
-            ]))
-          ],
-        ),
-        onTap: () => Navigator.of(context).pushNamed(
-            GalleryDetailsView.routeName,
-            arguments: {'gallery': gallery, 'local': false}));
+      child: Row(
+        key: ValueKey(gallery.id),
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(
+            width: 120,
+            child: ThumbImageView(
+              CacheImage(
+                manager: context.getCacheManager(local: true),
+                image: gallery.files.first,
+                refererUrl: 'https://hitomi.la${gallery.urlEncode()}',
+                id: gallery.id.toString(),
+              ),
+              aspectRatio: 1,
+            ),
+          ),
+          Expanded(
+            child: Column(
+              children: [
+                Text(
+                  gallery.dirName,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                LinearProgressIndicator(value: item['now'] / item['length']),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    Text('${(item['speed'] as double).toStringAsFixed(2)}KB'),
+                    const SizedBox(width: 8),
+                    Text('${item['current'] + 1}/${gallery.files.length}'),
+                    PopupMenuButton<String>(
+                      itemBuilder: (context) {
+                        return [
+                          PopupMenuItem(
+                            child: Text(AppLocalizations.of(context)!.cancel),
+                            onTap: () {
+                              controller.cancelTask(gallery.id);
+                            },
+                          ),
+                          PopupMenuItem(
+                            child: Text(AppLocalizations.of(context)!.delete),
+                            onTap: () {
+                              controller.deleteTask(gallery.id);
+                            },
+                          ),
+                        ];
+                      },
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+      onTap: () => Navigator.of(context).pushNamed(
+        GalleryDetailsView.routeName,
+        arguments: {'gallery': gallery, 'local': false},
+      ),
+    );
   }
 
   Widget _taskContent() {
-    return CustomScrollView(slivers: [
-      SliverList.list(children: [
-        Padding(
-            padding: const EdgeInsets.only(left: 8, right: 8),
-            child: Row(children: [
-              const Expanded(child: Divider()),
-              Text(AppLocalizations.of(context)!.runningTask),
-              const Expanded(child: Divider()),
-            ]))
-      ]),
-      SliverGrid.builder(
+    return CustomScrollView(
+      slivers: [
+        SliverList.list(
+          children: [
+            Padding(
+              padding: const EdgeInsets.only(left: 8, right: 8),
+              child: Row(
+                children: [
+                  const Expanded(child: Divider()),
+                  Text(AppLocalizations.of(context)!.runningTask),
+                  const Expanded(child: Divider()),
+                ],
+              ),
+            ),
+          ],
+        ),
+        SliverGrid.builder(
           itemBuilder: (context, index) {
             var item = runningTask[index];
             return _buildRunnintTaskItem(item);
           },
           gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-              maxCrossAxisExtent: 500,
-              mainAxisExtent: 100,
-              mainAxisSpacing: 8,
-              crossAxisSpacing: 8),
-          itemCount: runningTask.length),
-      SliverList.list(children: [
-        Padding(
-            padding: const EdgeInsets.only(left: 8, right: 8),
-            child: Row(children: [
-              const Expanded(child: Divider()),
-              Text(
-                  '${AppLocalizations.of(context)!.pendingTask}-${pendingTask.length}-'),
-              const Expanded(child: Divider()),
-            ]))
-      ]),
-      SliverGrid.builder(
+            maxCrossAxisExtent: 500,
+            mainAxisExtent: 100,
+            mainAxisSpacing: 8,
+            crossAxisSpacing: 8,
+          ),
+          itemCount: runningTask.length,
+        ),
+        SliverList.list(
+          children: [
+            Padding(
+              padding: const EdgeInsets.only(left: 8, right: 8),
+              child: Row(
+                children: [
+                  const Expanded(child: Divider()),
+                  Text(
+                    '${AppLocalizations.of(context)!.pendingTask}-${pendingTask.length}-',
+                  ),
+                  const Expanded(child: Divider()),
+                ],
+              ),
+            ),
+          ],
+        ),
+        SliverGrid.builder(
           itemBuilder: (context, index) {
             var gallery = pendingTask[index];
             return GalleryInfo(
-                key: ValueKey(gallery.id),
-                gallery: gallery,
-                click: (g) => Navigator.of(context).pushNamed(
-                    GalleryDetailsView.routeName,
-                    arguments: {'gallery': gallery, 'local': false}),
-                manager: context.getCacheManager(),
-                menus: PopupMenuButton<String>(itemBuilder: (context) {
+              key: ValueKey(gallery.id),
+              gallery: gallery,
+              click: (g) => Navigator.of(context).pushNamed(
+                GalleryDetailsView.routeName,
+                arguments: {'gallery': gallery, 'local': false},
+              ),
+              manager: context.getCacheManager(),
+              menus: PopupMenuButton<String>(
+                itemBuilder: (context) {
                   return [
                     PopupMenuItem(
-                        child: Text(AppLocalizations.of(context)!.delete),
-                        onTap: () => context.deleteTask(gallery.id)),
+                      child: Text(AppLocalizations.of(context)!.delete),
+                      onTap: () => context.deleteTask(gallery.id),
+                    ),
                     PopupMenuItem(
-                        child: Text(AppLocalizations.of(context)!.download),
-                        onTap: () => context.addTask(gallery.id)),
+                      child: Text(AppLocalizations.of(context)!.download),
+                      onTap: () => context.addTask(gallery.id),
+                    ),
                   ];
-                }));
+                },
+              ),
+            );
           },
           gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-              maxCrossAxisExtent: 550,
-              mainAxisExtent: 180,
-              mainAxisSpacing: 16,
-              crossAxisSpacing: 8),
-          itemCount: pendingTask.length),
-    ]);
+            maxCrossAxisExtent: 550,
+            mainAxisExtent: 180,
+            mainAxisSpacing: 16,
+            crossAxisSpacing: 8,
+          ),
+          itemCount: pendingTask.length,
+        ),
+      ],
+    );
   }
 
   @override

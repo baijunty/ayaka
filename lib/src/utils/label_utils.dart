@@ -6,7 +6,9 @@ MapEntry<String, Color> mapGalleryType(BuildContext context, String type) {
     case 'doujinshi':
       {
         return MapEntry(
-            AppLocalizations.of(context)!.doujinshi, Colors.pinkAccent);
+          AppLocalizations.of(context)!.doujinshi,
+          Colors.pinkAccent,
+        );
       }
     case 'manga':
       {
@@ -15,7 +17,9 @@ MapEntry<String, Color> mapGalleryType(BuildContext context, String type) {
     case 'artistcg':
       {
         return MapEntry(
-            AppLocalizations.of(context)!.artistcg, Colors.blueAccent);
+          AppLocalizations.of(context)!.artistcg,
+          Colors.blueAccent,
+        );
       }
     case 'gamecg':
       {
@@ -24,12 +28,16 @@ MapEntry<String, Color> mapGalleryType(BuildContext context, String type) {
     case 'imageset':
       {
         return MapEntry(
-            AppLocalizations.of(context)!.imageset, Colors.orangeAccent);
+          AppLocalizations.of(context)!.imageset,
+          Colors.orangeAccent,
+        );
       }
     case 'anime':
       {
         return MapEntry(
-            AppLocalizations.of(context)!.anime, Colors.greenAccent);
+          AppLocalizations.of(context)!.anime,
+          Colors.greenAccent,
+        );
       }
     default:
       return MapEntry('', Colors.transparent);

@@ -20,50 +20,52 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     final settingsController = context.watch<SettingsController>();
     return FutureBuilder(
-        future: settingsController.loadConfig(),
-        builder: (context, snap) {
-          debugPrint('load result error ${snap.error}');
-          if (snap.hasData) {
-            return ListenableBuilder(
-              listenable: settingsController,
-              builder: (BuildContext context, Widget? child) {
-                return MaterialApp(
-                  restorationScopeId: 'app',
-                  localizationsDelegates: const [
-                    AppLocalizations.delegate,
-                    GlobalMaterialLocalizations.delegate,
-                    GlobalWidgetsLocalizations.delegate,
-                    GlobalCupertinoLocalizations.delegate,
-                  ],
-                  debugShowCheckedModeBanner: false,
-                  supportedLocales: const [
-                    Locale('zh', 'CN'),
-                  ],
-                  onGenerateTitle: (BuildContext context) =>
-                      AppLocalizations.of(context)!.appTitle,
-                  theme: ThemeData(
-                      useMaterial3: true,
-                      colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue),
-                      pageTransitionsTheme: const PageTransitionsTheme(),
-                      elevatedButtonTheme: const ElevatedButtonThemeData()),
-                  darkTheme: ThemeData.dark(useMaterial3: true),
-                  themeMode: settingsController.themeMode,
-                  onGenerateRoute: (RouteSettings routeSettings) {
-                    return MaterialPageRoute<void>(
-                      settings: routeSettings,
-                      builder: (BuildContext context) {
-                        return _buildRoute(
-                            routeSettings.name ?? '/', routeSettings.arguments);
-                      },
-                    );
-                  },
-                );
-              },
-            );
-          } else {
-            return const Center(child: CircularProgressIndicator());
-          }
-        });
+      future: settingsController.loadConfig(),
+      builder: (context, snap) {
+        debugPrint('load result error ${snap.error}');
+        if (snap.hasData) {
+          return ListenableBuilder(
+            listenable: settingsController,
+            builder: (BuildContext context, Widget? child) {
+              return MaterialApp(
+                restorationScopeId: 'app',
+                localizationsDelegates: const [
+                  AppLocalizations.delegate,
+                  GlobalMaterialLocalizations.delegate,
+                  GlobalWidgetsLocalizations.delegate,
+                  GlobalCupertinoLocalizations.delegate,
+                ],
+                debugShowCheckedModeBanner: false,
+                supportedLocales: const [Locale('zh', 'CN')],
+                onGenerateTitle: (BuildContext context) =>
+                    AppLocalizations.of(context)!.appTitle,
+                theme: ThemeData(
+                  useMaterial3: true,
+                  colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue),
+                  pageTransitionsTheme: const PageTransitionsTheme(),
+                  elevatedButtonTheme: const ElevatedButtonThemeData(),
+                ),
+                darkTheme: ThemeData.dark(useMaterial3: true),
+                themeMode: settingsController.themeMode,
+                onGenerateRoute: (RouteSettings routeSettings) {
+                  return MaterialPageRoute<void>(
+                    settings: routeSettings,
+                    builder: (BuildContext context) {
+                      return _buildRoute(
+                        routeSettings.name ?? '/',
+                        routeSettings.arguments,
+                      );
+                    },
+                  );
+                },
+              );
+            },
+          );
+        } else {
+          return const Center(child: CircularProgressIndicator());
+        }
+      },
+    );
   }
 
   Widget _buildRoute(String route, Object? args) {

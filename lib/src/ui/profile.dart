@@ -34,23 +34,39 @@ class _UserProfileView extends State<UserProfileView>
     super.didChangeDependencies();
     var controller = context.read<SettingsController>();
     api = controller.hitomi(
-        type: controller.remoteLib ? HitomiType.PROXY : HitomiType.Local);
+      type: controller.remoteLib ? HitomiType.PROXY : HitomiType.Local,
+    );
     if (history.length + likes.length + todoCollection.length == 0) {
       var types = [readHistoryMask, bookMarkMask, lateReadMark];
       controller.manager.helper
           .selectSqlMultiResultAsync(
-              'select id from UserLog where type=? ORDER by date desc limit 10 ',
-              types.map((e) => [e]).toList())
+            'select id from UserLog where type=? ORDER by date desc limit 10 ',
+            types.map((e) => [e]).toList(),
+          )
           .then((value) {
-            var r = value.values.map((e) => e.fold(<int>[],
-                (previousValue, element) => previousValue..add(element['id'])));
+            var r = value.values.map(
+              (e) => e.fold(
+                <int>[],
+                (previousValue, element) => previousValue..add(element['id']),
+              ),
+            );
             return r.toList();
           })
-          .then((value) => Future.wait(value.map((e) => e
-              .asStream()
-              .asyncMap((event) => api.fetchGallery(event, usePrefence: false))
-              .fold(
-                  <Gallery>[], (previous, element) => previous..add(element)))))
+          .then(
+            (value) => Future.wait(
+              value.map(
+                (e) => e
+                    .asStream()
+                    .asyncMap(
+                      (event) => api.fetchGallery(event, usePrefence: false),
+                    )
+                    .fold(
+                      <Gallery>[],
+                      (previous, element) => previous..add(element),
+                    ),
+              ),
+            ),
+          )
           .then((value) {
             if (mounted) {
               setState(() {
@@ -68,69 +84,89 @@ class _UserProfileView extends State<UserProfileView>
       title: Text(title, style: Theme.of(context).textTheme.titleLarge),
       tileColor: Theme.of(context).colorScheme.primaryContainer,
       trailing: const Icon(Icons.arrow_forward),
-      onTap: () => Navigator.of(context).push(MaterialPageRoute(
-          builder: (context) => UserProfileLogView(type: type, title: title))),
+      onTap: () => Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (context) => UserProfileLogView(type: type, title: title),
+        ),
+      ),
     );
   }
 
   Widget _galleryList(List<Gallery> list) {
     return SizedBox(
-        height: 170,
-        child: ListView.separated(
-            itemBuilder: (context, index) {
-              var gallery = list[index];
-              return InkWell(
-                  child: SizedBox(
-                      width: 120,
-                      child: Column(children: [
-                        ThumbImageView(
-                            CacheImage(
-                                manager: context.getCacheManager(local: true),
-                                image: gallery.files.first,
-                                refererUrl:
-                                    'https://hitomi.la${gallery.urlEncode()}',
-                                id: gallery.id.toString()),
-                            aspectRatio: 1),
-                        Text(gallery.name, maxLines: 2, softWrap: true)
-                      ])),
-                  onTap: () => Navigator.of(context).pushNamed(
-                      GalleryDetailsView.routeName,
-                      arguments: {'gallery': gallery, 'local': false}));
-            },
-            separatorBuilder: (context, index) =>
-                const SizedBox(width: 8, child: Divider()),
-            itemCount: list.length,
-            scrollDirection: Axis.horizontal));
+      height: 170,
+      child: ListView.separated(
+        itemBuilder: (context, index) {
+          var gallery = list[index];
+          return InkWell(
+            child: SizedBox(
+              width: 120,
+              child: Column(
+                children: [
+                  ThumbImageView(
+                    CacheImage(
+                      manager: context.getCacheManager(local: true),
+                      image: gallery.files.first,
+                      refererUrl: 'https://hitomi.la${gallery.urlEncode()}',
+                      id: gallery.id.toString(),
+                    ),
+                    aspectRatio: 1,
+                  ),
+                  Text(gallery.name, maxLines: 2, softWrap: true),
+                ],
+              ),
+            ),
+            onTap: () => Navigator.of(context).pushNamed(
+              GalleryDetailsView.routeName,
+              arguments: {'gallery': gallery, 'local': false},
+            ),
+          );
+        },
+        separatorBuilder: (context, index) =>
+            const SizedBox(width: 8, child: Divider()),
+        itemCount: list.length,
+        scrollDirection: Axis.horizontal,
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     super.build(context);
     return Scaffold(
-        body: SafeArea(
-            child: SingleChildScrollView(
-                child: Column(
-      mainAxisAlignment: MainAxisAlignment.start,
-      crossAxisAlignment: CrossAxisAlignment.start,
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        const SizedBox(height: 8),
-        _itemTitle(AppLocalizations.of(context)!.readHistory, readHistoryMask),
-        _galleryList(history),
-        _itemTitle(AppLocalizations.of(context)!.collect, bookMarkMask),
-        _galleryList(likes),
-        _itemTitle(AppLocalizations.of(context)!.readLater, lateReadMark),
-        _galleryList(todoCollection),
-        ListTile(
-          title: Text(AppLocalizations.of(context)!.adImage,
-              style: Theme.of(context).textTheme.titleLarge),
-          tileColor: Theme.of(context).colorScheme.primaryContainer,
-          trailing: const Icon(Icons.arrow_forward),
-          onTap: () => Navigator.of(context).push(
-              MaterialPageRoute(builder: (context) => const AdImageView())),
+      body: SafeArea(
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const SizedBox(height: 8),
+              _itemTitle(
+                AppLocalizations.of(context)!.readHistory,
+                readHistoryMask,
+              ),
+              _galleryList(history),
+              _itemTitle(AppLocalizations.of(context)!.collect, bookMarkMask),
+              _galleryList(likes),
+              _itemTitle(AppLocalizations.of(context)!.readLater, lateReadMark),
+              _galleryList(todoCollection),
+              ListTile(
+                title: Text(
+                  AppLocalizations.of(context)!.adImage,
+                  style: Theme.of(context).textTheme.titleLarge,
+                ),
+                tileColor: Theme.of(context).colorScheme.primaryContainer,
+                trailing: const Icon(Icons.arrow_forward),
+                onTap: () => Navigator.of(context).push(
+                  MaterialPageRoute(builder: (context) => const AdImageView()),
+                ),
+              ),
+            ],
+          ),
         ),
-      ],
-    ))));
+      ),
+    );
   }
 
   @override
@@ -164,28 +200,37 @@ class _AdImageView extends State<AdImageView> {
         controller.manager.config.remoteHttp.isNotEmpty) {
       var size = adImages.length;
       await controller.manager.dio
-          .post('${controller.config.remoteHttp}/sync',
-              options: Options(headers: {
+          .post(
+            '${controller.config.remoteHttp}/sync',
+            options: Options(
+              headers: {
                 'Content-Type': 'application/json',
-                'x-real-ip': await localIp()
-              }, responseType: ResponseType.json),
-              data: {
-                'auth': controller.config.auth,
-                'mark': admarkMask,
-                'returnValue': true,
-                'content': adImages.toList()
-              })
+                'x-real-ip': await localIp(),
+              },
+              responseType: ResponseType.json,
+            ),
+            data: {
+              'auth': controller.config.auth,
+              'mark': admarkMask,
+              'returnValue': true,
+              'content': adImages.toList(),
+            },
+          )
           .then((data) => data.data! as Map<String, dynamic>)
           .then((map) => map['content'] as List)
           .then((list) => list.map((str) => str as String))
-          .then((d) => setState(() {
-                var set = d.toSet();
-                set.addAll(controller.manager.adImage);
-                adImages.addAll(set);
-                debugPrint('ad image length  ${adImages.length}');
-              }))
-          .catchError((e) => debugPrint('sync ad image error $e'),
-              test: (error) => true);
+          .then(
+            (d) => setState(() {
+              var set = d.toSet();
+              set.addAll(controller.manager.adImage);
+              adImages.addAll(set);
+              debugPrint('ad image length  ${adImages.length}');
+            }),
+          )
+          .catchError(
+            (e) => debugPrint('sync ad image error $e'),
+            test: (error) => true,
+          );
       if (mounted && size != adImages.length) {
         await context.read<GalleryManager>().addAdImageHash(adImages.toList());
       }
@@ -197,47 +242,61 @@ class _AdImageView extends State<AdImageView> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-        appBar: AppBar(
-            title: Text(AppLocalizations.of(context)!.adImage),
-            actions: [
-              IconButton(
-                  onPressed: () async =>
-                      await context.progressDialogAction(syncAdImage()),
-                  icon: const Icon(Icons.sync))
-            ]),
-        body: SafeArea(
-            child: Center(
-                child: MaxWidthBox(
-                    maxWidth: 1280,
-                    child: GridView.builder(
-                        gridDelegate:
-                            const SliverGridDelegateWithMaxCrossAxisExtent(
-                                maxCrossAxisExtent: 320),
-                        itemCount: adImages.length,
-                        itemBuilder: (context, index) {
-                          var image = adImages[index];
-                          return GestureDetector(
-                            child: ThumbImageView(CacheImage(
-                                manager: context.getCacheManager(),
-                                image: img.Image(
-                                    hash: image,
-                                    hasavif: 0,
-                                    width: 0,
-                                    height: 0,
-                                    name: 'test.jpg'),
-                                refererUrl: 'https://hitomi.la',
-                                id: '1')),
-                            onLongPress: () => context.showSnackBar(image),
-                          );
-                        })))));
+      appBar: AppBar(
+        title: Text(AppLocalizations.of(context)!.adImage),
+        actions: [
+          IconButton(
+            onPressed: () async =>
+                await context.progressDialogAction(syncAdImage()),
+            icon: const Icon(Icons.sync),
+          ),
+        ],
+      ),
+      body: SafeArea(
+        child: Center(
+          child: MaxWidthBox(
+            maxWidth: 1280,
+            child: GridView.builder(
+              gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
+                maxCrossAxisExtent: 320,
+              ),
+              itemCount: adImages.length,
+              itemBuilder: (context, index) {
+                var image = adImages[index];
+                return GestureDetector(
+                  child: ThumbImageView(
+                    CacheImage(
+                      manager: context.getCacheManager(),
+                      image: img.Image(
+                        hash: image,
+                        hasavif: 0,
+                        width: 0,
+                        height: 0,
+                        name: 'test.jpg',
+                      ),
+                      refererUrl: 'https://hitomi.la',
+                      id: '1',
+                    ),
+                  ),
+                  onLongPress: () => context.showSnackBar(image),
+                );
+              },
+            ),
+          ),
+        ),
+      ),
+    );
   }
 }
 
 class UserProfileLogView extends StatefulWidget {
   final int type;
   final String title;
-  const UserProfileLogView(
-      {super.key, required this.type, required this.title});
+  const UserProfileLogView({
+    super.key,
+    required this.type,
+    required this.title,
+  });
 
   @override
   State<StatefulWidget> createState() {
@@ -259,56 +318,72 @@ class _UserProfileLogView extends State<UserProfileLogView> {
     var sqlite = context.getSqliteHelper();
     sqlite
         .querySql(
-            'select COUNT(1) OVER() AS total_count, id from UserLog where type=? ORDER by date desc limit 25 offset ?',
-            [
-              widget.type,
-              page * 25
-            ])
-        .then((value) => value.map((element) {
-              totalCount = element['total_count'] as int;
-              return element['id'] as int;
-            }))
-        .then((value) => value
-            .asStream()
-            .asyncMap((event) => api
-                .fetchGallery(event, usePrefence: false)
-                .then((g) => g.id == event ? g : g.copyWith(id: event)))
-            .fold(<Gallery>[], (previous, element) => data..add(element)))
+          'select COUNT(1) OVER() AS total_count, id from UserLog where type=? ORDER by date desc limit 25 offset ?',
+          [widget.type, page * 25],
+        )
+        .then(
+          (value) => value.map((element) {
+            totalCount = element['total_count'] as int;
+            return element['id'] as int;
+          }),
+        )
+        .then(
+          (value) => value
+              .asStream()
+              .asyncMap(
+                (event) => api
+                    .fetchGallery(event, usePrefence: false)
+                    .then((g) => g.id == event ? g : g.copyWith(id: event)),
+              )
+              .fold(<Gallery>[], (previous, element) => data..add(element)),
+        )
         .then((value) {
           return Future.wait(
-                  value.map((e) => context.readUserDb(e.id, readHistoryMask)))
-              .then((result) => result.foldIndexed(
+                value.map((e) => context.readUserDb(e.id, readHistoryMask)),
+              )
+              .then(
+                (result) => result.foldIndexed(
                   readIndexMap,
                   (index, previous, element) =>
-                      previous..[value[index].id] = element))
+                      previous..[value[index].id] = element,
+                ),
+              )
               .then((map) => value);
         })
-        .then((value) => setState(() {
-              if (value.isNotEmpty) {
-                var insertList = value
-                    .where((element) => data.every((g) => g.id != element.id));
-                data.addAll(insertList);
-                page++;
-              }
-            }));
+        .then(
+          (value) => setState(() {
+            if (value.isNotEmpty) {
+              var insertList = value.where(
+                (element) => data.every((g) => g.id != element.id),
+              );
+              data.addAll(insertList);
+              page++;
+            }
+          }),
+        );
   }
 
   Future<bool> syncDelete(int id) async {
     var controller = context.read<SettingsController>();
     if (controller.manager.config.remoteHttp.isNotEmpty) {
       return controller.manager.dio
-          .post('${controller.config.remoteHttp}/sync',
-              options: Options(headers: {
+          .post(
+            '${controller.config.remoteHttp}/sync',
+            options: Options(
+              headers: {
                 'Content-Type': 'application/json',
-                'x-real-ip': await localIp()
-              }, responseType: ResponseType.json),
-              data: {
-                'auth': controller.config.auth,
-                'mark': widget.type,
-                'content': [
-                  {'id': -id}
-                ]
-              })
+                'x-real-ip': await localIp(),
+              },
+              responseType: ResponseType.json,
+            ),
+            data: {
+              'auth': controller.config.auth,
+              'mark': widget.type,
+              'content': [
+                {'id': -id},
+              ],
+            },
+          )
           .then((data) => data.data! as Map<String, dynamic>)
           .then((map) => map['success'] as bool)
           .catchError((e) => false, test: (error) => true);
@@ -321,39 +396,43 @@ class _UserProfileLogView extends State<UserProfileLogView> {
     super.initState();
     scrollController = ScrollController();
     scrollController.addListener(handleScroll);
-    menusBuilder = (gallery) => PopupMenuButton<String>(itemBuilder: (context) {
-          return [
-            PopupMenuItem(
-                child: Text(AppLocalizations.of(context)!.delete),
-                onTap: () => context
-                    .read<SettingsController>()
-                    .manager
-                    .helper
-                    .delete('UserLog', {'id': gallery.id, 'type': widget.type})
-                    .then((b) => syncDelete(gallery.id))
-                    .then((value) => setState(() {
-                          data.removeWhere(
-                              (element) => element.id == gallery.id);
-                        })))
-          ];
-        });
+    menusBuilder = (gallery) => PopupMenuButton<String>(
+      itemBuilder: (context) {
+        return [
+          PopupMenuItem(
+            child: Text(AppLocalizations.of(context)!.delete),
+            onTap: () => context
+                .read<SettingsController>()
+                .manager
+                .helper
+                .delete('UserLog', {'id': gallery.id, 'type': widget.type})
+                .then((b) => syncDelete(gallery.id))
+                .then(
+                  (value) => setState(() {
+                    data.removeWhere((element) => element.id == gallery.id);
+                  }),
+                ),
+          ),
+        ];
+      },
+    );
   }
 
   void clearData() async {
     await context
         .showConfirmDialog(AppLocalizations.of(context)!.clearDataWarn)
         .then((value) async {
-      if (mounted && value == true) {
-        await context
-            .getSqliteHelper()
-            .delete('UserLog', {'type': widget.type});
-        setState(() {
-          data.clear();
-          page = 0;
-          totalCount = 0;
+          if (mounted && value == true) {
+            await context.getSqliteHelper().delete('UserLog', {
+              'type': widget.type,
+            });
+            setState(() {
+              data.clear();
+              page = 0;
+              totalCount = 0;
+            });
+          }
         });
-      }
-    });
   }
 
   Future<bool> syncData() async {
@@ -361,15 +440,16 @@ class _UserProfileLogView extends State<UserProfileLogView> {
         .read<SettingsController>()
         .syncUserDb(widget.type)
         .then((v) async {
-      data.clear();
-      page = 0;
-      readIndexMap.clear();
-      await fetchDataFromDb();
-      return v;
-    }).catchError((err) {
-      debugPrint('err $err');
-      return false;
-    }, test: (error) => true);
+          data.clear();
+          page = 0;
+          readIndexMap.clear();
+          await fetchDataFromDb();
+          return v;
+        })
+        .catchError((err) {
+          debugPrint('err $err');
+          return false;
+        }, test: (error) => true);
   }
 
   @override
@@ -392,11 +472,14 @@ class _UserProfileLogView extends State<UserProfileLogView> {
     super.didChangeDependencies();
     var controller = context.read<SettingsController>();
     api = controller.hitomi(
-        type: controller.remoteLib ? HitomiType.PROXY : HitomiType.Local);
+      type: controller.remoteLib ? HitomiType.PROXY : HitomiType.Local,
+    );
     click = (g) async {
       var read = await Navigator.pushNamed(
-          context, GalleryDetailsView.routeName,
-          arguments: {'gallery': g, 'local': false});
+        context,
+        GalleryDetailsView.routeName,
+        arguments: {'gallery': g, 'local': false},
+      );
       setState(() {
         readIndexMap[g.id] = read as int?;
       });
@@ -410,42 +493,54 @@ class _UserProfileLogView extends State<UserProfileLogView> {
   Widget build(BuildContext context) {
     var controller = context.read<SettingsController>();
     return Scaffold(
-        appBar: AppBar(
-          title: Text(widget.title),
-          actions: [
-            if (controller.remoteLib)
-              IconButton(
-                  onPressed: () async {
-                    context.progressDialogAction(syncData()
-                        .then((r) => setState(() {
-                              if (mounted) {
-                                if (r) {
-                                  context.showSnackBar(
-                                      AppLocalizations.of(context)!.success);
-                                } else {
-                                  context.showSnackBar(
-                                      AppLocalizations.of(context)!.failed);
-                                }
-                              }
-                            }))
-                        .catchError((e, stack) {
-                      debugPrint('Error: $e with stack trace:  $stack');
-                    }, test: (error) => false));
-                  },
-                  icon: const Icon(Icons.sync)),
-            IconButton(onPressed: clearData, icon: const Icon(Icons.clear))
-          ],
+      appBar: AppBar(
+        title: Text(widget.title),
+        actions: [
+          if (controller.remoteLib)
+            IconButton(
+              onPressed: () async {
+                context.progressDialogAction(
+                  syncData()
+                      .then(
+                        (r) => setState(() {
+                          if (mounted) {
+                            if (r) {
+                              context.showSnackBar(
+                                AppLocalizations.of(context)!.success,
+                              );
+                            } else {
+                              context.showSnackBar(
+                                AppLocalizations.of(context)!.failed,
+                              );
+                            }
+                          }
+                        }),
+                      )
+                      .catchError((e, stack) {
+                        debugPrint('Error: $e with stack trace:  $stack');
+                      }, test: (error) => false),
+                );
+              },
+              icon: const Icon(Icons.sync),
+            ),
+          IconButton(onPressed: clearData, icon: const Icon(Icons.clear)),
+        ],
+      ),
+      body: SafeArea(
+        child: Center(
+          child: MaxWidthBox(
+            maxWidth: 1280,
+            child: GalleryListView(
+              data: data,
+              click: click,
+              manager: context.getCacheManager(local: true),
+              readIndexMap: readIndexMap,
+              scrollController: scrollController,
+              menusBuilder: menusBuilder,
+            ),
+          ),
         ),
-        body: SafeArea(
-            child: Center(
-                child: MaxWidthBox(
-                    maxWidth: 1280,
-                    child: GalleryListView(
-                        data: data,
-                        click: click,
-                        manager: context.getCacheManager(local: true),
-                        readIndexMap: readIndexMap,
-                        scrollController: scrollController,
-                        menusBuilder: menusBuilder)))));
+      ),
+    );
   }
 }

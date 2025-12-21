@@ -31,98 +31,125 @@ class _AyakaHome extends State<AyakaHome> {
     if (portrait) {
       if (kIsWeb) {
         return BottomNavigationBar(
-            items: [
-              BottomNavigationBarItem(
-                  icon: const Icon(Icons.book),
-                  label: AppLocalizations.of(context)!.gallery),
-              BottomNavigationBarItem(
-                  icon: const Icon(Icons.person),
-                  label: AppLocalizations.of(context)!.profile),
-              BottomNavigationBarItem(
-                  icon: const Icon(Icons.settings),
-                  label: AppLocalizations.of(context)!.setting),
-            ],
-            onTap: _handleIndexClick,
-            currentIndex: index,
-            type: BottomNavigationBarType.fixed);
-      }
-      return BottomNavigationBar(
           items: [
             BottomNavigationBarItem(
-                icon: const Icon(Icons.book),
-                label: AppLocalizations.of(context)!.gallery),
+              icon: const Icon(Icons.book),
+              label: AppLocalizations.of(context)!.gallery,
+            ),
             BottomNavigationBarItem(
-                icon: const Icon(Icons.download),
-                label: AppLocalizations.of(context)!.download),
+              icon: const Icon(Icons.person),
+              label: AppLocalizations.of(context)!.profile,
+            ),
             BottomNavigationBarItem(
-                icon: const Icon(Icons.person),
-                label: AppLocalizations.of(context)!.profile),
-            BottomNavigationBarItem(
-                icon: const Icon(Icons.settings),
-                label: AppLocalizations.of(context)!.setting),
+              icon: const Icon(Icons.settings),
+              label: AppLocalizations.of(context)!.setting,
+            ),
           ],
           onTap: _handleIndexClick,
           currentIndex: index,
-          type: BottomNavigationBarType.fixed);
+          type: BottomNavigationBarType.fixed,
+        );
+      }
+      return BottomNavigationBar(
+        items: [
+          BottomNavigationBarItem(
+            icon: const Icon(Icons.book),
+            label: AppLocalizations.of(context)!.gallery,
+          ),
+          BottomNavigationBarItem(
+            icon: const Icon(Icons.download),
+            label: AppLocalizations.of(context)!.download,
+          ),
+          BottomNavigationBarItem(
+            icon: const Icon(Icons.person),
+            label: AppLocalizations.of(context)!.profile,
+          ),
+          BottomNavigationBarItem(
+            icon: const Icon(Icons.settings),
+            label: AppLocalizations.of(context)!.setting,
+          ),
+        ],
+        onTap: _handleIndexClick,
+        currentIndex: index,
+        type: BottomNavigationBarType.fixed,
+      );
     } else {
       if (kIsWeb) {
         return NavigationRail(
-            destinations: [
-              NavigationRailDestination(
-                  icon: const Icon(Icons.book),
-                  label: Text(AppLocalizations.of(context)!.gallery)),
-              NavigationRailDestination(
-                  icon: const Icon(Icons.person),
-                  label: Text(AppLocalizations.of(context)!.profile)),
-              NavigationRailDestination(
-                  icon: const Icon(Icons.settings),
-                  label: Text(AppLocalizations.of(context)!.setting))
-            ],
-            selectedIndex: index,
-            onDestinationSelected: _handleIndexClick,
-            labelType: NavigationRailLabelType.selected);
-      }
-      return NavigationRail(
           destinations: [
             NavigationRailDestination(
-                icon: const Icon(Icons.book),
-                label: Text(AppLocalizations.of(context)!.gallery)),
+              icon: const Icon(Icons.book),
+              label: Text(AppLocalizations.of(context)!.gallery),
+            ),
             NavigationRailDestination(
-                icon: const Icon(Icons.download),
-                label: Text(AppLocalizations.of(context)!.download)),
+              icon: const Icon(Icons.person),
+              label: Text(AppLocalizations.of(context)!.profile),
+            ),
             NavigationRailDestination(
-                icon: const Icon(Icons.person),
-                label: Text(AppLocalizations.of(context)!.profile)),
-            NavigationRailDestination(
-                icon: const Icon(Icons.settings),
-                label: Text(AppLocalizations.of(context)!.setting)),
+              icon: const Icon(Icons.settings),
+              label: Text(AppLocalizations.of(context)!.setting),
+            ),
           ],
           selectedIndex: index,
           onDestinationSelected: _handleIndexClick,
-          labelType: NavigationRailLabelType.selected);
+          labelType: NavigationRailLabelType.selected,
+        );
+      }
+      return NavigationRail(
+        destinations: [
+          NavigationRailDestination(
+            icon: const Icon(Icons.book),
+            label: Text(AppLocalizations.of(context)!.gallery),
+          ),
+          NavigationRailDestination(
+            icon: const Icon(Icons.download),
+            label: Text(AppLocalizations.of(context)!.download),
+          ),
+          NavigationRailDestination(
+            icon: const Icon(Icons.person),
+            label: Text(AppLocalizations.of(context)!.profile),
+          ),
+          NavigationRailDestination(
+            icon: const Icon(Icons.settings),
+            label: Text(AppLocalizations.of(context)!.setting),
+          ),
+        ],
+        selectedIndex: index,
+        onDestinationSelected: _handleIndexClick,
+        labelType: NavigationRailLabelType.selected,
+      );
     }
   }
 
   Widget currentView() {
     if (kIsWeb) {
       return IndexedStack(
-          index: index,
-          children: [GalleryTabView(), UserProfileView(), SettingsView()]);
+        index: index,
+        children: [GalleryTabView(), UserProfileView(), SettingsView()],
+      );
     }
     Widget child;
     switch (index) {
       case 1:
         child = const IndexedStack(
-            index: 1, children: [GalleryTabView(), GalleryTaskView()]);
+          index: 1,
+          children: [GalleryTabView(), GalleryTaskView()],
+        );
       case 2:
         child = const IndexedStack(
-            index: 1, children: [GalleryTabView(), UserProfileView()]);
+          index: 1,
+          children: [GalleryTabView(), UserProfileView()],
+        );
       case 3:
         child = const IndexedStack(
-            index: 1, children: [GalleryTabView(), SettingsView()]);
+          index: 1,
+          children: [GalleryTabView(), SettingsView()],
+        );
       default:
         child = const IndexedStack(
-            index: 0, children: [GalleryTabView(), SettingsView()]);
+          index: 0,
+          children: [GalleryTabView(), SettingsView()],
+        );
     }
     return child;
   }
@@ -131,38 +158,45 @@ class _AyakaHome extends State<AyakaHome> {
   Widget build(BuildContext context) {
     var child = currentView();
     return PopScope(
-        canPop: exitApp,
-        onPopInvokedWithResult: (didPop, _) {
-          if (!exitApp) {
-            setState(() async {
-              context.showSnackBar(AppLocalizations.of(context)!.exitConfirm);
-              exitApp = true;
-              await Future.delayed(
-                  const Duration(seconds: 2),
-                  () => setState(() {
-                        exitApp = false;
-                      }));
-            });
-          } else {
-            SystemChannels.platform.invokeMethod('SystemNavigator.pop');
-          }
-        },
-        child: Scaffold(
-          body: SafeArea(
-              child: Center(
-                  child: MaxWidthBox(
-                      maxWidth: 1280,
-                      child: switch (context.currentOrientation()) {
-                        Orientation.portrait => child,
-                        _ => Row(children: [
-                            navigationBar(false),
-                            Expanded(child: child)
-                          ])
-                      }))),
-          bottomNavigationBar:
-              context.currentOrientation() == Orientation.portrait
-                  ? navigationBar(true)
-                  : null,
-        ));
+      canPop: exitApp,
+      onPopInvokedWithResult: (didPop, _) {
+        if (!exitApp) {
+          setState(() async {
+            context.showSnackBar(AppLocalizations.of(context)!.exitConfirm);
+            exitApp = true;
+            await Future.delayed(
+              const Duration(seconds: 2),
+              () => setState(() {
+                exitApp = false;
+              }),
+            );
+          });
+        } else {
+          SystemChannels.platform.invokeMethod('SystemNavigator.pop');
+        }
+      },
+      child: Scaffold(
+        body: SafeArea(
+          child: Center(
+            child: MaxWidthBox(
+              maxWidth: 1280,
+              child: switch (context.currentOrientation()) {
+                Orientation.portrait => child,
+                _ => Row(
+                  children: [
+                    navigationBar(false),
+                    Expanded(child: child),
+                  ],
+                ),
+              },
+            ),
+          ),
+        ),
+        bottomNavigationBar:
+            context.currentOrientation() == Orientation.portrait
+            ? navigationBar(true)
+            : null,
+      ),
+    );
   }
 }

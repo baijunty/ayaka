@@ -13,9 +13,15 @@ void main() async {
   // Run the app and pass in the SettingsController. The app listens to the
   // SettingsController for changes, then passes it further down to the
   // SettingsView.
-  runApp(MultiProvider(providers: [
-    ChangeNotifierProvider(create: (_) => settingsController),
-    ChangeNotifierProvider(
-        create: (_) => GalleryManager(controller: settingsController))
-  ], child: const MyApp()));
+  runApp(
+    MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (_) => settingsController),
+        ChangeNotifierProvider(
+          create: (_) => GalleryManager(controller: settingsController),
+        ),
+      ],
+      child: const MyApp(),
+    ),
+  );
 }

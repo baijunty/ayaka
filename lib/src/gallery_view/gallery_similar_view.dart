@@ -31,17 +31,19 @@ class _GallerySimilaerView extends State<GallerySimilaerView> {
     super.initState();
     click = (g) async {
       var read = await Navigator.pushNamed(
-          context, GalleryDetailsView.routeName,
-          arguments: {'gallery': g, 'local': false});
+        context,
+        GalleryDetailsView.routeName,
+        arguments: {'gallery': g, 'local': false},
+      );
       if (mounted) {
         (read is int
                 ? Future.value(read)
                 : context.readUserDb(g.id, readHistoryMask))
             .then((value) {
-          setState(() {
-            readIndexMap[g.id] = value;
-          });
-        });
+              setState(() {
+                readIndexMap[g.id] = value;
+              });
+            });
       }
     };
   }
@@ -58,23 +60,30 @@ class _GallerySimilaerView extends State<GallerySimilaerView> {
           .then((result) {
             var value = result.data;
             return Future.wait(
-                    value.map((e) => context.readUserDb(e.id, readHistoryMask)))
-                .then((result) => result.foldIndexed(
+                  value.map((e) => context.readUserDb(e.id, readHistoryMask)),
+                )
+                .then(
+                  (result) => result.foldIndexed(
                     readIndexMap,
                     (index, previous, element) =>
-                        previous..[value[index].id] = element))
+                        previous..[value[index].id] = element,
+                  ),
+                )
                 .then((map) => value);
           })
-          .then((value) => setState(() {
-                netLoading = false;
-                data = value;
-              }))
+          .then(
+            (value) => setState(() {
+              netLoading = false;
+              data = value;
+            }),
+          )
           .catchError((e) {
             if (mounted) {
               setState(() {
                 netLoading = false;
                 context.showSnackBar(
-                    '${AppLocalizations.of(context)!.failed}: $e');
+                  '${AppLocalizations.of(context)!.failed}: $e',
+                );
               });
             }
           });
@@ -90,38 +99,39 @@ class _GallerySimilaerView extends State<GallerySimilaerView> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-        appBar: AppBar(
-          leading: const BackButton(),
+      appBar: AppBar(leading: const BackButton()),
+      body: Center(
+        child: MaxWidthBox(
+          maxWidth: 1200,
+          child: netLoading
+              ? Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const CircularProgressIndicator(),
+                    Text(AppLocalizations.of(context)!.loading),
+                  ],
+                )
+              : data.isEmpty
+              ? Center(child: Text(AppLocalizations.of(context)!.emptyContent))
+              : GalleryListView(
+                  data: data,
+                  onRefresh: null,
+                  click: click,
+                  manager: context.getCacheManager(),
+                  readIndexMap: readIndexMap,
+                  menusBuilder: (g) => PopupMenuButton<String>(
+                    itemBuilder: (context) {
+                      return [
+                        PopupMenuItem(
+                          child: Text(AppLocalizations.of(context)!.download),
+                          onTap: () => context.addTask(g.id),
+                        ),
+                      ];
+                    },
+                  ),
+                ),
         ),
-        body: Center(
-            child: MaxWidthBox(
-                maxWidth: 1200,
-                child: netLoading
-                    ? Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                            const CircularProgressIndicator(),
-                            Text(AppLocalizations.of(context)!.loading)
-                          ])
-                    : data.isEmpty
-                        ? Center(
-                            child: Text(
-                                AppLocalizations.of(context)!.emptyContent))
-                        : GalleryListView(
-                            data: data,
-                            onRefresh: null,
-                            click: click,
-                            manager: context.getCacheManager(),
-                            readIndexMap: readIndexMap,
-                            menusBuilder: (g) =>
-                                PopupMenuButton<String>(itemBuilder: (context) {
-                                  return [
-                                    PopupMenuItem(
-                                        child: Text(
-                                            AppLocalizations.of(context)!
-                                                .download),
-                                        onTap: () => context.addTask(g.id)),
-                                  ];
-                                })))));
+      ),
+    );
   }
 }

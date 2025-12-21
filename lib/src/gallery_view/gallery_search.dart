@@ -53,9 +53,14 @@ class _GallerySearch extends State<GallerySearch> {
           if (lastQuery != text) {
             return [];
           }
-          lastResult = value.map((e) => _buildListTile(e, onTap: () {
+          lastResult = value.map(
+            (e) => _buildListTile(
+              e,
+              onTap: () {
                 handleSelection(e, controller);
-              }));
+              },
+            ),
+          );
           return lastResult;
         });
       } catch (e) {
@@ -76,14 +81,22 @@ class _GallerySearch extends State<GallerySearch> {
 
   void textChange() {
     var word = controller.text.characters.lastOrNull == ','
-        ? controller.text.split(',').lastWhereOrNull((element) =>
-            element.isNotEmpty &&
-            !element.contains(':') &&
-            _selected.every((elem) => elem['name'] != element))
+        ? controller.text
+              .split(',')
+              .lastWhereOrNull(
+                (element) =>
+                    element.isNotEmpty &&
+                    !element.contains(':') &&
+                    _selected.every((elem) => elem['name'] != element),
+              )
         : null;
     if (word != null) {
-      _selected
-          .add({'type': '', 'name': word, 'translate': word, 'include': true});
+      _selected.add({
+        'type': '',
+        'name': word,
+        'translate': word,
+        'include': true,
+      });
     }
     if (controller.text.isEmpty) {
       _selected.clear();
@@ -95,7 +108,8 @@ class _GallerySearch extends State<GallerySearch> {
     super.didChangeDependencies();
     var controller = Provider.of<SettingsController>(context);
     api = context.read<SettingsController>().hitomi(
-        type: controller.remoteLib ? HitomiType.PROXY : HitomiType.Local);
+      type: controller.remoteLib ? HitomiType.PROXY : HitomiType.Local,
+    );
     focusNode.unfocus();
   }
 
@@ -115,26 +129,34 @@ class _GallerySearch extends State<GallerySearch> {
     return '${showType.isNotEmpty ? '$showType:' : ''}$translate';
   }
 
-  Widget _buildListTile(Map<String, dynamic> label,
-      {void Function()? onTap, void Function()? onLongPress}) {
+  Widget _buildListTile(
+    Map<String, dynamic> label, {
+    void Function()? onTap,
+    void Function()? onLongPress,
+  }) {
     var history = _showTranslate(label);
     return ListTile(
-        leading: const Icon(Icons.history),
-        title: Text(history),
-        trailing: const Icon(Icons.arrow_upward),
-        onLongPress: onLongPress,
-        onTap: onTap);
+      leading: const Icon(Icons.history),
+      title: Text(history),
+      trailing: const Icon(Icons.arrow_upward),
+      onLongPress: onLongPress,
+      onTap: onTap,
+    );
   }
 
   Iterable<Widget> getHistoryList(SearchController controller) {
     return _history.map((label) {
-      return _buildListTile(label, onLongPress: () {
-        _history.remove(label);
-        Navigator.of(context).pop();
-        controller.openView();
-      }, onTap: () {
-        handleSelection(label, controller);
-      });
+      return _buildListTile(
+        label,
+        onLongPress: () {
+          _history.remove(label);
+          Navigator.of(context).pop();
+          controller.openView();
+        },
+        onTap: () {
+          handleSelection(label, controller);
+        },
+      );
     });
   }
 
@@ -142,74 +164,84 @@ class _GallerySearch extends State<GallerySearch> {
     return Padding(
       padding: const EdgeInsets.only(left: 8, right: 8),
       child: SearchAnchor(
-          viewHintText: AppLocalizations.of(context)!.searchHint,
-          suggestionsBuilder: (context, controller) {
-            if (controller.text.isEmpty) {
-              if (_history.isNotEmpty) {
-                return getHistoryList(controller);
-              }
-              return <Widget>[
-                Center(
-                  child: Text(AppLocalizations.of(context)!.emptyContent,
-                      style: const TextStyle(color: Colors.grey)),
-                )
-              ];
+        viewHintText: AppLocalizations.of(context)!.searchHint,
+        suggestionsBuilder: (context, controller) {
+          if (controller.text.isEmpty) {
+            if (_history.isNotEmpty) {
+              return getHistoryList(controller);
             }
-            return fetchLabels(controller);
-          },
-          searchController: controller,
-          viewTrailing: [
-            IconButton(
-                onPressed: () {
-                  controller.text = '';
-                  _selected.clear();
-                },
-                icon: const Icon(Icons.close))
-          ],
-          builder: (context, controller) {
-            return SearchBar(
-                controller: controller,
-                onTap: () {
-                  controller.openView();
-                },
-                onChanged: (String value) {
-                  controller.openView();
-                },
-                focusNode: focusNode,
-                padding: const WidgetStatePropertyAll<EdgeInsets>(
-                    EdgeInsets.symmetric(horizontal: 16.0)),
-                leading: const Icon(Icons.search),
-                onSubmitted: (value) async {
-                  var text = controller.text;
-                  if (text.isNotEmpty) {
-                    if (numberExp.hasMatch(text)) {
-                      await api.fetchGallery(text, usePrefence: false).then(
-                          (value) async {
+            return <Widget>[
+              Center(
+                child: Text(
+                  AppLocalizations.of(context)!.emptyContent,
+                  style: const TextStyle(color: Colors.grey),
+                ),
+              ),
+            ];
+          }
+          return fetchLabels(controller);
+        },
+        searchController: controller,
+        viewTrailing: [
+          IconButton(
+            onPressed: () {
+              controller.text = '';
+              _selected.clear();
+            },
+            icon: const Icon(Icons.close),
+          ),
+        ],
+        builder: (context, controller) {
+          return SearchBar(
+            controller: controller,
+            onTap: () {
+              controller.openView();
+            },
+            onChanged: (String value) {
+              controller.openView();
+            },
+            focusNode: focusNode,
+            padding: const WidgetStatePropertyAll<EdgeInsets>(
+              EdgeInsets.symmetric(horizontal: 16.0),
+            ),
+            leading: const Icon(Icons.search),
+            onSubmitted: (value) async {
+              var text = controller.text;
+              if (text.isNotEmpty) {
+                if (numberExp.hasMatch(text)) {
+                  await api
+                      .fetchGallery(text, usePrefence: false)
+                      .then((value) async {
                         if (context.mounted) {
                           widget.onSearch({'gallery': value, 'local': false});
                         }
                         return debugPrint('fetch ${value.name}');
-                      }).catchError(
-                          (e) => context.mounted
-                              ? context.showSnackBar(
-                                  '${AppLocalizations.of(context)!.networkError} or ${AppLocalizations.of(context)!.wrongId}')
-                              : false,
-                          test: (error) => true);
-                    } else {
-                      widget.onSearch({
-                        'tags': _selected.isNotEmpty
-                            ? _selected
-                            : [
-                                {
-                                  ...QueryText(controller.text).toMap(),
-                                  'include': true
-                                }
-                              ],
-                      });
-                    }
-                  }
-                });
-          }),
+                      })
+                      .catchError(
+                        (e) => context.mounted
+                            ? context.showSnackBar(
+                                '${AppLocalizations.of(context)!.networkError} or ${AppLocalizations.of(context)!.wrongId}',
+                              )
+                            : false,
+                        test: (error) => true,
+                      );
+                } else {
+                  widget.onSearch({
+                    'tags': _selected.isNotEmpty
+                        ? _selected
+                        : [
+                            {
+                              ...QueryText(controller.text).toMap(),
+                              'include': true,
+                            },
+                          ],
+                  });
+                }
+              }
+            },
+          );
+        },
+      ),
     );
   }
 
@@ -219,15 +251,18 @@ class _GallerySearch extends State<GallerySearch> {
   }
 
   void handleSelection(
-      Map<String, dynamic> label, SearchController controller) {
+    Map<String, dynamic> label,
+    SearchController controller,
+  ) {
     var useLabel = {...label, 'include': useInclude};
     setState(() {
       _history.add(label);
       _selected.add(useLabel);
       var input = _selected.fold(
-          '',
-          (previousValue, element) =>
-              previousValue + ('${_showTranslate(element)},'));
+        '',
+        (previousValue, element) =>
+            previousValue + ('${_showTranslate(element)},'),
+      );
       controller.closeView(input);
       // Navigator.of(context)
       //     .restorablePushNamed(GallerySearchResultView.routeName, arguments: {

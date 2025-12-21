@@ -47,39 +47,52 @@ class SettingsController with ChangeNotifier {
   }
 
   Future<UserConfig> loadConfig() async {
-    _themeMode = await _settingsService.readConfig<String>('themeMode').then(
-            (value) => ThemeMode.values
-                .firstWhereOrNull((element) => element.name == value)) ??
+    _themeMode =
+        await _settingsService
+            .readConfig<String>('themeMode')
+            .then(
+              (value) => ThemeMode.values.firstWhereOrNull(
+                (element) => element.name == value,
+              ),
+            ) ??
         ThemeMode.system;
-    var defaultConfig = UserConfig('',
-        languages: const ["japanese", "chinese"],
-        maxTasks: 5,
-        dateLimit: "2013-01-01",
-        remoteHttp: await defaultRemoteAddress());
+    var defaultConfig = UserConfig(
+      '',
+      languages: const ["japanese", "chinese"],
+      maxTasks: 5,
+      dateLimit: "2013-01-01",
+      remoteHttp: await defaultRemoteAddress(),
+    );
     _config = await _settingsService
         .readConfig<String>('config', defaultValue: '')
-        .then((value) => value?.isNotEmpty == true
-            ? UserConfig.fromStr(value!)
-            : defaultConfig)
+        .then(
+          (value) => value?.isNotEmpty == true
+              ? UserConfig.fromStr(value!)
+              : defaultConfig,
+        )
         .catchError((e) => defaultConfig, test: (error) => true);
     _remoteLib =
         await _settingsService.readConfig<bool>('useProxy') ?? _remoteLib;
-    runServer = !kIsWeb &&
+    runServer =
+        !kIsWeb &&
         (await _settingsService.readConfig<bool>('runServer') ?? runServer);
     _manager = TaskManager(_config);
     _cacheManager = HitomiImageCacheManager(hitomi());
     _localCacheManager = HitomiImageCacheManager(
-        hitomi(type: remoteLib ? HitomiType.PROXY : HitomiType.Remote));
+      hitomi(type: remoteLib ? HitomiType.PROXY : HitomiType.Remote),
+    );
     return !kIsWeb && runServer
         ? run_server(_manager)
-            .then((v) => _manager.parseCommandAndRun('-c'))
-            .then((value) => _config)
-            .catchError((e) => _config, test: (error) => true)
+              .then((v) => _manager.parseCommandAndRun('-c'))
+              .then((value) => _config)
+              .catchError((e) => _config, test: (error) => true)
         : Future.value(_config).then((c) async {
             if (remoteLib && _config.remoteHttp.isNotEmpty) {
               await _manager.dio
-                  .get<Map<String, dynamic>>('${_config.remoteHttp}/test',
-                      options: Options(responseType: ResponseType.json))
+                  .get<Map<String, dynamic>>(
+                    '${_config.remoteHttp}/test',
+                    options: Options(responseType: ResponseType.json),
+                  )
                   .then((d) {
                     var resp = d.data;
                     exntension = resp!['success'] && resp['feature'].isNotEmpty;
@@ -101,41 +114,57 @@ class SettingsController with ChangeNotifier {
     var sqlite = manager.helper;
     var ip = await localIp();
     return sqlite
-        .querySql('select id,value,type,content,date from UserLog where type=?',
-            [type])
-        .then((value) =>
-            value.fold(<Map<String, dynamic>>[], (acc, row) => acc..add(row)))
-        .then((values) => manager.dio
-            .post('${config.remoteHttp}/sync',
-                options: Options(headers: {
-                  'Content-Type': 'application/json',
-                  'x-real-ip': ip
-                }, responseType: ResponseType.json),
+        .querySql(
+          'select id,value,type,content,date from UserLog where type=?',
+          [type],
+        )
+        .then(
+          (value) =>
+              value.fold(<Map<String, dynamic>>[], (acc, row) => acc..add(row)),
+        )
+        .then(
+          (values) => manager.dio
+              .post(
+                '${config.remoteHttp}/sync',
+                options: Options(
+                  headers: {
+                    'Content-Type': 'application/json',
+                    'x-real-ip': ip,
+                  },
+                  responseType: ResponseType.json,
+                ),
                 data: {
                   'auth': config.auth,
                   'mark': type,
                   'returnValue': true,
-                  'content': values
-                })
-            .then((resp) {
-              return resp.data!;
-            })
-            .then((data) => data['content'] as List)
-            .then((list) =>
-                list.map((str) => str as Map<String, dynamic>).toList())
-            .then((d) {
-              return manager.helper.excuteSqlMultiParams(
+                  'content': values,
+                },
+              )
+              .then((resp) {
+                return resp.data!;
+              })
+              .then((data) => data['content'] as List)
+              .then(
+                (list) =>
+                    list.map((str) => str as Map<String, dynamic>).toList(),
+              )
+              .then((d) {
+                return manager.helper.excuteSqlMultiParams(
                   'replace into UserLog(id,value,type,content,date) values (?,?,?,?,?)',
                   d
-                      .map((e) => [
-                            e['id'],
-                            e['value'],
-                            e['type'],
-                            e['content'],
-                            e['date']
-                          ])
-                      .toList());
-            }));
+                      .map(
+                        (e) => [
+                          e['id'],
+                          e['value'],
+                          e['type'],
+                          e['content'],
+                          e['date'],
+                        ],
+                      )
+                      .toList(),
+                );
+              }),
+        );
   }
 
   Future<void> switchConn(bool useProxy) async {
@@ -164,8 +193,9 @@ class SettingsController with ChangeNotifier {
     await _settingsService.saveConfig('config', json.encode(config.toJson()));
     _manager = TaskManager(_config);
     _cacheManager = HitomiImageCacheManager(hitomi());
-    _localCacheManager =
-        HitomiImageCacheManager(hitomi(type: HitomiType.Local));
+    _localCacheManager = HitomiImageCacheManager(
+      hitomi(type: HitomiType.Local),
+    );
     if (runServer) {
       _server?.close(force: true);
       _server = await run_server(_manager);

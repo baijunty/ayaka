@@ -11,11 +11,15 @@ class HitomiImageCacheManager extends CacheManager with ImageCacheManager {
   static const key = 'hitomiCacheKey';
 
   HitomiImageCacheManager(Hitomi hitomi)
-      : super(Config(key,
-            stalePeriod: const Duration(days: 7),
-            maxNrOfCacheObjects: 20,
-            repo: defaultCacheInfoRepository(),
-            fileService: ProxyImageServer(hitomi)));
+    : super(
+        Config(
+          key,
+          stalePeriod: const Duration(days: 7),
+          maxNrOfCacheObjects: 20,
+          repo: defaultCacheInfoRepository(),
+          fileService: ProxyImageServer(hitomi),
+        ),
+      );
 }
 
 class ProxyImageServer extends FileService {
@@ -24,22 +28,35 @@ class ProxyImageServer extends FileService {
   ProxyImageServer(this.hitomi);
 
   @override
-  Future<FileServiceResponse> get(String url,
-      {Map<String, String>? headers}) async {
+  Future<FileServiceResponse> get(
+    String url, {
+    Map<String, String>? headers,
+  }) async {
     final streamController = StreamController<int>();
-    final size = ThumbnaiSize.values
-            .firstWhereOrNull((s) => s.name == headers?['size']) ??
+    final size =
+        ThumbnaiSize.values.firstWhereOrNull(
+          (s) => s.name == headers?['size'],
+        ) ??
         ThumbnaiSize.medium;
     final contentStream = hitomi.fetchImageData(
       Image(
-          hash: url, hasavif: 0, width: 0, name: headers!['name']!, height: 0),
+        hash: url,
+        hasavif: 0,
+        width: 0,
+        name: headers!['name']!,
+        height: 0,
+      ),
       id: headers['id']?.toInt() ?? 0,
       size: size,
       refererUrl: headers['refererUrl'] ?? '',
       onProcess: (now, total) => streamController.add(total),
     );
-    return HitomiFileServiceResponse(contentStream, url,
-        await streamController.stream.first, extension(headers['name']!));
+    return HitomiFileServiceResponse(
+      contentStream,
+      url,
+      await streamController.stream.first,
+      extension(headers['name']!),
+    );
   }
 }
 

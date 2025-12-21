@@ -37,8 +37,10 @@ class _GalleryTabView extends State<GalleryTabView>
   final FocusNode _focusNode = FocusNode();
   List<Widget> children = [];
   List<Widget> tabs = [];
-  List<MapEntry<int, SortEnum>> pageKey =
-      List.filled(2, const MapEntry(1, SortEnum.Default));
+  List<MapEntry<int, SortEnum>> pageKey = List.filled(
+    2,
+    const MapEntry(1, SortEnum.Default),
+  );
   @override
   void initState() {
     super.initState();
@@ -47,11 +49,15 @@ class _GalleryTabView extends State<GalleryTabView>
     scrollController = ScrollController();
     onSearch = (Map<String, dynamic> args) async {
       if (args['gallery'] != null) {
-        await Navigator.of(context).pushNamed(GalleryDetailsView.routeName,
-            arguments: {'gallery': args['gallery'], 'local': args['local']});
+        await Navigator.of(context).pushNamed(
+          GalleryDetailsView.routeName,
+          arguments: {'gallery': args['gallery'], 'local': args['local']},
+        );
       } else {
-        await Navigator.of(context).pushNamed(GalleryTabView.routeName,
-            arguments: {'tags': args['tags']});
+        await Navigator.of(context).pushNamed(
+          GalleryTabView.routeName,
+          arguments: {'tags': args['tags']},
+        );
       }
     };
   }
@@ -73,81 +79,89 @@ class _GalleryTabView extends State<GalleryTabView>
         ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>?;
     tags =
         args?['tags'] as List<Map<String, dynamic>>? ?? [QueryText('').toMap()];
-    var search = args != null &&
+    var search =
+        args != null &&
         tags.first['name'] != '' &&
         tags.first['type'] != 'type';
     if (search) {
       children = kIsWeb
           ? [
               GallerySearchResultView(
-                  key: ValueKey(pageKey[0]),
-                  api: controller.hitomi(type: HitomiType.PROXY),
-                  selected: tags,
-                  local: true,
-                  dateDesc: pageKey[0].value,
-                  startPage: pageKey[0].key)
+                key: ValueKey(pageKey[0]),
+                api: controller.hitomi(type: HitomiType.PROXY),
+                selected: tags,
+                local: true,
+                dateDesc: pageKey[0].value,
+                startPage: pageKey[0].key,
+              ),
             ]
           : [
               GallerySearchResultView(
-                  key: ValueKey(pageKey[0]),
-                  api: controller.hitomi(),
-                  selected: tags,
-                  local: false,
-                  dateDesc: pageKey[0].value,
-                  startPage: pageKey[0].key),
+                key: ValueKey(pageKey[0]),
+                api: controller.hitomi(),
+                selected: tags,
+                local: false,
+                dateDesc: pageKey[0].value,
+                startPage: pageKey[0].key,
+              ),
               GallerySearchResultView(
-                  key: ValueKey(pageKey[1]),
-                  api: controller.hitomi(
-                      type: controller.remoteLib
-                          ? HitomiType.PROXY
-                          : HitomiType.Local),
-                  selected: tags,
-                  local: true,
-                  dateDesc: pageKey[1].value,
-                  startPage: pageKey[1].key)
+                key: ValueKey(pageKey[1]),
+                api: controller.hitomi(
+                  type: controller.remoteLib
+                      ? HitomiType.PROXY
+                      : HitomiType.Local,
+                ),
+                selected: tags,
+                local: true,
+                dateDesc: pageKey[1].value,
+                startPage: pageKey[1].key,
+              ),
             ];
     } else {
       children = kIsWeb
           ? [
               GalleryItemListView(
-                  key: ValueKey(pageKey[0]),
-                  api: controller.hitomi(type: HitomiType.PROXY),
-                  label: tags.first,
-                  local: true,
-                  sortEnum: pageKey[0].value,
-                  startPage: pageKey[0].key)
+                key: ValueKey(pageKey[0]),
+                api: controller.hitomi(type: HitomiType.PROXY),
+                label: tags.first,
+                local: true,
+                sortEnum: pageKey[0].value,
+                startPage: pageKey[0].key,
+              ),
             ]
           : [
               GalleryItemListView(
-                  key: ValueKey(pageKey[0]),
-                  api: controller.hitomi(),
-                  label: tags.first,
-                  local: false,
-                  sortEnum: pageKey[0].value,
-                  startPage: pageKey[0].key),
+                key: ValueKey(pageKey[0]),
+                api: controller.hitomi(),
+                label: tags.first,
+                local: false,
+                sortEnum: pageKey[0].value,
+                startPage: pageKey[0].key,
+              ),
               GalleryItemListView(
-                  key: ValueKey(pageKey[1]),
-                  api: controller.hitomi(
-                      type: controller.remoteLib
-                          ? HitomiType.PROXY
-                          : HitomiType.Local),
-                  label: tags.first,
-                  sortEnum: pageKey[1].value,
-                  startPage: pageKey[1].key,
-                  local: true),
+                key: ValueKey(pageKey[1]),
+                api: controller.hitomi(
+                  type: controller.remoteLib
+                      ? HitomiType.PROXY
+                      : HitomiType.Local,
+                ),
+                label: tags.first,
+                sortEnum: pageKey[1].value,
+                startPage: pageKey[1].key,
+                local: true,
+              ),
             ];
     }
     tabs = children.length == 1
         ? [Tab(text: AppLocalizations.of(context)!.local)]
         : [
-            Tab(
-              text: AppLocalizations.of(context)!.network,
-            ),
-            Tab(text: AppLocalizations.of(context)!.local)
+            Tab(text: AppLocalizations.of(context)!.network),
+            Tab(text: AppLocalizations.of(context)!.local),
           ];
 
     // Request focus after the first frame if needed
-    final backAble = children.isNotEmpty && children[0] is GallerySearchResultView;
+    final backAble =
+        children.isNotEmpty && children[0] is GallerySearchResultView;
     if (backAble) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) {
@@ -159,112 +173,126 @@ class _GalleryTabView extends State<GalleryTabView>
 
   Widget _sortWidget() {
     return PopupMenuButton<SortEnum>(
-        itemBuilder: (context) {
-          return pageController.page == 1 ||
-                  kIsWeb ||
-                  children[0] is GallerySearchResultView
-              ? <PopupMenuEntry<SortEnum>>[
+      itemBuilder: (context) {
+        return pageController.page == 1 ||
+                kIsWeb ||
+                children[0] is GallerySearchResultView
+            ? <PopupMenuEntry<SortEnum>>[
+                PopupMenuItem(
+                  value: SortEnum.Default,
+                  child: Text(AppLocalizations.of(context)!.dateDefault),
+                ),
+                PopupMenuItem(
+                  value: SortEnum.ID_ASC,
+                  child: Text(AppLocalizations.of(context)!.idAsc),
+                ),
+                if (pageController.page == 1 || kIsWeb)
                   PopupMenuItem(
-                      value: SortEnum.Default,
-                      child: Text(AppLocalizations.of(context)!.dateDefault)),
-                  PopupMenuItem(
-                      value: SortEnum.ID_ASC,
-                      child: Text(AppLocalizations.of(context)!.idAsc)),
-                  if (pageController.page == 1 || kIsWeb)
-                    PopupMenuItem(
-                        value: SortEnum.ADD_TIME,
-                        child: Text(AppLocalizations.of(context)!.addTime)),
-                ]
-              : <PopupMenuEntry<SortEnum>>[
-                  PopupMenuItem(
-                      value: SortEnum.Default,
-                      child: Text(AppLocalizations.of(context)!.dateDefault)),
-                ];
-        },
-        onSelected: (value) => setState(() {
-              var preEntry = pageKey[pageController.page!.floor()];
-              pageKey[pageController.page!.floor()] =
-                  MapEntry(preEntry.key, value);
-            }),
-        icon: const Icon(Icons.sort));
+                    value: SortEnum.ADD_TIME,
+                    child: Text(AppLocalizations.of(context)!.addTime),
+                  ),
+              ]
+            : <PopupMenuEntry<SortEnum>>[
+                PopupMenuItem(
+                  value: SortEnum.Default,
+                  child: Text(AppLocalizations.of(context)!.dateDefault),
+                ),
+              ];
+      },
+      onSelected: (value) => setState(() {
+        var preEntry = pageKey[pageController.page!.floor()];
+        pageKey[pageController.page!.floor()] = MapEntry(preEntry.key, value);
+      }),
+      icon: const Icon(Icons.sort),
+    );
   }
 
   Widget content() {
     return MaxWidthBox(
-        maxWidth: 1280,
-        child: NestedScrollView(
-            controller: scrollController,
-            headerSliverBuilder: (context, innerBoxIsScrolled) => [
-                  SliverAppBar(
-                    forceElevated: innerBoxIsScrolled,
-                    pinned: true,
-                    floating: true,
-                    snap: true,
-                    title: children[0] is GallerySearchResultView
-                        ? Text(tags.fold(
-                            '',
-                            (acc, tag) =>
-                                '${acc + (tag['translate'] ?? tag['name'])},'))
-                        : GallerySearch(onSearch: onSearch),
-                    bottom: TabBar(
-                        tabs: tabs,
-                        controller: tabController,
-                        onTap: (value) => pageController.jumpToPage(value)),
-                    actions: [
-                      _sortWidget(),
-                      IconButton(
-                          onPressed: () async {
-                            var s = await context.showDialogInput(
-                                textField: TextField(
-                                    keyboardType:
-                                        const TextInputType.numberWithOptions(
-                                            signed: true),
-                                    controller: TextEditingController(),
-                                    inputFormatters: [
-                                      FilteringTextInputFormatter.digitsOnly
-                                    ]),
-                                inputHint:
-                                    AppLocalizations.of(context)!.pageJumpHint);
-                            if (s?.isNotEmpty == true) {
-                              setState(() {
-                                var preEntry =
-                                    pageKey[pageController.page!.floor()];
-                                pageKey[pageController.page!.floor()] =
-                                    MapEntry(int.parse(s!), preEntry.value);
-                              });
-                            }
-                          },
-                          icon: const Icon(Icons.forward_5))
-                    ],
+      maxWidth: 1280,
+      child: NestedScrollView(
+        controller: scrollController,
+        headerSliverBuilder: (context, innerBoxIsScrolled) => [
+          SliverAppBar(
+            forceElevated: innerBoxIsScrolled,
+            pinned: true,
+            floating: true,
+            snap: true,
+            title: children[0] is GallerySearchResultView
+                ? Text(
+                    tags.fold(
+                      '',
+                      (acc, tag) =>
+                          '${acc + (tag['translate'] ?? tag['name'])},',
+                    ),
                   )
-                ],
-            scrollBehavior: MouseEnabledScrollBehavior(),
-            body: NotificationListener(
-                child: PageView.builder(
-                    itemBuilder: (context, index) => children[index],
-                    controller: pageController,
-                    itemCount: children.length,
-                    scrollBehavior: MouseEnabledScrollBehavior(),
-                    onPageChanged: (value) => tabController.animateTo(value)),
-                onNotification: (notification) {
-                  if (notification is ScrollUpdateNotification &&
-                      notification.metrics.runtimeType == FixedScrollMetrics) {
-                    var dy = notification.scrollDelta ?? 0;
-                    if (dy != 0) {
-                      scrollController.position
-                          .jumpTo(scrollController.position.pixels + dy);
-                    }
+                : GallerySearch(onSearch: onSearch),
+            bottom: TabBar(
+              tabs: tabs,
+              controller: tabController,
+              onTap: (value) => pageController.jumpToPage(value),
+            ),
+            actions: [
+              _sortWidget(),
+              IconButton(
+                onPressed: () async {
+                  var s = await context.showDialogInput(
+                    textField: TextField(
+                      keyboardType: const TextInputType.numberWithOptions(
+                        signed: true,
+                      ),
+                      controller: TextEditingController(),
+                      inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                    ),
+                    inputHint: AppLocalizations.of(context)!.pageJumpHint,
+                  );
+                  if (s?.isNotEmpty == true) {
+                    setState(() {
+                      var preEntry = pageKey[pageController.page!.floor()];
+                      pageKey[pageController.page!.floor()] = MapEntry(
+                        int.parse(s!),
+                        preEntry.value,
+                      );
+                    });
                   }
-                  return true;
-                })));
+                },
+                icon: const Icon(Icons.forward_5),
+              ),
+            ],
+          ),
+        ],
+        scrollBehavior: MouseEnabledScrollBehavior(),
+        body: NotificationListener(
+          child: PageView.builder(
+            itemBuilder: (context, index) => children[index],
+            controller: pageController,
+            itemCount: children.length,
+            scrollBehavior: MouseEnabledScrollBehavior(),
+            onPageChanged: (value) => tabController.animateTo(value),
+          ),
+          onNotification: (notification) {
+            if (notification is ScrollUpdateNotification &&
+                notification.metrics.runtimeType == FixedScrollMetrics) {
+              var dy = notification.scrollDelta ?? 0;
+              if (dy != 0) {
+                scrollController.position.jumpTo(
+                  scrollController.position.pixels + dy,
+                );
+              }
+            }
+            return true;
+          },
+        ),
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     final backAble = children[0] is GallerySearchResultView;
     return Scaffold(
-        body: Center(
-      child: Focus(
+      body: Center(
+        child: Focus(
           focusNode: _focusNode,
           onKeyEvent: (focus, value) {
             if (backAble &&
@@ -276,8 +304,10 @@ class _GalleryTabView extends State<GalleryTabView>
             }
             return KeyEventResult.ignored;
           },
-          child: content()),
-    ));
+          child: content(),
+        ),
+      ),
+    );
   }
 }
 

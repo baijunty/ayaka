@@ -7,7 +7,7 @@ publish_to: 'none'
 version: 1.0.0+1
 
 environment:
-  sdk: '>=3.3.0 <4.0.0'
+  sdk: '>=3.8.0 <4.0.0'
 
 dependencies:
   flutter:
@@ -51,6 +51,6 @@ flutter:
     # Add assets from the images directory to the application.
     - assets/images/
 dependency_overrides:
-  test_api: 0.7.7
+  test_api: 0.7.8
   intl: ^0.20.2
   async: ^2.13.0

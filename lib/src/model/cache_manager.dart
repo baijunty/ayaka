@@ -46,7 +46,6 @@ class ProxyImageServer extends FileService {
         name: headers!['name']!,
         height: 0,
       ),
-      id: headers['id']?.toInt() ?? 0,
       size: size,
       refererUrl: headers['refererUrl'] ?? '',
       onProcess: (now, total) => streamController.add(total),

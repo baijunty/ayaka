@@ -103,7 +103,6 @@ class GalleryManager with ChangeNotifier {
               .fetchImageData(
                 event,
                 size: size,
-                id: id,
                 refererUrl: 'https://hitomi.la/imageset/test-$id.html',
               )
               .fold(<int>[], (acc, l) => acc..addAll(l))

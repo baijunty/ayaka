@@ -4,6 +4,7 @@ import 'package:ayaka/src/utils/label_utils.dart';
 import 'package:collection/collection.dart';
 import 'package:ayaka/src/localization/app_localizations.dart';
 import 'package:ayaka/src/settings/settings_controller.dart';
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:hitomi/gallery/label.dart';
 import 'package:hitomi/lib.dart';
@@ -11,6 +12,7 @@ import 'package:provider/provider.dart';
 
 import '../ui/common_view.dart';
 import '../utils/debounce.dart';
+import 'gallery_image_search.dart' show GalleryImageSearch;
 
 class GallerySearch extends StatefulWidget {
   final Function(Map<String, dynamic>) onSearch;
@@ -160,7 +162,7 @@ class _GallerySearch extends State<GallerySearch> {
     });
   }
 
-  Widget _inputRow() {
+  Widget _inputRow(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.only(left: 8, right: 8),
       child: SearchAnchor(
@@ -183,6 +185,31 @@ class _GallerySearch extends State<GallerySearch> {
         },
         searchController: controller,
         viewTrailing: [
+          IconButton(
+            onPressed: () {
+              FilePicker.platform
+                  .pickFiles(
+                    type: FileType.image,
+                    allowedExtensions: ['jpg', 'png', 'jpeg', 'webp'],
+                  )
+                  .then((value) async {
+                    if (value == null || value.files.isEmpty) {
+                      return;
+                    }
+                    var file = value.files.first.path;
+                    if (file == null || !context.mounted) {
+                      return;
+                    }
+                    await Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => GalleryImageSearch(path: file),
+                      ),
+                    );
+                  });
+            },
+            icon: const Icon(Icons.file_upload),
+          ),
           IconButton(
             onPressed: () {
               controller.text = '';
@@ -247,7 +274,7 @@ class _GallerySearch extends State<GallerySearch> {
 
   @override
   Widget build(BuildContext context) {
-    return _inputRow();
+    return _inputRow(context);
   }
 
   void handleSelection(

@@ -609,6 +609,30 @@ extension ContextAction on BuildContext {
     );
   }
 
+  Future<List<Gallery>> querrByImage(List<int> data) async {
+    var controller = read<SettingsController>();
+    var requests = controller.remoteLib
+        ? controller.manager.dio
+              .post<List<dynamic>>(
+                '${controller.config.remoteHttp}/queryByImage',
+                data: data,
+                options: Options(responseType: ResponseType.json),
+              )
+              .then((resp) => resp.data!)
+              .then(
+                (list) => list.map((i) => i as Map<String, dynamic>).toList(),
+              )
+        : controller.manager.searchByImage(data);
+    return requests.then(
+      (list) => Future.wait(
+        list.map(
+          (map) =>
+              controller.hitomi(type: HitomiType.Local).fetchGallery(map['id']),
+        ),
+      ),
+    );
+  }
+
   Future<void> progressDialogAction(Future action) async {
     return showDialog(
       context: this,

@@ -84,8 +84,6 @@ class _GalleryViewer extends State<GalleryViewer>
   var index = 0;
   var showAppBar = false;
   var extension = false;
-  var translate = false;
-  var lang = 'ja';
   late PageController controller;
   late MultiImageProvider provider;
   late Hitomi api;
@@ -128,9 +126,6 @@ class _GalleryViewer extends State<GalleryViewer>
             )
             .then((value) => controller.jumpToPage(value));
       }
-      lang = ['english', 'korean'].contains(_gallery.language)
-          ? _gallery.language!.substring(0, 2)
-          : lang;
       buildProvider();
     }
   }
@@ -151,11 +146,8 @@ class _GalleryViewer extends State<GalleryViewer>
             return api
                 .fetchImageData(
                   e,
-                  id: _gallery.id,
                   size: ThumbnaiSize.origin,
                   refererUrl: 'https://hitomi.la${_gallery.urlEncode()}',
-                  lang: lang,
-                  translate: translate,
                   onProcess: (now, total) => chunkEvents.add(
                     ImageChunkEvent(
                       cumulativeBytesLoaded: now,
@@ -165,7 +157,7 @@ class _GalleryViewer extends State<GalleryViewer>
                 )
                 .fold(<int>[], (acc, l) => acc..addAll(l));
           },
-          key: '${e.hash}:${translate}_origin',
+          key: '${e.hash}_origin',
         );
       }).toList(),
       initialIndex: index,
@@ -286,22 +278,6 @@ class _GalleryViewer extends State<GalleryViewer>
                     leading: BackButton(
                       onPressed: () => Navigator.of(context).pop(),
                     ),
-                    actions: (extension
-                        ? [
-                            IconButton(
-                              onPressed: () => setState(() {
-                                translate = !translate;
-                                controller.removeListener(handlePageChange);
-                                buildProvider();
-                              }),
-                              icon: Icon(
-                                translate
-                                    ? Icons.translate_sharp
-                                    : Icons.g_translate,
-                              ),
-                            ),
-                          ]
-                        : null),
                   ),
                 ),
               ),

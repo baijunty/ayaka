@@ -149,20 +149,8 @@ class SettingsController with ChangeNotifier {
                     list.map((str) => str as Map<String, dynamic>).toList(),
               )
               .then((d) {
-                return manager.helper.excuteSqlMultiParams(
-                  'replace into UserLog(id,value,type,content,date) values (?,?,?,?,?)',
-                  d
-                      .map(
-                        (e) => [
-                          e['id'],
-                          e['value'],
-                          e['type'],
-                          e['content'],
-                          e['date'],
-                        ],
-                      )
-                      .toList(),
-                );
+                manager.logger.d('sync $type ${d.length}');
+                return manager.manageUserLog(d, type);
               }),
         );
   }

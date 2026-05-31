@@ -76,7 +76,13 @@ class _GallerySearch extends State<GallerySearch> {
   void initState() {
     super.initState();
     controller = SearchController();
-    focusNode = FocusNode();
+    focusNode = FocusNode(
+      debugLabel: 'search View',
+      onKeyEvent: (n, e) {
+        debugPrint('${n} is ${e}');
+        return KeyEventResult.ignored;
+      },
+    );
     controller.addListener(textChange);
     _debounce = Debounce();
   }
@@ -162,6 +168,38 @@ class _GallerySearch extends State<GallerySearch> {
     });
   }
 
+  void onSearchEvent(String value) async {
+    var text = controller.text;
+    if (text.isNotEmpty) {
+      if (numberExp.hasMatch(text)) {
+        await api
+            .fetchGallery(text, usePrefence: false)
+            .then((value) async {
+              if (context.mounted) {
+                widget.onSearch({'gallery': value, 'local': false});
+              }
+              return debugPrint('fetch ${value.name}');
+            })
+            .catchError(
+              (e) => context.mounted
+                  ? context.showSnackBar(
+                      '${AppLocalizations.of(context)!.networkError} or ${AppLocalizations.of(context)!.wrongId}',
+                    )
+                  : false,
+              test: (error) => true,
+            );
+      } else {
+        widget.onSearch({
+          'tags': _selected.isNotEmpty
+              ? _selected
+              : [
+                  {...QueryText(controller.text).toMap(), 'include': true},
+                ],
+        });
+      }
+    }
+  }
+
   Widget _inputRow(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.only(left: 8, right: 8),
@@ -169,6 +207,7 @@ class _GallerySearch extends State<GallerySearch> {
         viewHintText: AppLocalizations.of(context)!.searchHint,
         suggestionsBuilder: (context, controller) {
           if (controller.text.isEmpty) {
+            _selected.clear();
             if (_history.isNotEmpty) {
               return getHistoryList(controller);
             }
@@ -187,26 +226,24 @@ class _GallerySearch extends State<GallerySearch> {
         viewTrailing: [
           IconButton(
             onPressed: () {
-              FilePicker.platform
-                  .pickFiles(
-                    type: FileType.image,
-                    allowedExtensions: ['jpg', 'png', 'jpeg', 'webp'],
-                  )
-                  .then((value) async {
-                    if (value == null || value.files.isEmpty) {
-                      return;
-                    }
-                    var file = value.files.first.path;
-                    if (file == null || !context.mounted) {
-                      return;
-                    }
-                    await Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => GalleryImageSearch(path: file),
-                      ),
-                    );
-                  });
+              FilePicker.pickFiles(
+                type: FileType.image,
+                allowedExtensions: ['jpg', 'png', 'jpeg', 'webp'],
+              ).then((value) async {
+                if (value == null || value.files.isEmpty) {
+                  return;
+                }
+                var file = value.files.first.path;
+                if (file == null || !context.mounted) {
+                  return;
+                }
+                await Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => GalleryImageSearch(path: file),
+                  ),
+                );
+              });
             },
             icon: const Icon(Icons.file_upload),
           ),
@@ -216,6 +253,10 @@ class _GallerySearch extends State<GallerySearch> {
               _selected.clear();
             },
             icon: const Icon(Icons.close),
+          ),
+          IconButton(
+            onPressed: () => onSearchEvent(controller.text),
+            icon: const Icon(Icons.search),
           ),
         ],
         builder: (context, controller) {
@@ -232,40 +273,7 @@ class _GallerySearch extends State<GallerySearch> {
               EdgeInsets.symmetric(horizontal: 16.0),
             ),
             leading: const Icon(Icons.search),
-            onSubmitted: (value) async {
-              var text = controller.text;
-              if (text.isNotEmpty) {
-                if (numberExp.hasMatch(text)) {
-                  await api
-                      .fetchGallery(text, usePrefence: false)
-                      .then((value) async {
-                        if (context.mounted) {
-                          widget.onSearch({'gallery': value, 'local': false});
-                        }
-                        return debugPrint('fetch ${value.name}');
-                      })
-                      .catchError(
-                        (e) => context.mounted
-                            ? context.showSnackBar(
-                                '${AppLocalizations.of(context)!.networkError} or ${AppLocalizations.of(context)!.wrongId}',
-                              )
-                            : false,
-                        test: (error) => true,
-                      );
-                } else {
-                  widget.onSearch({
-                    'tags': _selected.isNotEmpty
-                        ? _selected
-                        : [
-                            {
-                              ...QueryText(controller.text).toMap(),
-                              'include': true,
-                            },
-                          ],
-                  });
-                }
-              }
-            },
+            onSubmitted: onSearchEvent,
           );
         },
       ),
@@ -290,7 +298,7 @@ class _GallerySearch extends State<GallerySearch> {
         (previousValue, element) =>
             previousValue + ('${_showTranslate(element)},'),
       );
-      controller.closeView(input);
+      controller.text = (input);
       // Navigator.of(context)
       //     .restorablePushNamed(GallerySearchResultView.routeName, arguments: {
       //   'tags': [useLabel],

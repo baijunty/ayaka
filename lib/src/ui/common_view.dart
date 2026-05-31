@@ -152,9 +152,8 @@ class GalleryListView extends StatelessWidget {
   });
 
   Widget dataList() {
-    return KeyboardListener(
-      focusNode: FocusNode(),
-      onKeyEvent: (value) {
+    return Focus(
+      onKeyEvent: (focus, value) {
         if ((value.physicalKey == PhysicalKeyboardKey.arrowDown) &&
             scrollController != null) {
           scrollController!.animateTo(
@@ -162,6 +161,7 @@ class GalleryListView extends StatelessWidget {
             duration: const Duration(milliseconds: 250),
             curve: Curves.easeInOut,
           );
+          return KeyEventResult.handled;
         } else if ((value.physicalKey == PhysicalKeyboardKey.arrowUp) &&
             scrollController != null) {
           scrollController!.animateTo(
@@ -169,7 +169,9 @@ class GalleryListView extends StatelessWidget {
             duration: const Duration(milliseconds: 250),
             curve: Curves.easeInOut,
           );
+          return KeyEventResult.handled;
         }
+        return KeyEventResult.ignored;
       },
       child: LayoutBuilder(
         builder: (context, cons) {

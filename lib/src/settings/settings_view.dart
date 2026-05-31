@@ -245,7 +245,7 @@ class _StateSetting extends State<SettingsView> {
                       (value) async =>
                           value ?? await getApplicationSupportDirectory(),
                     );
-                var path = await FilePicker.platform.getDirectoryPath(
+                var path = await FilePicker.getDirectoryPath(
                   initialDirectory: initDir.path,
                 );
                 if (path?.isNotEmpty == true) {

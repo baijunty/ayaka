@@ -46,3 +46,6 @@ user.db
 user.db-shm
 user.db-wal
 .metadata
+
+# WorkBuddy 本地工作数据（工作日志 .workbuddy/memory/*.md 等）
+.workbuddy/

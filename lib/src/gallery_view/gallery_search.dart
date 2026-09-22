@@ -6,7 +6,6 @@ import 'package:ayaka/src/localization/app_localizations.dart';
 import 'package:ayaka/src/settings/settings_controller.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
-import 'package:hitomi/gallery/label.dart';
 import 'package:hitomi/lib.dart';
 import 'package:provider/provider.dart';
 
@@ -168,36 +167,87 @@ class _GallerySearch extends State<GallerySearch> {
     });
   }
 
-  void onSearchEvent(String value) async {
-    var text = controller.text;
-    if (text.isNotEmpty) {
-      if (numberExp.hasMatch(text)) {
-        await api
-            .fetchGallery(text, usePrefence: false)
-            .then((value) async {
-              if (context.mounted) {
-                widget.onSearch({'gallery': value, 'local': false});
-              }
-              return debugPrint('fetch ${value.name}');
-            })
-            .catchError(
-              (e) => context.mounted
-                  ? context.showSnackBar(
-                      '${AppLocalizations.of(context)!.networkError} or ${AppLocalizations.of(context)!.wrongId}',
-                    )
-                  : false,
-              test: (error) => true,
-            );
-      } else {
-        widget.onSearch({
-          'tags': _selected.isNotEmpty
-              ? _selected
-              : [
-                  {...QueryText(controller.text).toMap(), 'include': true},
-                ],
-        });
-      }
+  /// 以输入框内容为准收集搜索标签。
+  ///
+  /// `_selected` 仅用于补充 `type` / `translate` 等元信息，凡是输入框里出现的
+  /// 词都会进入搜索条件。这样手动敲进去的关键词（不经过建议列表选择）同样生效，
+  /// 同时用户从输入框里删掉的标签会被自动剔除，不再残留。
+  List<Map<String, dynamic>> collectTags() {
+    var meta = <String, Map<String, dynamic>>{};
+    for (var label in _selected) {
+      meta[_showTranslate(label)] = label;
     }
+    var result = <Map<String, dynamic>>[];
+    for (var chunk in controller.text.split(',')) {
+      var word = chunk.trim();
+      if (word.isEmpty) {
+        continue;
+      }
+      var known = meta[word];
+      if (known != null) {
+        result.add({...known, 'include': useInclude});
+        continue;
+      }
+      var type = '';
+      var name = word;
+      var sep = word.indexOf(':');
+      if (sep > 0) {
+        var reversed = reverseTagType(context, word.substring(0, sep));
+        if (reversed != null) {
+          type = reversed;
+          name = word.substring(sep + 1).trim();
+        }
+      }
+      if (name.isEmpty) {
+        continue;
+      }
+      result.add({
+        'type': type,
+        'name': name,
+        'translate': name,
+        'include': useInclude,
+      });
+    }
+    _selected
+      ..clear()
+      ..addAll(result);
+    return result;
+  }
+
+  void onSearchEvent(String value) async {
+    var text = controller.text.trim();
+    if (text.isEmpty) {
+      return;
+    }
+    // 先收起搜索视图，把焦点交还搜索栏，避免浮层残留在结果页上方。
+    if (controller.isOpen) {
+      controller.closeView(null);
+    }
+    focusNode.unfocus();
+    if (numberExp.hasMatch(text)) {
+      await api
+          .fetchGallery(text, usePrefence: false)
+          .then((value) async {
+            if (context.mounted) {
+              widget.onSearch({'gallery': value, 'local': false});
+            }
+            return debugPrint('fetch ${value.name}');
+          })
+          .catchError(
+            (e) => context.mounted
+                ? context.showSnackBar(
+                    '${AppLocalizations.of(context)!.networkError} or ${AppLocalizations.of(context)!.wrongId}',
+                  )
+                : false,
+            test: (error) => true,
+          );
+      return;
+    }
+    var tags = collectTags();
+    if (tags.isEmpty) {
+      return;
+    }
+    widget.onSearch({'tags': tags});
   }
 
   Widget _inputRow(BuildContext context) {
@@ -205,6 +255,9 @@ class _GallerySearch extends State<GallerySearch> {
       padding: const EdgeInsets.only(left: 8, right: 8),
       child: SearchAnchor(
         viewHintText: AppLocalizations.of(context)!.searchHint,
+        // 输入框获得焦点时处于展开的视图里，其回车回调是 viewOnSubmitted，
+        // 只设置 SearchBar.onSubmitted 无法覆盖该场景。
+        viewOnSubmitted: onSearchEvent,
         suggestionsBuilder: (context, controller) {
           if (controller.text.isEmpty) {
             _selected.clear();
@@ -253,10 +306,6 @@ class _GallerySearch extends State<GallerySearch> {
               _selected.clear();
             },
             icon: const Icon(Icons.close),
-          ),
-          IconButton(
-            onPressed: () => onSearchEvent(controller.text),
-            icon: const Icon(Icons.search),
           ),
         ],
         builder: (context, controller) {

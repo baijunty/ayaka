@@ -63,6 +63,40 @@ String mapLangugeType(BuildContext context, String type) {
   return showType;
 }
 
+/// `mapTagType` 支持的全部原始类型。
+const tagTypes = <String>[
+  'female',
+  'male',
+  'parody',
+  'series',
+  'artist',
+  'character',
+  'group',
+  'type',
+  'language',
+  'tag',
+];
+
+/// 把搜索框里手写的类型前缀还原成原始 type。
+///
+/// 同时接受本地化文案（如 `画师`）与原始类型名（如 `artist`）。
+/// 无法识别时返回 null，调用方应当把整段文字当作普通关键词处理。
+String? reverseTagType(BuildContext context, String prefix) {
+  var key = prefix.trim().toLowerCase();
+  if (key.isEmpty) {
+    return null;
+  }
+  if (tagTypes.contains(key)) {
+    return key;
+  }
+  for (var type in tagTypes) {
+    if (mapTagType(context, type).toLowerCase() == key) {
+      return type;
+    }
+  }
+  return null;
+}
+
 String mapTagType(BuildContext context, String type) {
   String showType = '';
   switch (type) {

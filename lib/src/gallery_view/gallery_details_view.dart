@@ -718,7 +718,7 @@ class GalleryDetailHead extends StatelessWidget {
                             ],
                           ),
                         ),
-                        if (tagInfo != null) tagInfo!,
+                        ?tagInfo,
                       ],
                     ),
                   ),

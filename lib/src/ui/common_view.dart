@@ -132,6 +132,22 @@ String takeTranslateText(String input) {
   return input;
 }
 
+/// Hero tag 只要求「同一个路由子树内唯一」。而同一路由里可能同时挂着多个图库列表
+/// （`GalleryTabView` 的「网络」/「本地仓储」两个 Tab 里的列表都是
+/// `wantKeepAlive => true`，会同时存活），同一个图库若同时出现在两个列表里，
+/// 就会出现两个 `gallery-thumb <id>` Hero —— Flutter 直接抛断言、转场动画失效。
+///
+/// 所以列表和详情页约定用同一个作用域前缀拼 tag：列表侧按自己的身份选前缀，
+/// 点进详情页时把同一个前缀通过路由参数 `heroScope` 传下去，两边就能对上。
+const String heroScopeNetwork = 'net-';
+const String heroScopeLocal = 'repo-';
+
+String galleryThumbHeroTag(String heroScope, int id) =>
+    'gallery-thumb $heroScope$id';
+
+String galleryNameHeroTag(String heroScope, int id) =>
+    'gallery_${heroScope}${id}_name';
+
 class GalleryListView extends StatelessWidget {
   final List<Gallery> data;
   final Future<dynamic> Function()? onRefresh;
@@ -140,6 +156,10 @@ class GalleryListView extends StatelessWidget {
   final ScrollController? scrollController;
   final PopupMenuButton<String> Function(Gallery gallery)? menusBuilder;
   final Map<int, int?> readIndexMap;
+
+  /// Hero tag 的作用域前缀，见 [heroScopeNetwork] / [heroScopeLocal]。
+  /// 只有一个图库列表的路由用默认空串即可。
+  final String heroScope;
   const GalleryListView({
     super.key,
     required this.data,
@@ -149,6 +169,7 @@ class GalleryListView extends StatelessWidget {
     this.scrollController,
     required this.readIndexMap,
     this.menusBuilder,
+    this.heroScope = '',
   });
 
   Widget dataList() {
@@ -191,6 +212,7 @@ class GalleryListView extends StatelessWidget {
                 manager: manager,
                 menus: menusBuilder?.call(item),
                 readIndex: readIndexMap[item.id],
+                heroScope: heroScope,
               );
             },
           );
@@ -213,6 +235,9 @@ class GalleryInfo extends StatelessWidget {
   final void Function(Gallery) click;
   final PopupMenuButton<String>? menus;
   final int? readIndex;
+
+  /// 与 [GalleryListView.heroScope] 一致，决定 Hero tag 前缀，见 [galleryThumbHeroTag]。
+  final String heroScope;
   const GalleryInfo({
     super.key,
     required this.gallery,
@@ -220,6 +245,7 @@ class GalleryInfo extends StatelessWidget {
     required this.manager,
     required this.menus,
     this.readIndex,
+    this.heroScope = '',
   });
 
   @override
@@ -246,7 +272,7 @@ class GalleryInfo extends StatelessWidget {
                 MaxWidthBox(
                   maxWidth: min(cons.maxWidth / 3, 300),
                   child: Hero(
-                    tag: 'gallery-thumb ${gallery.id}',
+                    tag: galleryThumbHeroTag(heroScope, gallery.id),
                     child: gallery.files.isEmpty
                         ? const Icon(Icons.error)
                         : ThumbImageView(
@@ -279,7 +305,7 @@ class GalleryInfo extends StatelessWidget {
                           Padding(
                             padding: const EdgeInsets.only(left: 4),
                             child: Hero(
-                              tag: 'gallery_${gallery.id}_name',
+                              tag: galleryNameHeroTag(heroScope, gallery.id),
                               child: Text(
                                 gallery.name,
                                 maxLines: 2,

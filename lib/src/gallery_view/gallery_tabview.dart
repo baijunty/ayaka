@@ -51,7 +51,13 @@ class _GalleryTabView extends State<GalleryTabView>
       if (args['gallery'] != null) {
         await Navigator.of(context).pushNamed(
           GalleryDetailsView.routeName,
-          arguments: {'gallery': args['gallery'], 'local': args['local']},
+          arguments: {
+            'gallery': args['gallery'],
+            'local': args['local'],
+            'heroScope': args['local'] == true
+                ? heroScopeLocal
+                : heroScopeNetwork,
+          },
         );
       } else {
         await Navigator.of(context).pushNamed(

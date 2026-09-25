@@ -43,6 +43,10 @@ class _GalleryDetailView extends State<GalleryDetailsView> {
   int? readedIndex;
   bool isLoading = false;
   bool local = false;
+
+  /// 由列表页通过路由参数 `heroScope` 传下来的 Hero tag 作用域，必须与列表侧
+  /// 拼 tag 时用的一致，Hero 转场才能对上（见 [galleryThumbHeroTag]）。
+  String heroScope = '';
   CancelToken? token;
   final List<img.Image> _selected = [];
   final List<Gallery> suggestGallerys = [];
@@ -126,6 +130,7 @@ class _GalleryDetailView extends State<GalleryDetailsView> {
           ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>;
       gallery = args['gallery'];
       bool local = args['local'] ?? false;
+      heroScope = args['heroScope'] as String? ?? '';
       if (local) {
         status = GalleryStatus.exists;
       }
@@ -347,6 +352,7 @@ class _GalleryDetailView extends State<GalleryDetailsView> {
                           }, test: (error) => true);
                     },
                     tagInfo: isDeskTop ? tagInfo : null,
+                    heroScope: heroScope,
                   ),
                   if (!isDeskTop) tagInfo,
                   if (context.read<SettingsController>().exntension)
@@ -444,6 +450,9 @@ class GalleryDetailHead extends StatelessWidget {
   final int? readIndex;
   final bool isLoading;
   final Function(int id) languageChange;
+
+  /// 与来源列表页一致的 Hero tag 作用域，见 [galleryThumbHeroTag]。
+  final String heroScope;
   const GalleryDetailHead({
     super.key,
     required this.manager,
@@ -454,11 +463,12 @@ class GalleryDetailHead extends StatelessWidget {
     required this.languageChange,
     required this.readIndex,
     this.tagInfo,
+    this.heroScope = '',
   });
 
   Widget headThumbImage(BuildContext context) {
     return Hero(
-      tag: 'gallery-thumb ${gallery.id}',
+      tag: galleryThumbHeroTag(heroScope, gallery.id),
       child: ThumbImageView(
         CacheImage(
           manager: manager,
@@ -581,7 +591,10 @@ class GalleryDetailHead extends StatelessWidget {
           onPressed: () => Navigator.of(context).pop(readIndex),
         ),
       ),
-      title: Hero(tag: 'gallery_${gallery.id}_name', child: Text(gallery.name)),
+      title: Hero(
+        tag: galleryNameHeroTag(heroScope, gallery.id),
+        child: Text(gallery.name),
+      ),
       pinned: true,
       expandedHeight: totalHeight,
       actions: [

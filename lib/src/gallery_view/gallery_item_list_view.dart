@@ -45,6 +45,9 @@ class _GalleryListView extends State<GalleryItemListView>
   bool netLoading = false;
   late ScrollController scrollController;
   final readIndexMap = <int, int?>{};
+
+  /// 「网络」和「本地仓储」两个 Tab 的列表会同时存活，Hero tag 必须按 Tab 区分。
+  String get heroScope => widget.local ? heroScopeLocal : heroScopeNetwork;
   Future<void> _fetchData({bool refresh = false}) async {
     token = CancelToken();
     netLoading = true;
@@ -117,7 +120,7 @@ class _GalleryListView extends State<GalleryItemListView>
       var read = await Navigator.pushNamed(
         context,
         GalleryDetailsView.routeName,
-        arguments: {'gallery': g, 'local': widget.local},
+        arguments: {'gallery': g, 'local': widget.local, 'heroScope': heroScope},
       );
       if (mounted) {
         (read is int
@@ -222,6 +225,7 @@ class _GalleryListView extends State<GalleryItemListView>
       scrollController: scrollController,
       readIndexMap: readIndexMap,
       menusBuilder: menuBuilder,
+      heroScope: heroScope,
     );
   }
 

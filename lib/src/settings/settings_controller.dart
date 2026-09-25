@@ -38,6 +38,20 @@ class SettingsController with ChangeNotifier {
   Hitomi hitomi({HitomiType type = HitomiType.Remote}) =>
       _manager.getApiDirect(type);
 
+  /// 重建两个图片缓存管理器。
+  ///
+  /// 本地仓储图库（`local: true`）统一走「远程仓库用代理服务器、本地直连」这一口径。
+  /// updateConfig 里曾硬编码成 `HitomiType.Local`，于是远程仓库模式下只要改过任意
+  /// 设置（例如「保存目录」），本地缩略图就会切到只读本机文件的那个实现上 —— 它读取
+  /// 缩略图时不上报进度，而 ProxyImageServer.get 又在等第一个进度回调，结果请求
+  /// 永久挂起并占满缓存管理器的并发槽位，后面的缩略图全都发不出去。
+  void _buildCacheManagers() {
+    _cacheManager = HitomiImageCacheManager(hitomi());
+    _localCacheManager = HitomiImageCacheManager(
+      hitomi(type: remoteLib ? HitomiType.PROXY : HitomiType.Remote),
+    );
+  }
+
   Future<void> updateThemeMode(ThemeMode? newThemeMode) async {
     if (newThemeMode == null) return;
     if (newThemeMode == _themeMode) return;
@@ -77,10 +91,7 @@ class SettingsController with ChangeNotifier {
         !kIsWeb &&
         (await _settingsService.readConfig<bool>('runServer') ?? runServer);
     _manager = TaskManager(_config);
-    _cacheManager = HitomiImageCacheManager(hitomi());
-    _localCacheManager = HitomiImageCacheManager(
-      hitomi(type: remoteLib ? HitomiType.PROXY : HitomiType.Remote),
-    );
+    _buildCacheManagers();
     return !kIsWeb && runServer
         ? run_server(_manager)
               .then((v) => _manager.parseCommandAndRun('-c'))
@@ -158,6 +169,9 @@ class SettingsController with ChangeNotifier {
   Future<void> switchConn(bool useProxy) async {
     await _settingsService.saveConfig('useProxy', useProxy);
     _remoteLib = useProxy || kIsWeb;
+    // 切换「图片仓库」后必须一并重建缓存后端，否则本地缩略图仍会沿用切换前的
+    // 实现（例如已经切到远程仓库了，还在用本地直连的实现拉缩略图）。
+    _buildCacheManagers();
     notifyListeners();
   }
 
@@ -180,10 +194,7 @@ class SettingsController with ChangeNotifier {
     _config = config;
     await _settingsService.saveConfig('config', json.encode(config.toJson()));
     _manager = TaskManager(_config);
-    _cacheManager = HitomiImageCacheManager(hitomi());
-    _localCacheManager = HitomiImageCacheManager(
-      hitomi(type: HitomiType.Local),
-    );
+    _buildCacheManagers();
     if (runServer) {
       _server?.close(force: true);
       _server = await run_server(_manager);

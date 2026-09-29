@@ -268,15 +268,17 @@ class _GalleryDetailView extends State<GalleryDetailsView> {
       return gallery.related?.isNotEmpty == true
           ? Future.wait(
                   gallery.related!.map(
-                    (id) => context
-                        .read<SettingsController>()
-                        .hitomi()
-                        .fetchGallery(id, usePrefence: false),
+                    // 单个相关画廊拉取失败（如上游 404）时跳过，
+                    // 别让整份推荐列表空掉。
+                    (id) => fetchGalleryTolerant(
+                      context.read<SettingsController>().hitomi(),
+                      id,
+                    ),
                   ),
                 )
                 .then((resp) {
                   setState(() {
-                    suggestGallerys.addAll(resp);
+                    suggestGallerys.addAll(resp.whereType<Gallery>());
                   });
                 })
                 .catchError((e) {

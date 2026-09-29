@@ -176,11 +176,12 @@ class _GallerySearchResultView extends State<GallerySearchResultView>
         )
         .then(
           (value) => Future.wait(
-            value.map(
-              (e) =>
-                  widget.api.fetchGallery(e, usePrefence: false, token: token),
-            ),
+            // 单个画廊拉取失败（如上游 404）时跳过，别拖垮整页结果。
+            value.map((e) => fetchGalleryTolerant(widget.api, e, token: token)),
           ),
+        )
+        .then(
+          (value) => value.whereType<Gallery>().toList(growable: false),
         )
         .then((value) {
           var labels = value.fold(

@@ -23,6 +23,22 @@ import '../utils/common_define.dart';
 import '../utils/label_utils.dart';
 import '../utils/responsive_util.dart';
 
+/// 拉取单个画廊，失败（如上游 404）时返回 null 而不是抛异常。
+/// 用于 Future.wait 批量拉取：一个坏数据只让自己消失，不拖垮整批列表。
+Future<Gallery?> fetchGalleryTolerant(
+  Hitomi api,
+  dynamic id, {
+  bool usePrefence = false,
+  CancelToken? token,
+}) async {
+  try {
+    return await api.fetchGallery(id, usePrefence: usePrefence, token: token);
+  } catch (e) {
+    debugPrint('跳过无法获取的画廊 $id: $e');
+    return null;
+  }
+}
+
 class ThumbImageView extends StatelessWidget {
   final ImageProvider provider;
   final Widget? label;
@@ -625,16 +641,16 @@ extension ContextAction on BuildContext {
     return requests.then(
       (list) => Future.wait(
         list.map(
-          (id) => controller
-              .hitomi(
-                type: controller.remoteLib
-                    ? HitomiType.PROXY
-                    : HitomiType.Local,
-              )
-              .fetchGallery(id),
+          (id) => fetchGalleryTolerant(
+            controller.hitomi(
+              type: controller.remoteLib ? HitomiType.PROXY : HitomiType.Local,
+            ),
+            id,
+            usePrefence: true,
+          ),
         ),
       ),
-    );
+    ).then((value) => value.whereType<Gallery>().toList(growable: false));
   }
 
   Future<List<Gallery>> querrByImage(List<int> data) async {
@@ -654,11 +670,14 @@ extension ContextAction on BuildContext {
     return requests.then(
       (list) => Future.wait(
         list.map(
-          (map) =>
-              controller.hitomi(type: HitomiType.Local).fetchGallery(map['id']),
+          (map) => fetchGalleryTolerant(
+            controller.hitomi(type: HitomiType.Local),
+            map['id'],
+            usePrefence: true,
+          ),
         ),
       ),
-    );
+    ).then((value) => value.whereType<Gallery>().toList(growable: false));
   }
 
   Future<void> progressDialogAction(Future action) async {

@@ -28,6 +28,11 @@ class _UserProfileView extends State<UserProfileView>
   final List<Gallery> likes = [];
   final List<Gallery> todoCollection = [];
   late Hitomi api;
+  bool _loading = false;
+
+  /// 单个画廊拉取失败（如上游 404）时跳过该项，不能让一个坏数据拖垮整个列表。
+  Future<Gallery?> _fetchGallerySafe(int id) =>
+      fetchGalleryTolerant(api, id);
 
   @override
   void didChangeDependencies() {
@@ -36,7 +41,9 @@ class _UserProfileView extends State<UserProfileView>
     api = controller.hitomi(
       type: controller.remoteLib ? HitomiType.PROXY : HitomiType.Local,
     );
-    if (history.length + likes.length + todoCollection.length == 0) {
+    if (!_loading &&
+        history.length + likes.length + todoCollection.length == 0) {
+      _loading = true;
       var types = [readHistoryMask, bookMarkMask, lateReadMark];
       controller.manager.helper
           .selectSqlMultiResultAsync(
@@ -57,9 +64,9 @@ class _UserProfileView extends State<UserProfileView>
               value.map(
                 (e) => e
                     .asStream()
-                    .asyncMap(
-                      (event) => api.fetchGallery(event, usePrefence: false),
-                    )
+                    .asyncMap((event) => _fetchGallerySafe(event))
+                    .where((g) => g != null)
+                    .cast<Gallery>()
                     .fold(
                       <Gallery>[],
                       (previous, element) => previous..add(element),
@@ -75,7 +82,11 @@ class _UserProfileView extends State<UserProfileView>
                 todoCollection.addAll(value[2]);
               });
             }
-          });
+          })
+          .catchError((e) {
+            debugPrint('加载用户记录失败: $e');
+          }, test: (error) => true)
+          .whenComplete(() => _loading = false);
     }
   }
 
@@ -314,7 +325,24 @@ class _UserProfileLogView extends State<UserProfileLogView> {
   late ScrollController scrollController;
   late PopupMenuButton<String> Function(Gallery gallery)? menusBuilder;
   final readIndexMap = <int, int?>{};
+  bool _loading = false;
+
+  /// 单个画廊拉取失败（如上游 404）时跳过该项，不能让一个坏数据拖垮整个列表。
+  Future<Gallery?> _fetchGallerySafe(int id) async {
+    try {
+      final g = await api.fetchGallery(id, usePrefence: false);
+      return g.id == id ? g : g.copyWith(id: id);
+    } catch (e) {
+      debugPrint('跳过无法获取的画廊 $id: $e');
+      return null;
+    }
+  }
+
   Future<void> fetchDataFromDb() async {
+    if (_loading) {
+      return;
+    }
+    _loading = true;
     var sqlite = context.getSqliteHelper();
     sqlite
         .querySql(
@@ -330,12 +358,10 @@ class _UserProfileLogView extends State<UserProfileLogView> {
         .then(
           (value) => value
               .asStream()
-              .asyncMap(
-                (event) => api
-                    .fetchGallery(event, usePrefence: false)
-                    .then((g) => g.id == event ? g : g.copyWith(id: event)),
-              )
-              .fold(<Gallery>[], (previous, element) => data..add(element)),
+              .asyncMap((event) => _fetchGallerySafe(event))
+              .where((g) => g != null)
+              .cast<Gallery>()
+              .fold(<Gallery>[], (previous, element) => previous..add(element)),
         )
         .then((value) {
           return Future.wait(
@@ -357,10 +383,15 @@ class _UserProfileLogView extends State<UserProfileLogView> {
                 (element) => data.every((g) => g.id != element.id),
               );
               data.addAll(insertList);
-              page++;
             }
+            // 即使这一页里有画廊取不到也要翻页，否则会一直卡在同一页。
+            page++;
           }),
-        );
+        )
+        .catchError((e) {
+          debugPrint('fetchDataFromDb error $e');
+        }, test: (error) => true)
+        .whenComplete(() => _loading = false);
   }
 
   Future<bool> syncDelete(int id) async {

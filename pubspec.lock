@@ -153,6 +153,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.2.2"
+  drift:
+    dependency: transitive
+    description:
+      name: drift
+      sha256: a21a6a7a9e6a0bcabdf47a9af4247c556d38dc9bfe9f05c4fdf72a488bb57eab
+      url: "https://pub.dev"
+    source: hosted
+    version: "2.35.1"
   easy_image_viewer:
     dependency: "direct main"
     description:

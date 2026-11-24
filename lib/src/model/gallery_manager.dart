@@ -22,7 +22,7 @@ class GalleryManager with ChangeNotifier {
               'auth': controller.config.auth,
               'task': command,
             }),
-            options: Options(headers: {'x-real-ip': await localIp()}),
+            options: Options(headers: await realIpHeader()),
           )
         : await controller.manager.parseCommandAndRun(command);
     notifyListeners();
@@ -33,7 +33,7 @@ class GalleryManager with ChangeNotifier {
         ? await controller.manager.dio.post(
             '${controller.config.remoteHttp}/cancel',
             data: json.encode({'auth': controller.config.auth, 'id': id}),
-            options: Options(headers: {'x-real-ip': await localIp()}),
+            options: Options(headers: await realIpHeader()),
           )
         : await controller.manager.parseCommandAndRun('-p $id');
   }
@@ -43,7 +43,7 @@ class GalleryManager with ChangeNotifier {
         ? await controller.manager.dio.post(
             '${controller.config.remoteHttp}/delete',
             data: json.encode({'auth': controller.config.auth, 'id': id}),
-            options: Options(headers: {'x-real-ip': await localIp()}),
+            options: Options(headers: await realIpHeader()),
           )
         : await controller.manager.parseCommandAndRun('-d $id');
   }
@@ -71,7 +71,7 @@ class GalleryManager with ChangeNotifier {
             options: Options(
               headers: {
                 'Content-Type': 'application/json',
-                'x-real-ip': await localIp(),
+                ...await realIpHeader(),
               },
               responseType: ResponseType.json,
             ),

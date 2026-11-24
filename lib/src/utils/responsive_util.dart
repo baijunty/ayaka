@@ -33,6 +33,14 @@ Future<String?> localIp() async {
   return localIpAddress();
 }
 
+/// 后端鉴权请求（/sync、/delete 等）携带的 x-real-ip 头。
+/// Web 端拿不到浏览器所在机器的局域网 IP（[localIp] 返回空串），空头没有意义，
+/// 服务端会以真实连接对端地址兜底，此时干脆不发这个头。
+Future<Map<String, String>> realIpHeader() async {
+  final ip = await localIp();
+  return (ip == null || ip.isEmpty) ? const {} : {'x-real-ip': ip};
+}
+
 Future<String> defaultRemoteAddress() {
   return defaultAddress();
 }

@@ -756,7 +756,7 @@ extension ContextAction on BuildContext {
                   options: Options(
                     headers: {
                       'Content-Type': 'application/json',
-                      'x-real-ip': await localIp(),
+                      ...await realIpHeader(),
                     },
                     responseType: ResponseType.json,
                   ),

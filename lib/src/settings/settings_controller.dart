@@ -123,7 +123,7 @@ class SettingsController with ChangeNotifier {
 
   Future<bool> syncUserDb(int type) async {
     var sqlite = manager.helper;
-    var ip = await localIp();
+    var ipHeader = await realIpHeader();
     return sqlite
         .querySql(
           'select id,value,type,content,date from UserLog where type=?',
@@ -140,7 +140,7 @@ class SettingsController with ChangeNotifier {
                 options: Options(
                   headers: {
                     'Content-Type': 'application/json',
-                    'x-real-ip': ip,
+                    ...ipHeader,
                   },
                   responseType: ResponseType.json,
                 ),
